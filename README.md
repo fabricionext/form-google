@@ -293,6 +293,7 @@ O script `install.sh` automatiza a configuração do ambiente e instalação da 
 
 4. **Pós-instalação:**
    - O script criará um arquivo `.env` de exemplo
+   - Edite esse arquivo conforme necessário. Ele contém variáveis como `GOOGLE_SERVICE_ACCOUNT_JSON` e `BACKUP_FOLDER_ID` e define os horários de backup (`BACKUP_SCHEDULE`, `SYNC_GDRIVE_SCHEDULE`, `LOG_CLEANUP_SCHEDULE`).
    - Serão configuradas permissões de arquivos e diretórios
    - Serão habilitados e iniciados os serviços necessários
    - O primeiro backup será executado automaticamente
