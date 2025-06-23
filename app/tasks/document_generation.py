@@ -47,8 +47,8 @@ def process_document_request_task(self, payload_json_str: str):
         primeiro_nome=dados_cliente_payload.get("nome"),
         status_processamento="Pendente",
     )
-    db.session.add(nova_resposta)
-    db.session.commit()
+    with db.session.begin():
+        db.session.add(nova_resposta)
 
     try:
         google_credentials_json_str = current_app.config.get(
@@ -74,9 +74,9 @@ def process_document_request_task(self, payload_json_str: str):
         )
         link_pasta = f"https://drive.google.com/drive/folders/{id_pasta_cliente}"
 
-        nova_resposta.link_pasta_cliente = link_pasta
-        nova_resposta.status_processamento = "Documentos_Enfileirados"
-        db.session.commit()
+        with db.session.begin():
+            nova_resposta.link_pasta_cliente = link_pasta
+            nova_resposta.status_processamento = "Documentos_Enfileirados"
 
         documentos_requeridos = payload.get("documentosRequeridos")
         gerar_documentos_task.delay(
@@ -93,10 +93,12 @@ def process_document_request_task(self, payload_json_str: str):
             f"Falha na tarefa orquestradora para resposta {nova_resposta.id}: {e}",
             exc_info=True,
         )
-        nova_resposta.status_processamento = "Falha_orquestracao"
-        nova_resposta.observacoes_processamento = str(e)
-        db.session.commit()
+        with db.session.begin():
+            nova_resposta.status_processamento = "Falha_orquestracao"
+            nova_resposta.observacoes_processamento = str(e)
         raise
+    finally:
+        db.session.remove()
 
 
 @shared_task(
@@ -143,8 +145,8 @@ def gerar_documentos_task(
         logger.info(
             f"Atualizando status para 'Processando' para resposta_id: {resposta_id}"
         )
-        resposta.status_processamento = "Processando"
-        db.session.commit()
+        with db.session.begin():
+            resposta.status_processamento = "Processando"
 
         google_credentials_json_str = current_app.config.get(
             "GOOGLE_CREDENTIALS_AS_JSON_STR"
@@ -187,13 +189,11 @@ def gerar_documentos_task(
             resposta.link_pasta_cliente = (
                 f"https://drive.google.com/drive/folders/{pasta_id}"
             )
-        db.session.commit()
-
-        resposta.status_processamento = "Concluido"
-        resposta.observacoes_processamento = json.dumps(
-            {"links": links}, ensure_ascii=False
-        )
-        db.session.commit()
+        with db.session.begin():
+            resposta.status_processamento = "Concluido"
+            resposta.observacoes_processamento = json.dumps(
+                {"links": links}, ensure_ascii=False
+            )
 
     except HttpError as e:
         if e.resp.status in (429, 500, 503):
@@ -204,16 +204,18 @@ def gerar_documentos_task(
                 delay,
             )
             raise self.retry(exc=e, countdown=delay)
-        resposta.status_processamento = "Falha"
-        resposta.observacoes_processamento = str(e)
-        db.session.commit()
+        with db.session.begin():
+            resposta.status_processamento = "Falha"
+            resposta.observacoes_processamento = str(e)
         raise
     except Exception as e:
         logger.error(
             f"ERRO FATAL na gerar_documentos_task para resposta_id {resposta_id}",
             exc_info=True,
         )
-        resposta.status_processamento = "Falha"
-        resposta.observacoes_processamento = str(e)
-        db.session.commit()
+        with db.session.begin():
+            resposta.status_processamento = "Falha"
+            resposta.observacoes_processamento = str(e)
         raise
+    finally:
+        db.session.remove()
