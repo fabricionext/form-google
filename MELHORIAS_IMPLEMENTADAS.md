@@ -4,6 +4,8 @@
 
 Este documento descreve as melhorias implementadas no projeto baseadas no código de referência fornecido, focando em **performance**, **manutenibilidade**, **tratamento de erros** e **monitoramento**.
 
+Também foi adicionado um `.gitignore` mais abrangente para proteger arquivos sensíveis.
+
 ## 🏗️ Estrutura de Arquivos
 
 ```

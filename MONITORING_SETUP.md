@@ -2,6 +2,8 @@
 
 Este documento descreve como configurar e usar o sistema de monitoramento baseado em Grafana Loki para logs centralizados.
 
+> **Nota:** documentação revisada na versão 1.05 para refletir ajustes de segurança e simplificação das instruções.
+
 ## 🎯 Visão Geral
 
 O sistema de monitoramento inclui:
