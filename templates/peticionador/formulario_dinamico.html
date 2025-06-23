@@ -491,17 +491,46 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
     const exibirDadosCliente = cliente => {
       const nomeCompleto =
         `${cliente.primeiro_nome || ''} ${cliente.sobrenome || ''}`.trim();
-      dadosClienteArea.innerHTML = `
-            <div id="draggable_cliente" draggable="true" class="cliente-info-drag p-2 rounded text-start fade-in">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary"><i class="fas fa-user-check"></i> ${nomeCompleto}</h6>
-                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" id="btn_quick_view" title="Visualizar Detalhes">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
-                <small class="d-block"><strong>CPF:</strong> ${cliente.cpf || 'N/A'}</small>
-            </div>
-        `;
+
+      const container = document.createElement('div');
+      container.id = 'draggable_cliente';
+      container.draggable = true;
+      container.className = 'cliente-info-drag p-2 rounded text-start fade-in';
+
+      const header = document.createElement('div');
+      header.className = 'd-flex justify-content-between align-items-center';
+
+      const title = document.createElement('h6');
+      title.className = 'mb-0 text-primary';
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-user-check';
+      title.appendChild(icon);
+      title.appendChild(document.createTextNode(' ' + nomeCompleto));
+
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-sm btn-outline-secondary py-0 px-1';
+      btn.type = 'button';
+      btn.id = 'btn_quick_view';
+      btn.title = 'Visualizar Detalhes';
+      const eyeIcon = document.createElement('i');
+      eyeIcon.className = 'fas fa-eye';
+      btn.appendChild(eyeIcon);
+
+      header.appendChild(title);
+      header.appendChild(btn);
+
+      const cpfSmall = document.createElement('small');
+      cpfSmall.className = 'd-block';
+      const cpfStrong = document.createElement('strong');
+      cpfStrong.textContent = 'CPF:';
+      cpfSmall.appendChild(cpfStrong);
+      cpfSmall.appendChild(document.createTextNode(' ' + (cliente.cpf || 'N/A')));
+
+      container.appendChild(header);
+      container.appendChild(cpfSmall);
+
+      dadosClienteArea.innerHTML = '';
+      dadosClienteArea.appendChild(container);
     };
 
     const limparDadosCliente = (showInitialMsg = true) => {
@@ -572,14 +601,38 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
     document.addEventListener('click', e => {
       if (e.target.closest('#btn_quick_view')) {
         const modalBody = document.getElementById('clienteModalBody');
-        modalBody.innerHTML = `
-                <dl class="row">
-                  <dt class="col-sm-3">Nome Completo</dt><dd class="col-sm-9">${clienteData.primeiro_nome} ${clienteData.sobrenome}</dd>
-                  <dt class="col-sm-3">CPF</dt><dd class="col-sm-9">${clienteData.cpf}</dd>
-                  <dt class="col-sm-3">Email</dt><dd class="col-sm-9">${clienteData.email || 'N/A'}</dd>
-                  <dt class="col-sm-3">Celular</dt><dd class="col-sm-9">${clienteData.telefone_celular || 'N/A'}</dd>
-                  <dt class="col-sm-3">Endereço</dt><dd class="col-sm-9">${clienteData.endereco_logradouro || ''}, ${clienteData.endereco_numero || ''}</dd>
-                </dl>`;
+        modalBody.innerHTML = '';
+
+        const dl = document.createElement('dl');
+        dl.className = 'row';
+
+        const addDetail = (label, value) => {
+          const dt = document.createElement('dt');
+          dt.className = 'col-sm-3';
+          dt.textContent = label;
+          const dd = document.createElement('dd');
+          dd.className = 'col-sm-9';
+          dd.textContent = value;
+          dl.appendChild(dt);
+          dl.appendChild(dd);
+        };
+
+        addDetail(
+          'Nome Completo',
+          `${clienteData.primeiro_nome} ${clienteData.sobrenome}`.trim()
+        );
+        addDetail('CPF', clienteData.cpf);
+        addDetail('Email', clienteData.email || 'N/A');
+        addDetail('Celular', clienteData.telefone_celular || 'N/A');
+        addDetail(
+          'Endereço',
+          `${clienteData.endereco_logradouro || ''}, ${
+            clienteData.endereco_numero || ''
+          }`
+        );
+
+        modalBody.appendChild(dl);
+
         new bootstrap.Modal(
           document.getElementById('clienteDetailModal')
         ).show();
