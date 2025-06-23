@@ -117,6 +117,8 @@ def setup_logging(app, log_level: str = "INFO"):
         "app.validators.cliente_validator",
         "app.api.document_api",
         "document_generator",
+        "app.tasks.document_generation",
+        "config",
     ]
 
     for logger_name in loggers_to_configure:
