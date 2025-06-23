@@ -16,7 +16,13 @@ source .venv/bin/activate
 
 # 3. Instalar dependências Python
 pip install --upgrade pip
-pip install -r requirements.txt
+if [ -f requirements.txt ]; then
+  pip install -r requirements.txt
+elif [ -f pyproject.toml ] || [ -f setup.py ]; then
+  pip install .
+else
+  echo "[WARN] Nenhum arquivo requirements.txt ou pyproject.toml/setup.py encontrado."
+fi
 
 # 4. Instalar dependências extras de desenvolvimento (opcional)
 if [ -f requirements-dev.txt ]; then

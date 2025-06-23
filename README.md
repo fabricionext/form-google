@@ -383,7 +383,7 @@ Se precisar reconfigurar o acesso ao Google Drive:
 
    ```bash
    source venv/bin/activate
-   pip install -r requirements.txt
+   pip install .
    npm install  # Para ferramentas de qualidade de código
    ```
 
