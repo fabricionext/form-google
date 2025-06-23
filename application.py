@@ -501,9 +501,7 @@ def gerar_documento_api():
                     }
                 )
             except Exception as sub_e:
-                print(f"--- ERRO AO GERAR DOCUMENTO: {tipo_doc_atual} ---")
-                traceback.print_exc()
-                print("--- FIM ERRO DOCUMENTO ---")
+                app.logger.exception("Erro ao gerar documento %s", tipo_doc_atual)
                 erros_ocorridos.append(
                     {"tipo_documento": tipo_doc_atual, "erro": str(sub_e)}
                 )
@@ -545,10 +543,7 @@ def gerar_documento_api():
             200,
         )
     except Exception as e:
-        print("--- TRACEBACK START ---")
-        traceback.print_exc()
-        print("--- TRACEBACK END ---")
-        # app.logger.error(f"Erro em /api/gerar-documento: {traceback.format_exc()}") # Alternativa com logger Flask
+        app.logger.exception("Erro em /api/gerar-documento")
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 
