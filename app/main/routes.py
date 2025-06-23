@@ -48,7 +48,6 @@ from . import main_bp
 # from ...security_middleware import require_api_key # Exemplo se estivesse em outro lugar
 
 
-
 def require_api_key(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
