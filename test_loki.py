@@ -5,6 +5,7 @@ Script de teste para verificar a configuração do Grafana Loki
 import os
 import sys
 import time
+from unittest import mock
 
 import requests
 from dotenv import load_dotenv
@@ -22,7 +23,7 @@ from loki_logger import (
 )
 
 
-def test_loki_connection():
+def check_loki_connection():
     """Testa a conexão com o Loki"""
     print("🔧 Testando conexão com Loki...")
 
@@ -45,7 +46,7 @@ def test_loki_connection():
         return False
 
 
-def test_grafana_connection():
+def check_grafana_connection():
     """Testa a conexão com o Grafana"""
     print("\n📊 Testando conexão com Grafana...")
 
@@ -68,7 +69,7 @@ def test_grafana_connection():
         return False
 
 
-def test_logging_functions():
+def perform_logging_functions():
     """Testa as funções de logging"""
     print("\n📝 Testando funções de logging...")
 
@@ -82,7 +83,7 @@ def test_logging_functions():
         log_google_api_operation(
             operation="create_document",
             status="success",
-            metadata={"document_id": "test_123", "template": "ficha_cadastral"},
+            details={"document_id": "test_123", "template": "ficha_cadastral"},
         )
         print("✅ Log de operação da API enviado")
 
@@ -92,8 +93,7 @@ def test_logging_functions():
             form_id=123,
             user_id=456,
             status="completed",
-            document_type="ficha_cadastral",
-            processing_time=2.5,
+            details={"document_type": "ficha_cadastral", "processing_time": 2.5},
         )
         print("✅ Log de geração de documento enviado")
 
@@ -102,7 +102,7 @@ def test_logging_functions():
         log_google_api_operation(
             operation="update_document",
             status="error",
-            metadata={"error": "Document not found", "document_id": "invalid_123"},
+            details={"error": "Document not found", "document_id": "invalid_123"},
         )
         print("✅ Log de erro enviado")
 
@@ -113,7 +113,7 @@ def test_logging_functions():
         return False
 
 
-def test_log_retrieval():
+def perform_log_retrieval():
     """Testa a recuperação de logs via API do Loki"""
     print("\n🔍 Testando recuperação de logs...")
 
@@ -165,24 +165,24 @@ def main():
     print("🧪 Iniciando testes do Grafana Loki...\n")
 
     # Teste 1: Conexão com Loki
-    if not test_loki_connection():
+    if not check_loki_connection():
         print("\n❌ Teste de conexão com Loki falhou.")
         print("💡 Execute: ./start_monitoring.sh")
         return
 
     # Teste 2: Conexão com Grafana
-    if not test_grafana_connection():
+    if not check_grafana_connection():
         print("\n❌ Teste de conexão com Grafana falhou.")
         print("💡 Execute: ./start_monitoring.sh")
         return
 
     # Teste 3: Funções de logging
-    if not test_logging_functions():
+    if not perform_logging_functions():
         print("\n❌ Teste de logging falhou.")
         return
 
     # Teste 4: Recuperação de logs
-    test_log_retrieval()
+    perform_log_retrieval()
 
     print("\n🎉 Todos os testes do Grafana Loki foram executados!")
     print("\n📊 Para verificar os resultados:")
@@ -196,3 +196,28 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_loki(monkeypatch):
+    """Executa o fluxo de testes do Loki sem acesso à rede."""
+
+    def fake_get(*args, **kwargs):
+        resp = mock.Mock()
+        resp.status_code = 200
+        resp.json.return_value = {}
+        resp.text = "ok"
+        return resp
+
+    def fake_post(*args, **kwargs):
+        resp = mock.Mock()
+        resp.status_code = 204
+        return resp
+
+    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(requests, "post", fake_post)
+    monkeypatch.setattr(time, "sleep", lambda x: None)
+
+    assert check_loki_connection()
+    assert check_grafana_connection()
+    assert perform_logging_functions()
+    assert perform_log_retrieval()

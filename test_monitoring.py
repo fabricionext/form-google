@@ -6,6 +6,10 @@ import os
 import subprocess
 import sys
 
+import pytest
+
+pytest.skip("monitoring tests require Docker", allow_module_level=True)
+
 from dotenv import load_dotenv
 
 # Carregar variáveis de ambiente
