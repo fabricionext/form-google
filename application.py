@@ -31,6 +31,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import CONFIG
 from document_generator import buscar_ou_criar_pasta_cliente, gerar_documento_cliente
+from security_config import get_security_config
 from security_middleware import SecurityMiddleware, require_api_key
 
 # Inicializar extensões
@@ -67,6 +68,9 @@ app.config.update(
     WTF_CSRF_ENABLED=True,
     WTF_CSRF_TIME_LIMIT=3600,  # 1 hora
 )
+
+# Carregar configurações adicionais de segurança
+app.config.update(get_security_config())
 
 # Inicializar extensões
 csrf.init_app(app)
