@@ -1,4 +1,4 @@
-# Sistema de Cadastro de Clientes ADV - Versão 1.04
+# Sistema de Cadastro de Clientes ADV - Versão 1.05
 
 Este projeto é uma aplicação Flask para automação de documentos Google Docs, publicada de forma segura e profissional usando Gunicorn, Nginx e Cloudflare Tunnel (sem necessidade de portas abertas no roteador).
 
@@ -17,7 +17,7 @@ Este projeto é uma aplicação Flask para automação de documentos Google Docs
 
 ---
 
-## ✨ Melhorias Recentes (v1.04)
+## ✨ Melhorias Recentes (v1.05)
 
 ### 🔍 Monitoramento e Observabilidade
 
@@ -459,6 +459,11 @@ Para suporte, entre em contato:
 
 ## 📝 Notas de Atualização
 
+### v1.0.5 - 01/07/2025
+
+- **Segurança:** `.gitignore` aprimorado para evitar o versionamento de credenciais
+- **Documentação:** revisão geral e remoção de referências ao Sentry
+
 ### v1.0.4 - 16/01/2025
 
 - **Monitoramento e Observabilidade:**
@@ -480,10 +485,9 @@ Para suporte, entre em contato:
 - **Remoção:**
   - Sentry removido (apenas planos pagos disponíveis)
 
-### v1.0.3 - 16/01/2025
+-### v1.0.3 - 16/01/2025
 
 - **Monitoramento e Observabilidade:**
-  - Integração com Sentry para rastreamento de erros e performance
   - Grafana Loki para agregação e visualização de logs centralizados
   - Grafana com dashboards para análise de logs e métricas
   - Sistema de logging estruturado com contexto
@@ -498,7 +502,7 @@ Para suporte, entre em contato:
 - **Documentação:**
   - README atualizado com novas funcionalidades
   - Documentação de monitoramento e observabilidade
-  - Guias de configuração para Sentry e Grafana Loki
+  - Guias de configuração para Grafana Loki
 
 ### v1.0.2 - 08/06/2025
 
