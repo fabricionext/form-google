@@ -36,6 +36,7 @@ from .forms import (
 from .models import (  # Cliente removido daqui
     AutoridadeTransito,
     Cliente,
+    DocumentTemplate,
     PeticaoGerada,
     PeticaoModelo,
     PeticaoPlaceholder,
@@ -581,6 +582,76 @@ def editar_modelo(modelo_id):
         title="Editar Modelo",
         form=form,
         form_action=url_for("peticionador.editar_modelo", modelo_id=modelo.id),
+    )
+
+
+# --- Rotas para Templates de Documento ---
+@peticionador_bp.route("/doc-templates")
+@login_required
+def listar_doc_templates():
+    templates = DocumentTemplate.query.order_by(
+        DocumentTemplate.tipo_pessoa, DocumentTemplate.nome
+    ).all()
+    return render_template(
+        "peticionador/doc_templates_listar.html",
+        title="Templates de Documentos",
+        templates=templates,
+    )
+
+
+@peticionador_bp.route("/doc-templates/novo", methods=["GET", "POST"])
+@login_required
+def adicionar_doc_template():
+    from .forms import DocumentTemplateForm
+
+    form = DocumentTemplateForm()
+    if form.validate_on_submit():
+        novo = DocumentTemplate(
+            tipo_pessoa=form.tipo_pessoa.data,
+            nome=form.nome.data,
+            template_id=form.template_id.data,
+        )
+        try:
+            db.session.add(novo)
+            db.session.commit()
+            flash("Template adicionado com sucesso!", "success")
+            return redirect(url_for("peticionador.listar_doc_templates"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao adicionar template: {e}", "danger")
+    return render_template(
+        "peticionador/doc_template_form.html",
+        title="Adicionar Template",
+        form=form,
+        form_action=url_for("peticionador.adicionar_doc_template"),
+    )
+
+
+@peticionador_bp.route(
+    "/doc-templates/<int:template_id>/editar", methods=["GET", "POST"]
+)
+@login_required
+def editar_doc_template(template_id):
+    from .forms import DocumentTemplateForm
+
+    tpl = DocumentTemplate.query.get_or_404(template_id)
+    form = DocumentTemplateForm(obj=tpl)
+    if form.validate_on_submit():
+        tpl.tipo_pessoa = form.tipo_pessoa.data
+        tpl.nome = form.nome.data
+        tpl.template_id = form.template_id.data
+        try:
+            db.session.commit()
+            flash("Template atualizado com sucesso!", "success")
+            return redirect(url_for("peticionador.listar_doc_templates"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar template: {e}", "danger")
+    return render_template(
+        "peticionador/doc_template_form.html",
+        title="Editar Template",
+        form=form,
+        form_action=url_for("peticionador.editar_doc_template", template_id=tpl.id),
     )
 
 

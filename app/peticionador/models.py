@@ -129,3 +129,17 @@ class PeticaoGerada(db.Model):
 
     def __repr__(self):
         return f"<PeticaoGerada {self.modelo} - {self.cliente_id}>"
+
+
+class DocumentTemplate(db.Model):
+    """Armazena os IDs de templates de documentos Google."""
+
+    __tablename__ = "document_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    tipo_pessoa = db.Column(db.String(10), nullable=False)
+    nome = db.Column(db.String(150), nullable=False)
+    template_id = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return f"<DocumentTemplate {self.tipo_pessoa}:{self.nome}>"

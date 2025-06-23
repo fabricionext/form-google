@@ -3,6 +3,7 @@ import logging  # Adicionado para logar erros de carregamento
 import os
 
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
 # --- INÍCIO DA DEPURAÇÃO ADICIONAL ---
 print("=" * 50)
@@ -16,6 +17,23 @@ print("=" * 50)
 load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
+
+
+def _load_templates_from_db(db_uri: str) -> dict:
+    """Retorna dicionário de templates armazenados no banco de dados."""
+    templates: dict[str, dict[str, str]] = {}
+    try:
+        engine = create_engine(db_uri)
+        with engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT tipo_pessoa, nome, template_id FROM document_templates")
+            )
+            for tipo, nome, t_id in result:
+                templates.setdefault(tipo, {})[nome] = t_id
+    except Exception as exc:
+        logger.error("Erro ao carregar templates do banco: %s", exc)
+    return templates
+
 
 # Carregar credenciais do Google como string JSON
 print("[CONFIG_DEBUG_CRED] Tentando obter GOOGLE_SERVICE_ACCOUNT_JSON do env...")
@@ -71,13 +89,16 @@ else:
     )
     logger.warning("Variável de ambiente GOOGLE_SERVICE_ACCOUNT_JSON não definida.")
 
+DB_URI = os.getenv(
+    "SQLALCHEMY_DATABASE_URI",
+    f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}",
+)
+TEMPLATES_FROM_DB = _load_templates_from_db(DB_URI)
+
 # Configurações principais do sistema
 CONFIG = {
     # Configuração do banco de dados
-    "SQLALCHEMY_DATABASE_URI": os.getenv(
-        "SQLALCHEMY_DATABASE_URI",
-        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}",
-    ),
+    "SQLALCHEMY_DATABASE_URI": DB_URI,
     "SQLALCHEMY_TRACK_MODIFICATIONS": False,
     # Configuração de segurança
     "SECRET_KEY": os.getenv("SECRET_KEY")
@@ -93,43 +114,9 @@ CONFIG = {
     "GOOGLE_CREDENTIALS_AS_JSON_STR": GOOGLE_CREDENTIALS_AS_JSON_STR,  # Adicionada a string JSON das credenciais
     "ADMIN_EMAIL": os.getenv("ADMIN_EMAIL"),
     "BACKUP_FOLDER_ID": os.getenv("BACKUP_FOLDER_ID"),
-    "INTERNAL_API_KEY": os.getenv(
-        "INTERNAL_API_KEY"
-    ),  # Chave para autenticação da API interna
+    "INTERNAL_API_KEY": os.getenv("INTERNAL_API_KEY"),
     # Templates
-    "TEMPLATES": {
-        "pf": {
-            "Ficha Cadastral-PF": os.getenv("TEMPLATE_PF_FICHA_CADASTRAL"),
-            "Contrato de Honorarios-PF": os.getenv("TEMPLATE_PF_CONTRATO_HONORARIOS"),
-            "Procuracao Judicial-PF": os.getenv("TEMPLATE_PF_PROCURACAO_JUDICIAL"),
-            "Procuracao Administrativa-PF": os.getenv(
-                "TEMPLATE_PF_PROCURACAO_ADMINISTRATIVA"
-            ),
-            "Contrato Administrativo-PF": os.getenv(
-                "TEMPLATE_PF_CONTRATO_ADMINISTRATIVO"
-            ),
-            "Declaracao de Pobreza-PF": os.getenv("TEMPLATE_PF_DECLARACAO_POBREZA"),
-            # Templates antigos para compatibilidade
-            "PROCURACAO_PF": os.getenv("TEMPLATE_PROCURACAO_PF"),
-            "CONTRATO_PF": os.getenv("TEMPLATE_CONTRATO_PF"),
-            "DECLARACAO_HIPOSSUFICIENCIA_PF": os.getenv(
-                "TEMPLATE_DECLARACAO_HIPOSSUFICIENCIA_PF"
-            ),
-        },
-        "pj": {
-            "Ficha Cadastral-PJ": os.getenv("TEMPLATE_PJ_FICHA_CADASTRAL"),
-            "Contrato de Honorarios-PJ": os.getenv("TEMPLATE_PJ_CONTRATO_HONORARIOS"),
-            "Procuracao Judicial-PJ": os.getenv("TEMPLATE_PJ_PROCURACAO_JUDICIAL"),
-            "Procuracao Administrativa-PJ": os.getenv(
-                "TEMPLATE_PJ_PROCURACAO_ADMINISTRATIVA"
-            ),
-        },
-        "pet": {
-            "Suspensao Direito Dirigir": os.getenv(
-                "TEMPLATE_PET_SUSPENSAO_DIREITO_DIRIGIR"
-            ),
-        },
-    },
+    "TEMPLATES": TEMPLATES_FROM_DB,
     # Subpastas
     "FOLDER_FOR_CLIENT_ANNEXES": os.getenv(
         "FOLDER_FOR_CLIENT_ANNEXES", "Anexos Cliente"
