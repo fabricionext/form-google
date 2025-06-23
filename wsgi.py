@@ -21,7 +21,10 @@ if __name__ == "__main__":
         os.environ.get("FLASK_DEBUG", "1") == "1"
     )  # '1' para True, '0' para False
 
-    print(
-        f"Iniciando servidor de desenvolvimento em http://{host}:{port}/ (Debug: {debug_mode})"
+    logging.info(
+        "Iniciando servidor de desenvolvimento em http://%s:%s/ (Debug: %s)",
+        host,
+        port,
+        debug_mode,
     )
     app.run(host=host, port=port, debug=debug_mode)
