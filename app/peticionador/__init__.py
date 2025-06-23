@@ -4,7 +4,11 @@ from flask import Blueprint, current_app, jsonify, render_template, request
 
 # Criar o blueprint
 peticionador_bp = Blueprint(
-    "peticionador", __name__, url_prefix="/peticionador", static_folder="static"
+    "peticionador",
+    __name__,
+    url_prefix="/peticionador",
+    static_folder="static",
+    template_folder="../../templates",
 )
 
 # @peticionador_bp.route('/')

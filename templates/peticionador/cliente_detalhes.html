@@ -1,6 +1,6 @@
-{% extends 'peticionador/_base_peticionador.html' %} {% block title %}{{ title
-}} - {{ cliente.primeiro_nome or cliente.razao_social }}{% endblock %} {% block
-content_peticionador %}
+{% extends '_base_peticionador.html' %}
+{% block title %}{{ title }} - {{ cliente.primeiro_nome or cliente.razao_social }}{% endblock %}
+{% block content_peticionador %}
 <div class="container-fluid px-4">
   <h1 class="mt-4">
     {{ title }}: {% if cliente.tipo_pessoa == 'FISICA' %}{{
