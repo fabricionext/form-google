@@ -188,12 +188,12 @@ def gerar_suspensao_peticao_dados_form():
                         cliente_para_documento.cnh_numero = form.cliente_cnh_numero.data
                         # Adicionar outros campos conforme necessário
                         try:
-                            db.session.commit()
+                            with db.session.begin():
+                                pass
                             flash(
                                 "Dados do cliente atualizados com sucesso.", "success"
                             )
                         except Exception as e:
-                            db.session.rollback()
                             current_app.logger.error(f"Erro ao atualizar cliente: {e}")
                             flash("Erro ao atualizar dados do cliente.", "danger")
                             return render_template(
@@ -332,8 +332,8 @@ def gerar_suspensao_peticao_dados_form():
                             google_id=document_id,
                             link=link,
                         )
-                        db.session.add(pet)
-                        db.session.commit()
+                        with db.session.begin():
+                            db.session.add(pet)
                         # Retornar JSON para o frontend abrir em nova aba
                         return jsonify({"success": True, "link": link})
                     else:
@@ -386,12 +386,11 @@ def adicionar_autoridade():
             cep=form.cep.data or None,
         )
         try:
-            db.session.add(nova_autoridade)
-            db.session.commit()
+            with db.session.begin():
+                db.session.add(nova_autoridade)
             flash("Autoridade de trânsito adicionada com sucesso!", "success")
             return redirect(url_for("peticionador.listar_autoridades"))
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao adicionar autoridade: {str(e)}", "danger")
     return render_template(
         "peticionador/autoridade_form.html",
@@ -415,11 +414,11 @@ def editar_autoridade(autoridade_id):
         # Atualiza os campos do objeto 'autoridade' com os dados do formulário
         form.populate_obj(autoridade)
         try:
-            db.session.commit()
+            with db.session.begin():
+                pass
             flash("Autoridade atualizada com sucesso.", "success")
             return redirect(url_for("peticionador.listar_autoridades"))
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao atualizar autoridade: {e}", "danger")
 
     # Para GET, ou se o formulário não for válido no POST, renderiza o template
@@ -439,11 +438,10 @@ def editar_autoridade(autoridade_id):
 def excluir_autoridade(autoridade_id):
     autoridade = AutoridadeTransito.query.get_or_404(autoridade_id)
     try:
-        db.session.delete(autoridade)
-        db.session.commit()
+        with db.session.begin():
+            db.session.delete(autoridade)
         flash("Autoridade excluída com sucesso.", "success")
     except Exception as e:
-        db.session.rollback()
         flash(f"Erro ao excluir autoridade: {e}", "danger")
     return redirect(url_for("peticionador.listar_autoridades"))
 
@@ -489,10 +487,10 @@ def setup_admin_dev():
         admin_user.set_password("fea71868")  # Defina uma senha forte
         db.session.add(admin_user)
         try:
-            db.session.commit()
+            with db.session.begin():
+                pass
             flash(f"Usuário admin {email_admin} criado com senha admin123.", "success")
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao criar usuário admin: {str(e)}", "danger")
     else:
         flash(f"Usuário admin {email_admin} já existe.", "info")
@@ -527,14 +525,13 @@ def adicionar_modelo():
             ativo=form.ativo.data,
         )
         try:
-            db.session.add(novo_modelo)
-            db.session.commit()
+            with db.session.begin():
+                db.session.add(novo_modelo)
             flash("Modelo adicionado com sucesso!", "success")
             return redirect(
                 url_for("peticionador.placeholders_modelo", modelo_id=novo_modelo.id)
             )
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao adicionar modelo: {str(e)}", "danger")
     return render_template(
         "peticionador/modelo_form.html",
@@ -559,13 +556,13 @@ def editar_modelo(modelo_id):
         modelo.descricao = form.descricao.data
         modelo.ativo = form.ativo.data
         try:
-            db.session.commit()
+            with db.session.begin():
+                pass
             flash("Modelo atualizado com sucesso!", "success")
             return redirect(
                 url_for("peticionador.placeholders_modelo", modelo_id=modelo.id)
             )
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao atualizar modelo: {str(e)}", "danger")
     return render_template(
         "peticionador/modelo_form.html",
@@ -629,7 +626,8 @@ def mover_placeholder(modelo_id, ph_id, direcao):
         swap_idx = idx - 1 if direcao == "cima" else idx + 1
         other = placeholders[swap_idx]
         ph.ordem, other.ordem = other.ordem, ph.ordem
-        db.session.commit()
+        with db.session.begin():
+            pass
         if request.method == "POST":
             return jsonify({"success": True})
         flash("Ordem atualizada.", "success")
@@ -684,7 +682,8 @@ def sincronizar_placeholders(modelo_id):
             )
             db.session.add(ph)
             criados += 1
-    db.session.commit()
+    with db.session.begin():
+        pass
     flash(
         f"Sincronização concluída. {criados} novos placeholders adicionados.", "success"
     )
@@ -707,10 +706,10 @@ def reordenar_placeholders(modelo_id):
             ).first()
             if ph:
                 ph.ordem = idx
-        db.session.commit()
+        with db.session.begin():
+            pass
         return jsonify({"success": True})
     except Exception as e:
-        db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -849,8 +848,8 @@ def gerar_peticao_dinamica(modelo_id):
             pet = PeticaoGerada(
                 cliente_id=None, modelo=modelo.nome, google_id=novo_id, link=link
             )
-            db.session.add(pet)
-            db.session.commit()
+            with db.session.begin():
+                db.session.add(pet)
             # Retorna a resposta JSON que o JavaScript espera
             return jsonify({"success": True, "link": link})
         else:
@@ -912,8 +911,8 @@ def criar_formulario_dinamico(modelo_id):
                 form_gerado = FormularioGerado(
                     modelo_id=modelo.id, nome=nome, slug=slug
                 )
-                db.session.add(form_gerado)
-                db.session.commit()
+                with db.session.begin():
+                    db.session.add(form_gerado)
 
                 flash(f'Formulário "{nome}" criado com sucesso!', "success")
                 return redirect(
@@ -921,7 +920,6 @@ def criar_formulario_dinamico(modelo_id):
                 )
 
             except Exception as e:
-                db.session.rollback()
                 current_app.logger.error(f"Erro ao criar formulário: {str(e)}")
                 flash(f"Erro ao criar formulário: {str(e)}", "danger")
                 return render_template(
@@ -1004,8 +1002,8 @@ def preencher_formulario_dinamico(slug):
                 pet = PeticaoGerada(
                     cliente_id=None, modelo=modelo.nome, google_id=novo_id, link=link
                 )
-                db.session.add(pet)
-                db.session.commit()
+                with db.session.begin():
+                    db.session.add(pet)
                 # Retorna a resposta JSON que o JavaScript espera
                 return jsonify({"success": True, "link": link})
             else:
@@ -1045,8 +1043,8 @@ def excluir_formulario_dinamico(slug):
     from models import FormularioGerado
 
     form_gerado = FormularioGerado.query.filter_by(slug=slug).first_or_404()
-    db.session.delete(form_gerado)
-    db.session.commit()
+    with db.session.begin():
+        db.session.delete(form_gerado)
     flash("Formulário excluído com sucesso.", "success")
     return redirect(url_for("peticionador.listar_modelos"))
 
@@ -1115,12 +1113,11 @@ def adicionar_cliente():
                 )
                 novo_cliente.representante_cargo = form.representante_cargo.data or None
 
-            db.session.add(novo_cliente)
-            db.session.commit()
+            with db.session.begin():
+                db.session.add(novo_cliente)
             flash("Cliente adicionado com sucesso!", "success")
             return redirect(url_for("peticionador.listar_clientes"))
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao adicionar cliente: {str(e)}", "danger")
             current_app.logger.error(
                 f"Erro ao adicionar cliente: {str(e)}\n{traceback.format_exc()}"
@@ -1312,10 +1309,9 @@ def gerar_documento_suspensao(cliente_id):
                         google_id=new_document_id,
                         link=new_document_url,
                     )
-                    db.session.add(nova_peticao)
-                    db.session.commit()
+                    with db.session.begin():
+                        db.session.add(nova_peticao)
                 except Exception as e:
-                    db.session.rollback()
                     current_app.logger.error(f"Erro ao registrar PeticaoGerada: {e}")
                 flash(
                     f'Documento "{file_name}" gerado com sucesso! <a href="{new_document_url}" target="_blank">Abrir documento</a>',
@@ -1416,11 +1412,11 @@ def editar_cliente(cliente_id):
                 cliente.cnh_numero = None
                 cliente.data_nascimento = None
 
-            db.session.commit()
+            with db.session.begin():
+                pass
             flash("Cliente atualizado com sucesso!", "success")
             return redirect(url_for("peticionador.listar_clientes"))
         except Exception as e:
-            db.session.rollback()
             flash(f"Erro ao atualizar cliente: {str(e)}", "danger")
             current_app.logger.error(
                 f"Erro ao atualizar cliente {cliente_id}: {str(e)}\n{traceback.format_exc()}"
@@ -1462,11 +1458,10 @@ def excluir_cliente(cliente_id):
             if cliente.tipo_pessoa == TipoPessoaEnum.FISICA
             else cliente.razao_social
         )
-        db.session.delete(cliente)
-        db.session.commit()
+        with db.session.begin():
+            db.session.delete(cliente)
         flash(f'Cliente "{nome_cliente}" excluído com sucesso!', "success")
     except Exception as e:
-        db.session.rollback()
         flash(f"Erro ao excluir cliente: {str(e)}", "danger")
         current_app.logger.error(
             f"Erro ao excluir cliente {cliente_id}: {str(e)}\n{traceback.format_exc()}"
@@ -1558,8 +1553,8 @@ def api_cadastrar_autoridade():
         cep=cep,
         estado=estado,
     )
-    db.session.add(autoridade)
-    db.session.commit()
+    with db.session.begin():
+        db.session.add(autoridade)
     return (
         jsonify(
             {
