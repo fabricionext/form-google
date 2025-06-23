@@ -80,57 +80,6 @@ def require_api_key(f):
     return decorated_function
 
 
-# Função wrapper para a tarefa de geração de documentos em thread
-# ---- Função obsoleta (substituída por Celery) ----
-def thread_document_generation_task(*args, **kwargs):
-    """Deprecated: mantida apenas para compatibilidade de import. Use gerar_documentos_task (Celery)."""
-    pass
-    with app_context:
-        current_app.logger.info(
-            f"[THREAD_TASK] Recebido google_credentials_json_str: Presente? {bool(google_credentials_json_str)}, Len: {len(google_credentials_json_str) if google_credentials_json_str else 0}"
-        )
-        if google_credentials_json_str:
-            current_app.logger.info(
-                f"[THREAD_TASK] google_credentials_json_str (primeiros 30): {google_credentials_json_str[:30]}..."
-            )
-        current_app.logger.info(
-            f"Thread {threading.get_ident()}: Iniciando geração de documentos para tipo '{tipo_pessoa}'."
-        )
-        try:
-            # Garante que form_data seja um dict; converte se vier como string JSON
-            if isinstance(form_data, str):
-                try:
-                    form_data = json.loads(form_data)
-                    current_app.logger.debug(
-                        "[THREAD_TASK] form_data convertido de string JSON para dict."
-                    )
-                except json.JSONDecodeError as e:
-                    current_app.logger.error(
-                        f"[THREAD_TASK] Falha ao decodificar form_data JSON: {e}"
-                    )
-                    return  # Aborta a geração se os dados estiverem inválidos
-            # Aqui, form_data é o 'dados_cliente_payload'
-            resultado_geracao = document_generator.gerar_todos_os_documentos_para_cliente(
-                form_data,
-                tipo_pessoa,
-                google_credentials_json_str,
-                documentos_solicitados=documentos_requeridos,  # Passa a lista de documentos solicitados
-            )
-            current_app.logger.info(
-                f"Thread {threading.get_ident()}: Geração de documentos concluída. Resultado: {resultado_geracao}"
-            )
-            # Aqui você pode adicionar lógica para lidar com o resultado, como:
-            # - Salvar status no banco de dados
-            # - Enviar notificação por e-mail
-            # - Etc.
-            # Exemplo: if resultado_geracao.get('status') == 'sucesso': ...
-        except Exception as e:
-            current_app.logger.error(
-                f"Thread {threading.get_ident()}: ERRO CRÍTICO durante a geração de documentos: {e}",
-                exc_info=True,
-            )
-            # Tratar o erro como apropriado (ex: marcar a tarefa como falha no DB)
-
 
 @main_bp.route("/")
 @limiter.limit("100 per day")
