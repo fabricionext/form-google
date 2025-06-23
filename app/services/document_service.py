@@ -280,5 +280,9 @@ class DocumentService:
 
     def __del__(self):
         """Cleanup do executor"""
+        self.close()
+
+    def close(self):
+        """Encerra explicitamente o executor de threads."""
         if hasattr(self, "_executor"):
             self._executor.shutdown(wait=True)

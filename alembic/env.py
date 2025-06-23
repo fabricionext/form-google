@@ -57,19 +57,19 @@ project_root_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root_path))
 print(f"!!! env.py: Added to sys.path: {str(project_root_path)} !!!")
 try:
-    from app import app, db  # Import app and db from your Flask app
+    from application import app, db  # Import app and db from your Flask app
 
-    print("!!! env.py: Successfully imported 'app' and 'db' from 'app.py' !!!")
+    print("!!! env.py: Successfully imported 'app' and 'db' from 'application.py' !!!")
     target_metadata = db.metadata
     print("!!! env.py: target_metadata set from db.metadata !!!")
 except ImportError as e:
-    print(f"!!! env.py: FAILED to import 'app' or 'db' from 'app.py': {e} !!!")
+    print(f"!!! env.py: FAILED to import 'app' or 'db' from 'application.py': {e} !!!")
     print(
-        "!!! env.py: Ensure your Flask app ('app.py') and its SQLAlchemy instance ('db') are correctly defined and accessible."
+        "!!! env.py: Ensure your Flask app ('application.py') and its SQLAlchemy instance ('db') are correctly defined and accessible."
     )
     target_metadata = None  # Keep this for safety
     raise ImportError(
-        "Could not import 'app' or 'db' from app.py, Alembic cannot proceed."
+        "Could not import 'app' or 'db' from application.py, Alembic cannot proceed."
     ) from e
 # --- End Flask-SQLAlchemy setup ---
 
@@ -97,13 +97,13 @@ def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
 
     with app.app_context():
-        # 'db' is the instance imported from app.py, which should be configured by the Flask app.
-        # The Flask app itself (app.py) handles loading .env and setting up its database URI.
+        # 'db' is the instance imported from application.py, which should be configured by the Flask app.
+        # The Flask app itself (application.py) handles loading .env and setting up its database URI.
         # db.engine should reflect that configuration.
         connectable = db.engine
         print(f"!!! env.py ONLINE: Using db.engine from Flask app: {connectable} !!!")
-        # We expect app.py to have correctly configured the DB_URI, including any SSL requirements if necessary.
-        # For example, if app.py sets SQLALCHEMY_DATABASE_URI to '...?...sslmode=require', db.engine will use it.
+        # We expect application.py to have correctly configured the DB_URI, including any SSL requirements if necessary.
+        # For example, if application.py sets SQLALCHEMY_DATABASE_URI to '...?...sslmode=require', db.engine will use it.
 
         try:
             with connectable.connect() as connection:
