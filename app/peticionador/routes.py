@@ -483,10 +483,16 @@ def logout():
     return redirect(url_for("peticionador.login"))
 
 
-# Rota para criar um usuário de teste (APENAS PARA DESENVOLVIMENTO)
-# Remova ou proteja adequadamente em produção.
+# Rota exclusiva para desenvolvimento. Avalie removê-la em produção.
+# Caso seja mantida, o acesso é restrito a usuários autenticados e
+# bloqueado em ambiente de produção.
 @peticionador_bp.route("/setup_admin_dev")
+@login_required
 def setup_admin_dev():
+    """Cria usuário admin para testes. Não habilitar em produção."""
+    if current_app.config.get("ENV") == "production":
+        abort(404)
+
     email_admin = "fabricionext@gmail.com"
     # Verifica se o usuário admin já existe
     admin_user = User.query.filter_by(email=email_admin).first()
