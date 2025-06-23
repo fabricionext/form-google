@@ -301,6 +301,23 @@ class PeticaoModeloForm(FlaskForm):
     submit = SubmitField("Salvar Modelo")
 
 
+class DocumentTemplateForm(FlaskForm):
+    """Formulário para edição de IDs de templates."""
+
+    tipo_pessoa = SelectField(
+        "Tipo de Pessoa",
+        choices=[("pf", "PF"), ("pj", "PJ"), ("pet", "PET")],
+        validators=[DataRequired()],
+    )
+    nome = StringField(
+        "Nome do Documento", validators=[DataRequired(), Length(max=150)]
+    )
+    template_id = StringField(
+        "ID do Template", validators=[DataRequired(), Length(max=64)]
+    )
+    submit = SubmitField("Salvar")
+
+
 class GerarDocumentoSuspensaoForm(FlaskForm):
     # Campo para busca de CPF
     cpf_busca = StringField(
