@@ -15,7 +15,17 @@ setup(
         "google-api-python-client",
         "oauth2client",
         "sqlalchemy",
-        # Adicione outras dependências do requirements.txt se necessário
+        # Bibliotecas usadas nos testes e em módulos importados
+        "psycopg2-binary",
+        "python-dotenv",
+        "requests",
+        "python-dateutil",
+        "flask_sqlalchemy",
+        "flask_login",
+        "flask_limiter",
+        "flask_talisman",
+        "flask_wtf",
+        "flask_migrate",
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["form-google=app:main"]},
