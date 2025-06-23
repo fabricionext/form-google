@@ -22,6 +22,7 @@ from wtforms.validators import DataRequired
 
 from app.peticionador import google_services
 from app.peticionador.utils import get_enum_display_name
+from config import CONFIG
 
 # Ajuste o import de 'db' conforme a estrutura do seu projeto.
 # from app import db
@@ -1177,7 +1178,9 @@ def gerar_documento_suspensao(cliente_id):
                         "ID do template de suspensão não encontrado nas configurações."
                     )
             except KeyError as e:
-                logger.error(f"Erro ao obter ID do template de suspensão: {e}")
+                current_app.logger.error(
+                    f"Erro ao obter ID do template de suspensão: {e}"
+                )
                 flash(
                     "Erro de configuração: ID do template de suspensão não definido. Contate o administrador.",
                     "danger",
