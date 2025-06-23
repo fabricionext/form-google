@@ -17,7 +17,7 @@ Environment="PATH=/var/www/estevaoalmeida.com.br/form-google/venv/bin"
 # Variáveis de ambiente do projeto
 EnvironmentFile=/var/www/estevaoalmeida.com.br/form-google/.env
 # Garante que Flask leia config correta (opcional)
-Environment="FLASK_APP=app.py"
+Environment="FLASK_APP=application.py"
 Environment="FLASK_ENV=production"
 Environment="PYTHONPATH=/var/www/estevaoalmeida.com.br/form-google"
 

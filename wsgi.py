@@ -5,7 +5,7 @@ logging.basicConfig(level=logging.DEBUG)
 logging.debug("WSGI.PY: Inicializando aplicação")
 
 # Importa a instância da aplicação já configurada
-from app import app
+from application import app
 
 if __name__ == "__main__":
     # Este bloco é para executar o servidor de desenvolvimento do Flask.
