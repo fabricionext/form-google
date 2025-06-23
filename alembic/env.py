@@ -57,7 +57,7 @@ project_root_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root_path))
 print(f"!!! env.py: Added to sys.path: {str(project_root_path)} !!!")
 try:
-    from app import app, db  # Import app and db from your Flask app
+    from application import app, db  # Import app and db from your Flask app
 
     print("!!! env.py: Successfully imported 'app' and 'db' from 'app.py' !!!")
     target_metadata = db.metadata
