@@ -282,7 +282,7 @@ O script `install.sh` automatiza a configuração do ambiente e instalação da 
 
    - Instalar dependências do sistema (python3-venv, nginx, rclone, nodejs, etc.)
    - Criar e configurar ambiente virtual Python (`venv`)
-   - Instalar dependências Python de segurança (do arquivo `requirements-secure.txt`)
+   - Instalar dependências Python (a partir do arquivo `requirements.txt`)
    - Instalar dependências Node.js para ferramentas de qualidade
    - Configurar diretórios de log e backup com permissões adequadas
    - Configurar serviço systemd otimizado para produção

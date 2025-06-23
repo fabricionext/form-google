@@ -1,0 +1,14 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Limiter
+Flask-Talisman
+Flask-WTF
+gunicorn
+celery
+requests
+psycopg2-binary
+python-dotenv
+google-api-python-client
+oauth2client
+pytest
