@@ -1,14 +1,10 @@
-import os
 import re
 from pathlib import Path
 
 from bs4 import BeautifulSoup
 
 # Diretórios onde estão os templates
-TEMPLATE_DIRS = [
-    "app/templates/peticionador",
-    "templates/peticionador",
-]
+TEMPLATE_DIRS = ["templates/peticionador"]
 
 # Regex para snake_case
 SNAKE_CASE = re.compile(r"^[a-z0-9_]+$")
