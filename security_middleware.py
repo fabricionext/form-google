@@ -4,6 +4,7 @@ Middleware de segurança para a aplicação Flask.
 
 import time
 from functools import wraps
+import os
 
 from flask import g, jsonify, request
 
