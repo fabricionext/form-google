@@ -11,8 +11,6 @@ from extensions import db  # Importa diretamente da raiz do projeto
 # Se o seu db estiver em app.extensions, por exemplo:
 
 
-
-
 class User(UserMixin, db.Model):
     __tablename__ = "users_peticionador"
 
@@ -101,6 +99,7 @@ class PeticaoPlaceholder(db.Model):
     label_form = db.Column(db.String(120))
     opcoes_json = db.Column(db.Text)  # Para campos select/radio
     ordem = db.Column(db.Integer, default=0)
+    obrigatorio = db.Column(db.Boolean, default=True)
 
     modelo = db.relationship(
         "PeticaoModelo",
