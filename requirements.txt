@@ -1,3 +1,19 @@
+# Dependências de produção
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Limiter
+Flask-Talisman
+Flask-WTF
+gunicorn
+celery
+requests
+psycopg2-binary
+python-dotenv
+google-api-python-client
+oauth2client
+
+# Dependências de desenvolvimento
 black==25.1.0
 click==8.2.1
 iniconfig==2.1.0

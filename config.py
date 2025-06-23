@@ -36,24 +36,15 @@ def _load_templates_from_db(db_uri: str) -> dict:
     return templates
 
 # Carregar credenciais do Google como string JSON
-logger.debug("Tentando obter GOOGLE_SERVICE_ACCOUNT_JSON do env...")
 GOOGLE_SERVICE_ACCOUNT_JSON_PATH = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-logger.debug(
-    "GOOGLE_SERVICE_ACCOUNT_JSON_PATH definido? %s",
-    bool(GOOGLE_SERVICE_ACCOUNT_JSON_PATH),
-)
 GOOGLE_CREDENTIALS_AS_JSON_STR = None
 path_exists = (
     os.path.exists(GOOGLE_SERVICE_ACCOUNT_JSON_PATH)
     if GOOGLE_SERVICE_ACCOUNT_JSON_PATH
     else False
 )
-logger.debug("Arquivo de credenciais encontrado? %s", path_exists)
 if GOOGLE_SERVICE_ACCOUNT_JSON_PATH and path_exists:
     try:
-        logger.debug(
-            "Lendo arquivo de credenciais em %s", GOOGLE_SERVICE_ACCOUNT_JSON_PATH
-        )
         with open(GOOGLE_SERVICE_ACCOUNT_JSON_PATH, "r") as f:
             # Carrega o JSON do arquivo e o converte de volta para uma string JSON compacta
             # Isso garante que temos uma string JSON válida e não um objeto Python dict
