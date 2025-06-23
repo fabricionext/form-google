@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 
 # Diretórios onde estão os templates
 TEMPLATE_DIRS = [
-    "app/templates/peticionador",
     "templates/peticionador",
 ]
 
