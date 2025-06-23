@@ -120,8 +120,8 @@ def gerar_documento_api_refatorada():
             return _create_error_response(str(e), 400, request_id)
 
         # 4. Processar geração de documentos
+        document_service = DocumentService(CONFIG)
         try:
-            document_service = DocumentService(CONFIG)
             sucessos, erros = document_service.gerar_documentos_cliente(cliente_data)
         except Exception as e:
             logger.error(
@@ -136,6 +136,8 @@ def gerar_documento_api_refatorada():
             return _create_error_response(
                 "Erro interno no processamento de documentos", 500, request_id
             )
+        finally:
+            document_service.close()
 
         # 5. Preparar resposta
         duration = time.time() - start_time
