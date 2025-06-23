@@ -54,7 +54,11 @@ class ClienteData:
 
 
 class DocumentService:
-    """Service para gerar documentos com melhorias de performance e tratamento de erros"""
+    """Service para gerar documentos com melhorias de performance e tratamento de erros.
+
+    Chame :py:meth:`close` quando o serviço não for mais necessário para liberar
+    recursos do ``ThreadPoolExecutor``.
+    """
 
     def __init__(self, config: Dict):
         self.config = config
@@ -278,7 +282,12 @@ class DocumentService:
 
         return endereco
 
+    def close(self) -> None:
+        """Encerra o executador de tarefas paralelas."""
+        if getattr(self, "_executor", None):
+            self._executor.shutdown(wait=True)
+            self._executor = None
+
     def __del__(self):
         """Cleanup do executor"""
-        if hasattr(self, "_executor"):
-            self._executor.shutdown(wait=True)
+        self.close()
