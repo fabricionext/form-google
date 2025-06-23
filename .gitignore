@@ -28,6 +28,7 @@ ENV/
 #########################
 # pip-tools
 requirements*.txt
+!requirements.txt
 # Poetry
 poetry.lock
 # conda
