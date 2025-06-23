@@ -241,6 +241,7 @@ O backup é configurado automaticamente durante a instalação. Os arquivos prin
   sudo apt update && sudo apt install -y git python3-venv python3-pip python3-dev build-essential libssl-dev libffi-dev python3-setuptools rclone nodejs npm
   ```
 - **OpenSSL** para geração de certificados (já incluído na maioria das distribuições)
+- As dependências Python (execução e testes) estão listadas em `requirements.txt`.
 
 ---
 
