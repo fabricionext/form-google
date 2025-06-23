@@ -123,16 +123,11 @@ def gerar_documentos_task(
     logger.info(f"Iniciando gerar_documentos_task para resposta_id: {resposta_id}")
 
     # Debug: Log dos dados recebidos
-    with open(
-        "/var/www/estevaoalmeida.com.br/form-google/debug_celery_task.log", "a"
-    ) as f:
-        f.write(f"[CELERY_DEBUG] resposta_id: {resposta_id}\n")
-        f.write(f"[CELERY_DEBUG] tipo_pessoa: {tipo_pessoa}\n")
-        f.write(
-            f"[CELERY_DEBUG] dados_cliente_json (tipo): {type(dados_cliente_json)}\n"
-        )
-        f.write(f"[CELERY_DEBUG] dados_cliente_json (conteúdo): {dados_cliente_json}\n")
-        f.write(f"[CELERY_DEBUG] documentos_requeridos: {documentos_requeridos}\n")
+    logger.debug("[CELERY_DEBUG] resposta_id: %s", resposta_id)
+    logger.debug("[CELERY_DEBUG] tipo_pessoa: %s", tipo_pessoa)
+    logger.debug("[CELERY_DEBUG] dados_cliente_json (tipo): %s", type(dados_cliente_json))
+    logger.debug("[CELERY_DEBUG] dados_cliente_json (conteúdo): %s", dados_cliente_json)
+    logger.debug("[CELERY_DEBUG] documentos_requeridos: %s", documentos_requeridos)
 
     resposta = RespostaForm.query.get(resposta_id)
     if not resposta:
@@ -155,22 +150,12 @@ def gerar_documentos_task(
         # Debug: Verificar se dados_cliente_json é string ou dict
         if isinstance(dados_cliente_json, str):
             dados_cliente = json.loads(dados_cliente_json)
-            with open(
-                "/var/www/estevaoalmeida.com.br/form-google/debug_celery_task.log", "a"
-            ) as f:
-                f.write(
-                    f"[CELERY_DEBUG] dados_cliente_json era string, convertido para dict\n"
-                )
-                f.write(
-                    f"[CELERY_DEBUG] dados_cliente (após conversão): {dados_cliente}\n"
-                )
+            logger.debug("[CELERY_DEBUG] dados_cliente_json era string, convertido para dict")
+            logger.debug("[CELERY_DEBUG] dados_cliente (após conversão): %s", dados_cliente)
         else:
             dados_cliente = dados_cliente_json
-            with open(
-                "/var/www/estevaoalmeida.com.br/form-google/debug_celery_task.log", "a"
-            ) as f:
-                f.write(f"[CELERY_DEBUG] dados_cliente_json já era dict\n")
-                f.write(f"[CELERY_DEBUG] dados_cliente: {dados_cliente}\n")
+            logger.debug("[CELERY_DEBUG] dados_cliente_json já era dict")
+            logger.debug("[CELERY_DEBUG] dados_cliente: %s", dados_cliente)
 
         current_app.logger.info(
             "Chamando service.generate_documents para tipo_pessoa='%s' com documentos: %s",
