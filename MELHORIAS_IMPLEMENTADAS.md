@@ -43,6 +43,7 @@ MELHORIAS_IMPLEMENTADAS.md    # Este arquivo
 # Exemplo de uso
 document_service = DocumentService(CONFIG)
 sucessos, erros = document_service.gerar_documentos_cliente(cliente_data)
+document_service.close()
 ```
 
 ### 2. **Validação Robusta de Dados** (`app/validators/cliente_validator.py`)
@@ -222,6 +223,7 @@ except ValueError as e:
 # 2. Gerar documentos
 document_service = DocumentService(CONFIG)
 sucessos, erros = document_service.gerar_documentos_cliente(cliente_data)
+document_service.close()
 
 # 3. Retornar resultado
 if erros and not sucessos:
