@@ -115,7 +115,7 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
                         <div class="row g-3">
                           {% set campos_cliente = [ 'primeiro_nome',
                           'sobrenome', 'nacionalidade', 'estado_civil',
-                          'profissao', 'cpf', 'rg', 'estado_emissor_do_rg',
+                          'profissao', 'cpf', 'rg', 'estado_emissor_rg',
                           'cnh', 'endereco_logradouro', 'endereco_numero',
                           'endereco_complemento', 'endereco_bairro',
                           'endereco_cep', 'endereco_cidade', 'endereco_estado' ]
@@ -437,10 +437,7 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
       // DOCUMENTOS
       setFieldValue('cpf', cliente.cpf);
       setFieldValue('rg', cliente.rg_numero || cliente.rg);
-      setFieldValue(
-        'estado_emissor_do_rg',
-        cliente.rg_estado_emissor || cliente.rg_uf_emissao
-      );
+      setFieldValue('estado_emissor_rg', cliente.estado_emissor_rg);
       setFieldValue('cnh', cliente.cnh_numero || cliente.cnh);
       // ENDEREÇO
       setFieldValue('endereco_logradouro', cliente.endereco_logradouro);
