@@ -4,11 +4,12 @@ Script de teste para verificar a geração de documentos.
 """
 import json
 import time
+from unittest import mock
 
 import requests
 
 
-def test_document_generation():
+def perform_document_generation():
     """Testa a geração de documentos via API"""
 
     # URL da API
@@ -82,9 +83,32 @@ def test_document_generation():
 
 if __name__ == "__main__":
     print("🧪 Iniciando teste de geração de documentos...")
-    success = test_document_generation()
+    success = perform_document_generation()
 
     if success:
         print("✅ Teste concluído com sucesso!")
     else:
         print("❌ Teste falhou!")
+
+
+def test_document_generation(monkeypatch):
+    """Testa geração de documentos sem realizar chamadas HTTP reais."""
+
+    def fake_post(*args, **kwargs):
+        response = mock.Mock()
+        response.status_code = 202
+        response.text = "accepted"
+        response.json.return_value = {"task_id": "123"}
+        return response
+
+    def fake_get(*args, **kwargs):
+        response = mock.Mock()
+        response.status_code = 200
+        response.text = "completed"
+        return response
+
+    monkeypatch.setattr(requests, "post", fake_post)
+    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(time, "sleep", lambda x: None)
+
+    assert perform_document_generation() is True

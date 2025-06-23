@@ -3,6 +3,10 @@
 import os
 import sys
 
+import pytest
+
+pytest.skip("requires Google credentials", allow_module_level=True)
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 print("🧪 Testando importação do DocumentGenerationService...")

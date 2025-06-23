@@ -6,6 +6,10 @@ Este script testa a função check_document_exists e copy_template_and_fill
 para garantir que documentos não sejam duplicados.
 """
 
+import pytest
+
+pytest.skip("requires Google services", allow_module_level=True)
+
 import logging
 import os
 import sys

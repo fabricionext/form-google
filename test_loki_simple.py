@@ -8,6 +8,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from unittest import mock
 
 from dotenv import load_dotenv
 
@@ -18,7 +19,7 @@ load_dotenv()
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
-def test_logging_functions():
+def run_logging_functions():
     """Testa as funções de logging localmente"""
     print("🧪 Testando funções de logging...")
 
@@ -73,7 +74,7 @@ def test_logging_functions():
         return False
 
 
-def test_log_file_creation():
+def run_log_file_creation():
     """Testa se os logs estão sendo salvos em arquivo local"""
     print("\n📝 Testando criação de arquivos de log...")
 
@@ -176,10 +177,10 @@ def main():
     print("=" * 60)
 
     # Teste 1: Funções de logging
-    logging_ok = test_logging_functions()
+    logging_ok = run_logging_functions()
 
     # Teste 2: Criação de arquivos de log
-    file_ok = test_log_file_creation()
+    file_ok = run_log_file_creation()
 
     # Resumo
     print("\n" + "=" * 60)
@@ -201,3 +202,26 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_loki_simple(monkeypatch):
+    """Executa o teste simplificado sem realizar chamadas HTTP."""
+
+    def fake_get(*args, **kwargs):
+        resp = mock.Mock()
+        resp.status_code = 200
+        resp.json.return_value = {}
+        resp.text = "ok"
+        return resp
+
+    def fake_post(*args, **kwargs):
+        resp = mock.Mock()
+        resp.status_code = 204
+        return resp
+
+    monkeypatch.setattr("loki_logger.requests.get", fake_get)
+    monkeypatch.setattr("loki_logger.requests.post", fake_post)
+    monkeypatch.setattr(time, "sleep", lambda x: None)
+
+    assert run_logging_functions()
+    assert run_log_file_creation()
