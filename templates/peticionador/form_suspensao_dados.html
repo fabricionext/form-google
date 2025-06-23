@@ -533,7 +533,13 @@ render_field %} {% block title %}{{ title }}{% endblock %} {% block content %}
     window.addEventListener('load', () => {
       const savedData = localStorage.getItem(formId);
       if (savedData) {
-        const data = JSON.parse(savedData);
+        let data;
+        try {
+          data = JSON.parse(savedData);
+        } catch (e) {
+          localStorage.removeItem(formId);
+          return;
+        }
         if (
           data.cliente_id &&
           confirm('Encontramos um progresso salvo. Deseja restaurá-lo?')
