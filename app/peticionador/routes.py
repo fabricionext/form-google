@@ -638,6 +638,30 @@ def mover_placeholder(modelo_id, ph_id, direcao):
     return redirect(url_for("peticionador.placeholders_modelo", modelo_id=modelo_id))
 
 
+@peticionador_bp.route(
+    "/modelos/<int:modelo_id>/placeholders/<int:ph_id>/toggle_obrigatorio",
+    methods=["POST"],
+)
+@login_required
+def toggle_placeholder_obrigatorio(modelo_id, ph_id):
+    ph = PeticaoPlaceholder.query.get_or_404(ph_id)
+    if ph.modelo_id != modelo_id:
+        return (
+            jsonify(
+                {"success": False, "error": "Modelo não corresponde ao placeholder."}
+            ),
+            400,
+        )
+
+    data = request.get_json() or {}
+    if "obrigatorio" in data:
+        ph.obrigatorio = bool(data["obrigatorio"])
+    else:
+        ph.obrigatorio = not ph.obrigatorio
+    db.session.commit()
+    return jsonify({"success": True, "obrigatorio": ph.obrigatorio})
+
+
 @peticionador_bp.route("/modelos/<int:modelo_id>/placeholders")
 @login_required
 def placeholders_modelo(modelo_id):
@@ -789,9 +813,13 @@ def build_dynamic_form(placeholders):
     """Gera dinamicamente uma classe WTForm com campos conforme placeholders."""
     attrs = {"csrf_enabled": True}
     for ph in placeholders:
+        validators = []
+        if getattr(ph, "obrigatorio", True):
+            validators.append(DataRequired())
+
         field_kwargs = {
             "label": ph.label_form or ph.chave.replace("_", " ").title(),
-            "validators": [DataRequired()],
+            "validators": validators,
         }
         if ph.tipo_campo == "date":
             attrs[ph.chave] = DateField(**field_kwargs, format="%Y-%m-%d")

@@ -72,6 +72,7 @@
               <th class="fw-semibold">Chave</th>
               <th class="fw-semibold">Rótulo</th>
               <th class="fw-semibold">Tipo</th>
+              <th class="fw-semibold text-center">Obrigatório</th>
               <th class="fw-semibold text-center" style="width: 80px">Ordem</th>
               <th class="fw-semibold text-center" style="width: 120px">
                 Ações
@@ -98,6 +99,14 @@
                 <span class="badge bg-light text-dark border"
                   >{{ ph.tipo }}</span
                 >
+              </td>
+              <td class="text-center">
+                <input
+                  type="checkbox"
+                  class="form-check-input required-toggle"
+                  data-id="{{ ph.id }}"
+                  {% if ph.obrigatorio %}checked{% endif %}
+                />
               </td>
               <td class="text-center">
                 <span class="badge bg-secondary rounded-pill"
@@ -288,6 +297,15 @@
       // Corrigido: construir a URL diretamente em JS
       const url = `/peticionador/modelos/{{ modelo.id }}/placeholders/${placeholderId}/mover/${direction}`;
       makeRequest(url);
+    });
+
+    // Toggle campo obrigatório
+    tbody.addEventListener('change', function (e) {
+      const checkbox = e.target.closest('.required-toggle');
+      if (!checkbox) return;
+      const placeholderId = checkbox.getAttribute('data-id');
+      const url = `/peticionador/modelos/{{ modelo.id }}/placeholders/${placeholderId}/toggle_obrigatorio`;
+      makeRequest(url, { obrigatorio: checkbox.checked });
     });
 
     // Verificar se FontAwesome está carregado
