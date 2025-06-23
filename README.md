@@ -240,6 +240,7 @@ O backup é configurado automaticamente durante a instalação. Os arquivos prin
   sudo apt update && sudo apt install -y git python3-venv python3-pip python3-dev build-essential libssl-dev libffi-dev python3-setuptools rclone nodejs npm
   ```
 - **OpenSSL** para geração de certificados (já incluído na maioria das distribuições)
+- As dependências Python (execução e testes) estão listadas em `requirements.txt`.
 
 ---
 
@@ -282,7 +283,7 @@ O script `install.sh` automatiza a configuração do ambiente e instalação da 
 
    - Instalar dependências do sistema (python3-venv, nginx, rclone, nodejs, etc.)
    - Criar e configurar ambiente virtual Python (`venv`)
-   - Instalar dependências Python de segurança (do arquivo `requirements-secure.txt`)
+   - instalar dependências Python (do arquivo `requirements.txt`)
    - Instalar dependências Node.js para ferramentas de qualidade
    - Configurar diretórios de log e backup com permissões adequadas
    - Configurar serviço systemd otimizado para produção

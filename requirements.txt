@@ -1,0 +1,25 @@
+Flask
+Flask-Limiter
+Flask-Login
+Flask-WTF
+Flask-Talisman
+Flask-Migrate
+Flask-SQLAlchemy
+SQLAlchemy
+celery
+python-dotenv
+requests
+psycopg2-binary
+gunicorn
+google-api-python-client
+oauth2client
+python-dateutil
+# Test dependencies
+pytest
+pytest-cov
+black
+isort
+flake8
+mypy
+types-requests
+types-python-dateutil
