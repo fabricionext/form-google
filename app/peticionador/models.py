@@ -11,8 +11,6 @@ from extensions import db  # Importa diretamente da raiz do projeto
 # Se o seu db estiver em app.extensions, por exemplo:
 
 
-
-
 class User(UserMixin, db.Model):
     __tablename__ = "users_peticionador"
 
