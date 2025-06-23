@@ -1,5 +1,6 @@
-{% extends "peticionador/_base_peticionador.html" %} {% import
-"bootstrap/wtf.html" as wtf %} {% block title %}{{ title }} - {{
+{% extends "_base_peticionador.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}{{ title }} - {{
 cliente.primeiro_nome or cliente.razao_social }}{% endblock %} {% block
 app_content %}
 <div class="container mt-4">
