@@ -141,3 +141,28 @@ desktop.ini
 # macOS adicionais
 .AppleDouble
 .LSOverride
+
+##########################
+# 13. Credenciais e Segurança #
+##########################
+# Google Cloud Service Account
+app-script-*.json
+*service-account*.json
+*credentials*.json
+client_secret*.json
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Certificados SSL/TLS
+cert.pem
+key.pem
+*.crt
+*.key
+
+# Cookies e dados de sessão
+cookies.txt
+*.session
+*.cache
