@@ -9,6 +9,7 @@ Este projeto é uma aplicação Flask para automação de documentos Google Docs
 - **Proxy reverso**: Nginx com headers de segurança
 - **Backup Automático**: Backup diário local e sincronização com Google Drive
 - **Segurança**: Rate limiting, CSRF protection, CORS, Headers de segurança
+  - Configurações extras carregadas de `security_config.py` em `application.py`
 - **Monitoramento**: Grafana Loki (logs centralizados)
 - **Qualidade de Código**: ESLint + Prettier para JavaScript/TypeScript
 - **Publicação externa**: Cloudflare Tunnel (cloudflared)
