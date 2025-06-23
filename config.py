@@ -4,71 +4,48 @@ import os
 
 from dotenv import load_dotenv
 
-# --- INÍCIO DA DEPURAÇÃO ADICIONAL ---
-print("=" * 50)
-print("[CONFIG_DEBUG_ENV] INICIANDO config.py")
-print("[CONFIG_DEBUG_ENV] CONTEÚDO COMPLETO DE os.environ:")
-for key, value in os.environ.items():
-    print(f"[CONFIG_DEBUG_ENV]   {key} = {value}")
-print("=" * 50)
-# --- FIM DA DEPURAÇÃO ADICIONAL ---
-
 load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 
 # Carregar credenciais do Google como string JSON
-print("[CONFIG_DEBUG_CRED] Tentando obter GOOGLE_SERVICE_ACCOUNT_JSON do env...")
+logger.debug("Tentando obter GOOGLE_SERVICE_ACCOUNT_JSON do env...")
 GOOGLE_SERVICE_ACCOUNT_JSON_PATH = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-print(
-    f"[CONFIG_DEBUG_CRED] GOOGLE_SERVICE_ACCOUNT_JSON_PATH: {GOOGLE_SERVICE_ACCOUNT_JSON_PATH}"
+logger.debug(
+    "GOOGLE_SERVICE_ACCOUNT_JSON_PATH definido? %s",
+    bool(GOOGLE_SERVICE_ACCOUNT_JSON_PATH),
 )
 GOOGLE_CREDENTIALS_AS_JSON_STR = None
-print(
-    f"[CONFIG_DEBUG_CRED] Verificando existência de: {GOOGLE_SERVICE_ACCOUNT_JSON_PATH}"
-)
 path_exists = (
     os.path.exists(GOOGLE_SERVICE_ACCOUNT_JSON_PATH)
     if GOOGLE_SERVICE_ACCOUNT_JSON_PATH
     else False
 )
-print(f"[CONFIG_DEBUG_CRED] Caminho existe? {path_exists}")
+logger.debug("Arquivo de credenciais encontrado? %s", path_exists)
 if GOOGLE_SERVICE_ACCOUNT_JSON_PATH and path_exists:
     try:
-        print(
-            f"[CONFIG_DEBUG_CRED] Tentando abrir e carregar JSON de: {GOOGLE_SERVICE_ACCOUNT_JSON_PATH}"
+        logger.debug(
+            "Lendo arquivo de credenciais em %s", GOOGLE_SERVICE_ACCOUNT_JSON_PATH
         )
         with open(GOOGLE_SERVICE_ACCOUNT_JSON_PATH, "r") as f:
             # Carrega o JSON do arquivo e o converte de volta para uma string JSON compacta
             # Isso garante que temos uma string JSON válida e não um objeto Python dict
             loaded_json = json.load(f)
-            print("[CONFIG_DEBUG_CRED] JSON carregado do arquivo com sucesso.")
             GOOGLE_CREDENTIALS_AS_JSON_STR = json.dumps(loaded_json)
-            print("[CONFIG_DEBUG_CRED] JSON convertido para string com sucesso.")
         logger.info(
             f"Credenciais Google carregadas com sucesso de {GOOGLE_SERVICE_ACCOUNT_JSON_PATH}"
         )
-        print(
-            f"[CONFIG_DEBUG_CRED] Credenciais Google carregadas com sucesso de {GOOGLE_SERVICE_ACCOUNT_JSON_PATH}"
-        )
     except Exception as e:
-        print(f"[CONFIG_DEBUG_CRED] EXCEÇÃO ao carregar credenciais: {e}")
         logger.error(
             f"Erro ao carregar ou processar o arquivo de credenciais JSON do Google ({GOOGLE_SERVICE_ACCOUNT_JSON_PATH}): {e}",
             exc_info=True,
         )
         # GOOGLE_CREDENTIALS_AS_JSON_STR permanecerá None, o que deve ser tratado na aplicação
 elif GOOGLE_SERVICE_ACCOUNT_JSON_PATH:
-    print(
-        f"[CONFIG_DEBUG_CRED] Arquivo especificado ({GOOGLE_SERVICE_ACCOUNT_JSON_PATH}) não encontrado, mas a variável de ambiente existe."
-    )
     logger.warning(
         f"Arquivo de credenciais JSON do Google especificado ({GOOGLE_SERVICE_ACCOUNT_JSON_PATH}) não encontrado."
     )
 else:
-    print(
-        "[CONFIG_DEBUG_CRED] Variável de ambiente GOOGLE_SERVICE_ACCOUNT_JSON não definida OU caminho é None."
-    )
     logger.warning("Variável de ambiente GOOGLE_SERVICE_ACCOUNT_JSON não definida.")
 
 # Configurações principais do sistema
@@ -214,9 +191,8 @@ config_by_name = {
     "default": DevelopmentConfig,
 }
 
-print(
-    f"[CONFIG_DEBUG_FINAL] Valor final de GOOGLE_CREDENTIALS_AS_JSON_STR APÓS definição do CONFIG: {CONFIG.get('GOOGLE_CREDENTIALS_AS_JSON_STR') is not None}"
+logger.debug(
+    "GOOGLE_CREDENTIALS_AS_JSON_STR definido? %s",
+    CONFIG.get("GOOGLE_CREDENTIALS_AS_JSON_STR") is not None,
 )
-print("=" * 50)
-print("[CONFIG_DEBUG_ENV] FINALIZANDO config.py")
-print("=" * 50)
+logger.debug("Finalizando config.py")
