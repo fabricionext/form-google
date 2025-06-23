@@ -566,6 +566,10 @@ render_field %} {% block title %}{{ title }}{% endblock %} {% block content %}
 
     // --- INICIALIZAÇÃO ---
     cpfInput.addEventListener('input', debounce(buscarCliente, 400));
+
+    peticaoForm.addEventListener('submit', () => {
+      localStorage.removeItem(formId);
+    });
   });
 </script>
 {% endblock %}

@@ -644,6 +644,11 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
     });
 
     cpfInput.addEventListener('input', debounce(buscarCliente, 400));
+
+    // Limpa o progresso salvo somente quando o envio é realizado com sucesso
+    peticaoForm.addEventListener('submit', () => {
+      localStorage.removeItem(formId);
+    });
   });
 </script>
 {% endblock %}
