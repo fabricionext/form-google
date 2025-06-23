@@ -3,6 +3,7 @@ API refatorada para geração de documentos com melhorias de performance e trata
 """
 
 import logging
+import re
 import time
 from datetime import datetime
 from typing import Dict
@@ -10,6 +11,7 @@ from uuid import uuid4
 
 from flask import current_app, jsonify, request
 
+from app.placeholder_mapping import PLACEHOLDER_MAPPING_PF, PLACEHOLDER_MAPPING_PJ
 from app.services.document_service import DocumentResult, DocumentService
 from app.validators.cliente_validator import ClienteData, validar_dados_cliente
 from config import CONFIG
@@ -51,29 +53,20 @@ def _serialize_document_result(result: DocumentResult) -> Dict[str, str]:
 
 def _mapear_dados_entrada(data: Dict) -> Dict:
     """Mapeia dados da entrada da API para formato do validador"""
-    return {
-        "tipoPessoa": data.get("tipoPessoa", "pf"),
-        "primeiroNome": data.get("primeiroNome", ""),
-        "sobrenome": data.get("sobrenome", ""),
-        "email": data.get("email", ""),
-        "cpf": data.get("cpf"),
-        "cnpj": data.get("cnpj"),
-        "rg": data.get("rg"),
-        "cnh": data.get("cnh"),
-        "data_nascimento": data.get("dataNascimento"),
-        "telefone_celular": data.get("telefoneCelular"),
-        "endereco_logradouro": data.get("logradouro"),
-        "endereco_numero": data.get("numero"),
-        "endereco_complemento": data.get("complemento"),
-        "endereco_bairro": data.get("bairro"),
-        "endereco_cidade": data.get("cidade"),
-        "endereco_estado": data.get("estado"),
-        "endereco_cep": data.get("cep"),
-        "nacionalidade": data.get("nacionalidade"),
-        "estado_civil": data.get("estadoCivil"),
-        "profissao": data.get("profissao"),
-        "estado_emissor_rg": data.get("estadoEmissorRG"),
-    }
+
+    def camel_to_snake(name: str) -> str:
+        s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+        return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+    tipo_pessoa = data.get("tipoPessoa", "pf")
+    mapping = PLACEHOLDER_MAPPING_PF if tipo_pessoa == "pf" else PLACEHOLDER_MAPPING_PJ
+
+    resultado = {"tipoPessoa": tipo_pessoa}
+    for field_key in mapping.keys():
+        attr = camel_to_snake(field_key)
+        resultado[attr] = data.get(field_key)
+
+    return resultado
 
 
 def gerar_documento_api_refatorada():

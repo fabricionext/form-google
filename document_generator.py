@@ -9,55 +9,15 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from app.placeholder_mapping import (
+    PLACEHOLDER_MAPPING_PF as MAPEAMENTO_CHAVES_TEMPLATE_PF,
+)
+from app.placeholder_mapping import (
+    PLACEHOLDER_MAPPING_PJ as MAPEAMENTO_CHAVES_TEMPLATE_PJ,
+)
 from config import CONFIG
 
 logger = logging.getLogger(__name__)
-
-MAPEAMENTO_CHAVES_TEMPLATE_PF = {
-    "primeiroNome": "Primeiro Nome",
-    "sobrenome": "Sobrenome",
-    "nacionalidade": "Nacionalidade",
-    "estadoCivil": "Estado Civil",
-    "profissao": "Profissão",
-    "dataNascimento": "Nascimento",
-    "cpf": "CPF",
-    "rg": "RG",
-    "estadoEmissorRG": "Estado emissor do RG",
-    "cnh": "CNH",
-    "cep": "Endereço_CEP",
-    "logradouro": "Endereço_Logradouro",
-    "numero": "Endereço_Numero",
-    "complemento": "Endereço_Complemento",
-    "bairro": "Endereço_Bairro",
-    "cidade": "Endereço_Cidade",
-    "estado": "Endereço_Estado",
-    "email": "E-mail",
-    "telefoneCelular": "Telefone Celular",
-    "outroTelefone": "Outro telefone",
-}
-
-MAPEAMENTO_CHAVES_TEMPLATE_PJ = {
-    "razaoSocial": "Razão Social",
-    "nomeFantasia": "Nome Fantasia",
-    "cnpj": "CNPJ",
-    "inscricaoEstadual": "Inscrição Estadual",
-    "dataFundacao": "Data de Fundação",
-    "cep": "Endereço_CEP",
-    "logradouro": "Endereço_Logradouro",
-    "numero": "Endereço_Numero",
-    "complemento": "Endereço_Complemento",
-    "bairro": "Endereço_Bairro",
-    "cidade": "Endereço_Cidade",
-    "estado": "Endereço_Estado",
-    "email": "E-mail",  # Email principal da PJ
-    "telefoneCelular": "Telefone Celular",  # Telefone principal da PJ (pode ser fixo ou móvel)
-    "outroTelefone": "Outro telefone",
-    # Campos de contato para PJ (ajuste os placeholders conforme seu template)
-    "nomeCompletoContato": "Nome Contato PJ",  # Ex: se o payload enviar 'nomeCompletoContato'
-    "emailContato": "E-mail Contato PJ",
-    "telefoneContato": "Telefone Contato PJ",
-    "cargoContato": "Cargo Contato PJ",
-}
 # Configurar o logger se ainda não estiver configurado no app principal
 if not logger.hasHandlers():
     logging.basicConfig(
