@@ -149,7 +149,7 @@ desktop.ini
 app-script-*.json
 *service-account*.json
 *credentials*.json
-client_secret*.json
+client_secret_*.json
 *.pem
 *.key
 *.crt
