@@ -4,12 +4,18 @@ Serviço para geração de documentos Google Docs com melhorias de performance e
 
 import asyncio
 import logging
+import re
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
+
+from app.placeholder_mapping import (
+    PLACEHOLDER_MAPPING_PF,
+    PLACEHOLDER_MAPPING_PJ,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -230,31 +236,26 @@ class DocumentService:
 
     def _mapear_dados_cliente(self, cliente_data: ClienteData) -> Dict[str, str]:
         """Mapeia dados do cliente para formato esperado pelos templates"""
-        return {
-            "Primeiro Nome": cliente_data.primeiro_nome or "",
-            "Sobrenome": cliente_data.sobrenome or "",
-            "E-mail": cliente_data.email or "",
-            "CPF": cliente_data.cpf or "",
-            "CNPJ": cliente_data.cnpj or "",
-            "RG": cliente_data.rg or "",
-            "CNH": cliente_data.cnh or "",
-            "Nascimento": cliente_data.data_nascimento or "",
-            "Telefone Celular": cliente_data.telefone_celular or "",
-            "Nacionalidade": cliente_data.nacionalidade or "Brasileiro(a)",
-            "Estado Civil": cliente_data.estado_civil or "",
-            "Profissão": cliente_data.profissao or "",
-            "Estado emissor do RG": cliente_data.estado_emissor_rg or "",
-            # Endereço estruturado
-            "Logradouro": cliente_data.endereco_logradouro or "",
-            "Número": cliente_data.endereco_numero or "",
-            "Complemento": cliente_data.endereco_complemento or "",
-            "Bairro": cliente_data.endereco_bairro or "",
-            "Cidade": cliente_data.endereco_cidade or "",
-            "Estado": cliente_data.endereco_estado or "",
-            "CEP": cliente_data.endereco_cep or "",
-            # Endereço completo para compatibilidade
-            "Endereço": self._montar_endereco_completo(cliente_data),
-        }
+
+        def camel_to_snake(name: str) -> str:
+            """Converte nomes camelCase para snake_case."""
+            s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+            return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+        mapping = (
+            PLACEHOLDER_MAPPING_PF
+            if cliente_data.tipo_pessoa == "pf"
+            else PLACEHOLDER_MAPPING_PJ
+        )
+
+        dados = {}
+        for field_key, placeholder in mapping.items():
+            attr_name = camel_to_snake(field_key)
+            value = getattr(cliente_data, attr_name, "") or ""
+            dados[placeholder] = value
+
+        dados["Endereço"] = self._montar_endereco_completo(cliente_data)
+        return dados
 
     def _montar_endereco_completo(self, cliente_data: ClienteData) -> str:
         """Monta endereço completo para compatibilidade com templates antigos"""

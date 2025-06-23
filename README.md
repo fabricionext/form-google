@@ -114,7 +114,7 @@ O núcleo da aplicação é a capacidade de gerar documentos Google Docs automat
 ### Mapeamento de Placeholders
 
 - **Formato:** Os placeholders no seu template do Google Docs devem seguir o formato `{{Nome_Do_Placeholder}}`.
-- **Mapeamento Interno:** O sistema possui um mapa interno (`document_generator.py`) que converte os campos do formulário (ex: `primeiroNome`) para os placeholders correspondentes no template (ex: `{{Primeiro Nome}}`).
+- **Mapeamento Interno:** O mapeamento de campos agora está centralizado em `app/placeholder_mapping.py`. Ele define como cada campo de registro (ex: `primeiroNome`) corresponde ao placeholder do template (ex: `{{Primeiro Nome}}`). Utilize esse módulo ao adicionar novos campos para manter a consistência.
 - **Placeholders de Endereço:** Para endereços, utilize os placeholders detalhados para garantir o preenchimento correto: `{{Endereço_Logradouro}}`, `{{Endereço_Numero}}`, `{{Endereço_Bairro}}`, `{{Endereço_CEP}}`, `{{Endereço_Cidade}}`, `{{Endereço_Estado}}` e `{{Endereço_Complemento}}`.
 
 ### Placeholders Especiais
