@@ -1,0 +1,213 @@
+{% extends 'peticionador/_base_peticionador.html' %} {% block title %}{{ title
+}} - {{ cliente.primeiro_nome or cliente.razao_social }}{% endblock %} {% block
+content_peticionador %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">
+    {{ title }}: {% if cliente.tipo_pessoa == 'FISICA' %}{{
+    cliente.primeiro_nome }} {{ cliente.sobrenome or '' }}{% else %}{{
+    cliente.razao_social }}{% endif %}
+  </h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item">
+      <a href="{{ url_for('peticionador.index') }}">Dashboard</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{{ url_for('peticionador.listar_clientes') }}">Clientes</a>
+    </li>
+    <li class="breadcrumb-item active">Detalhes</li>
+  </ol>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      <i class="fas fa-info-circle me-1"></i>
+      Informações do Cliente
+      <a
+        href="{{ url_for('peticionador.editar_cliente', cliente_id=cliente.id) }}"
+        class="btn btn-warning btn-sm float-end ms-2"
+      >
+        <i class="fas fa-edit me-1"></i> Editar
+      </a>
+      <a
+        href="{{ url_for('peticionador.listar_clientes') }}"
+        class="btn btn-secondary btn-sm float-end"
+      >
+        <i class="fas fa-arrow-left me-1"></i> Voltar para Lista
+      </a>
+    </div>
+    <div class="card-body">
+      {% include 'peticionador/_messages.html' %}
+
+      <h4>Dados Gerais</h4>
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <th scope="row" style="width: 25%">Tipo de Pessoa</th>
+            <td>{{ cliente.get_tipo_pessoa_display() }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Email</th>
+            <td>{{ cliente.email or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Telefone Celular</th>
+            <td>{{ cliente.telefone_celular or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Outro Telefone</th>
+            <td>{{ cliente.telefone_outro or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Data de Cadastro</th>
+            <td>
+              {{ cliente.data_criacao.strftime('%d/%m/%Y %H:%M:%S') if
+              cliente.data_criacao else 'N/A' }}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Última Atualização</th>
+            <td>
+              {{ cliente.data_atualizacao.strftime('%d/%m/%Y %H:%M:%S') if
+              cliente.data_atualizacao else 'N/A' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4 class="mt-4">Endereço</h4>
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <th scope="row" style="width: 25%">Logradouro</th>
+            <td>{{ cliente.endereco_logradouro or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Número</th>
+            <td>{{ cliente.endereco_numero or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Complemento</th>
+            <td>{{ cliente.endereco_complemento or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Bairro</th>
+            <td>{{ cliente.endereco_bairro or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Cidade</th>
+            <td>{{ cliente.endereco_cidade or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Estado (UF)</th>
+            <td>{{ cliente.endereco_estado or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">CEP</th>
+            <td>{{ cliente.endereco_cep or 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {% if cliente.tipo_pessoa == 'FISICA' %}
+      <h4 class="mt-4">Dados Pessoais (Pessoa Física)</h4>
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <th scope="row" style="width: 25%">Nome Completo</th>
+            <td>{{ cliente.primeiro_nome }} {{ cliente.sobrenome or '' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">CPF</th>
+            <td>{{ cliente.cpf or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">RG</th>
+            <td>
+              {{ cliente.rg_numero or 'N/A' }} (Órgão: {{
+              cliente.rg_orgao_emissor or 'N/A' }} - UF: {{
+              cliente.rg_uf_emissor or 'N/A' }})
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Data de Nascimento</th>
+            <td>
+              {{ cliente.data_nascimento.strftime('%d/%m/%Y') if
+              cliente.data_nascimento else 'N/A' }}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Nacionalidade</th>
+            <td>{{ cliente.nacionalidade or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Estado Civil</th>
+            <td>{{ cliente.get_estado_civil_display() or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Profissão</th>
+            <td>{{ cliente.profissao or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">CNH</th>
+            <td>{{ cliente.cnh_numero or 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      {% elif cliente.tipo_pessoa == 'JURIDICA' %}
+      <h4 class="mt-4">Dados da Empresa (Pessoa Jurídica)</h4>
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <th scope="row" style="width: 25%">Razão Social</th>
+            <td>{{ cliente.razao_social or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">CNPJ</th>
+            <td>{{ cliente.cnpj or 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="mt-3">Representante Legal</h5>
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <th scope="row" style="width: 25%">Nome</th>
+            <td>{{ cliente.representante_nome or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Cargo</th>
+            <td>{{ cliente.representante_cargo or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">CPF</th>
+            <td>{{ cliente.representante_cpf or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">RG</th>
+            <td>
+              {{ cliente.representante_rg_numero or 'N/A' }} (Órgão: {{
+              cliente.representante_rg_orgao_emissor or 'N/A' }} - UF: {{
+              cliente.representante_rg_uf_emissor or 'N/A' }})
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+    <div class="card-footer text-end">
+      <a
+        href="{{ url_for('peticionador.editar_cliente', cliente_id=cliente.id) }}"
+        class="btn btn-warning"
+      >
+        <i class="fas fa-edit me-1"></i> Editar Cliente
+      </a>
+      <a
+        href="{{ url_for('peticionador.listar_clientes') }}"
+        class="btn btn-secondary"
+      >
+        <i class="fas fa-arrow-left me-1"></i> Voltar para Lista de Clientes
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

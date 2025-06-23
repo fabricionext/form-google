@@ -1,0 +1,74 @@
+{% extends '_base_peticionador.html' %} {% block title %}Modelos de Petição{%
+endblock %} {% block content %}
+<h2 class="mb-4">Modelos de Petição</h2>
+<a
+  href="{{ url_for('peticionador.adicionar_modelo') }}"
+  class="btn btn-primary mb-3"
+  >Novo Modelo</a
+>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nome</th>
+      <th>Ativo</th>
+      <th>Criado em</th>
+      <th>Ações</th>
+      <th>Link Permanente</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in modelos %}
+    <tr>
+      <td>{{ m.id }}</td>
+      <td>{{ m.nome }}</td>
+      <td>{{ 'Sim' if m.ativo else 'Não' }}</td>
+      <td>{{ m.criado_em.strftime('%d/%m/%Y') }}</td>
+      <td>
+        <a
+          href="{{ url_for('peticionador.editar_modelo', modelo_id=m.id) }}"
+          class="btn btn-sm btn-secondary"
+          >Editar</a
+        >
+        <a
+          href="{{ url_for('peticionador.placeholders_modelo', modelo_id=m.id) }}"
+          class="btn btn-sm btn-info"
+          >Placeholders</a
+        >
+        <a
+          href="{{ url_for('peticionador.criar_formulario_dinamico', modelo_id=m.id) }}"
+          class="btn btn-sm btn-success"
+          >Gerar</a
+        >
+      </td>
+      <td>
+        {% for f in m.formularios_gerados %}
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <a
+            href="{{ url_for('peticionador.preencher_formulario_dinamico', slug=f.slug) }}"
+            class="link-primary"
+            >{{ f.nome }}</a
+          >
+          <form
+            method="post"
+            action="{{ url_for('peticionador.excluir_formulario_dinamico', slug=f.slug) }}"
+            style="display: inline"
+          >
+            <button
+              type="submit"
+              class="btn btn-sm btn-outline-danger"
+              onclick="return confirm('Tem certeza que deseja excluir este formulário?')"
+            >
+              Excluir
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <span class="text-muted">Nenhum formulário criado</span>
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

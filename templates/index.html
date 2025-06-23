@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta
+      name="description"
+      content="Estevão Almeida Advocacia - Ficha Cadastral de Clientes"
+    />
+    <title>Estevão Almeida Advocacia - Ficha Cadastral</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://apis.google.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <header class="header">
+        <h1><i class="fas fa-user-plus"></i> Estevão Almeida Advocacia</h1>
+        <h2>Ficha Cadastral</h2>
+        <p>Preencha os dados para realizar o cadastro completo no sistema</p>
+      </header>
+      <div class="form-container">
+        <div
+          class="progress-container"
+          role="progressbar"
+          aria-label="Progresso do cadastro"
+        >
+          <div
+            id="progressBar"
+            class="progress-bar"
+            aria-valuenow="0"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        <form id="clientForm" novalidate>
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fas fa-users"></i> Tipo de Pessoa
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <div
+                  class="tipo-pessoa-selector"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                  "
+                >
+                  <input
+                    type="radio"
+                    id="tipoPessoaPF"
+                    name="tipoPessoa"
+                    value="PF"
+                    checked
+                    style="margin-right: 5px; transform: scale(1.2)"
+                  />
+                  <label class="form-check-label" for="tipoPessoaPF"
+                    >Pessoa Física</label
+                  >
+                  <input
+                    type="radio"
+                    id="tipoPessoaPJ"
+                    name="tipoPessoa"
+                    value="PJ"
+                    style="margin-right: 5px; transform: scale(1.2)"
+                  />
+                  <label
+                    for="tipoPessoaPJ"
+                    style="font-weight: normal; cursor: pointer"
+                    >Pessoa Jurídica</label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Dados Pessoais -->
+          <div id="camposPessoaFisica">
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-user"></i>
+                Dados Pessoais
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="primeiroNome" class="form-label required"
+                    >Primeiro Nome</label
+                  >
+                  <input
+                    type="text"
+                    id="primeiroNome"
+                    name="primeiroNome"
+                    class="form-control"
+                    required
+                    placeholder="João"
+                    maxlength="50"
+                    autocomplete="given-name"
+                  />
+                  <div class="character-count">0/50</div>
+                </div>
+                <div class="form-group">
+                  <label for="sobrenome" class="form-label required"
+                    >Sobrenome</label
+                  >
+                  <input
+                    type="text"
+                    id="sobrenome"
+                    name="sobrenome"
+                    class="form-control"
+                    required
+                    placeholder="Silva"
+                    maxlength="50"
+                    autocomplete="family-name"
+                  />
+                  <div class="character-count">0/50</div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nacionalidade" class="form-label"
+                    >Nacionalidade</label
+                  >
+                  <input
+                    type="text"
+                    id="nacionalidade"
+                    name="nacionalidade"
+                    class="form-control"
+                    value="Brasileiro(a)"
+                    placeholder="Brasileiro(a)"
+                    maxlength="30"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="estadoCivil" class="form-label"
+                    >Estado Civil</label
+                  >
+                  <select
+                    id="estadoCivil"
+                    name="estadoCivil"
+                    class="form-control"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Solteiro(a)">Solteiro(a)</option>
+                    <option value="Casado(a)">Casado(a)</option>
+                    <option value="Divorciado(a)">Divorciado(a)</option>
+                    <option value="Viúvo(a)">Viúvo(a)</option>
+                    <option value="União Estável">União Estável</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="profissao" class="form-label">Profissão</label>
+                  <input
+                    type="text"
+                    id="profissao"
+                    name="profissao"
+                    class="form-control"
+                    placeholder="Desenvolvedor"
+                    maxlength="50"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="dataNascimento" class="form-label"
+                    >Data de Nascimento</label
+                  >
+                  <input
+                    type="date"
+                    id="dataNascimento"
+                    name="dataNascimento"
+                    class="form-control"
+                    autocomplete="bday"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Documentos -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-id-card"></i>
+                Documentos
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cpf" class="form-label required">CPF</label>
+                  <input
+                    type="text"
+                    id="cpf"
+                    name="cpf"
+                    class="form-control"
+                    required
+                    placeholder="000.000.000-00"
+                    maxlength="14"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="rg" class="form-label">RG</label>
+                  <input
+                    type="text"
+                    id="rg"
+                    name="rg"
+                    class="form-control"
+                    placeholder="12.345.678-9"
+                    maxlength="12"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="estadoEmissorRG" class="form-label"
+                    >Estado Emissor do RG</label
+                  >
+                  <select
+                    id="estadoEmissorRG"
+                    name="estadoEmissorRG"
+                    class="form-control"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="AC">Acre (AC)</option>
+                    <option value="AL">Alagoas (AL)</option>
+                    <option value="AP">Amapá (AP)</option>
+                    <option value="AM">Amazonas (AM)</option>
+                    <option value="BA">Bahia (BA)</option>
+                    <option value="CE">Ceará (CE)</option>
+                    <option value="DF">Distrito Federal (DF)</option>
+                    <option value="ES">Espírito Santo (ES)</option>
+                    <option value="GO">Goiás (GO)</option>
+                    <option value="MA">Maranhão (MA)</option>
+                    <option value="MT">Mato Grosso (MT)</option>
+                    <option value="MS">Mato Grosso do Sul (MS)</option>
+                    <option value="MG">Minas Gerais (MG)</option>
+                    <option value="PA">Pará (PA)</option>
+                    <option value="PB">Paraíba (PB)</option>
+                    <option value="PR">Paraná (PR)</option>
+                    <option value="PE">Pernambuco (PE)</option>
+                    <option value="PI">Piauí (PI)</option>
+                    <option value="RJ">Rio de Janeiro (RJ)</option>
+                    <option value="RN">Rio Grande do Norte (RN)</option>
+                    <option value="RS">Rio Grande do Sul (RS)</option>
+                    <option value="RO">Rondônia (RO)</option>
+                    <option value="RR">Roraima (RR)</option>
+                    <option value="SC">Santa Catarina (SC)</option>
+                    <option value="SP">São Paulo (SP)</option>
+                    <option value="SE">Sergipe (SE)</option>
+                    <option value="TO">Tocantins (TO)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label
+                    for="cnh"
+                    class="form-label tooltip"
+                    data-tooltip="Número da Carteira Nacional de Habilitação"
+                  >
+                    CNH <i class="fas fa-info-circle"></i>
+                  </label>
+                  <input
+                    type="text"
+                    id="cnh"
+                    name="cnh"
+                    class="form-control"
+                    placeholder="12345678901"
+                    maxlength="11"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Fecha camposPessoaFisica -->
+
+          <div id="camposPessoaJuridica" style="display: none">
+            <!-- Dados Pessoa Jurídica -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-building"></i> Dados da Empresa
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="razaoSocial" class="form-label"
+                    >Razão Social</label
+                  >
+                  <input
+                    type="text"
+                    id="razaoSocial"
+                    name="razaoSocial"
+                    class="form-control"
+                    placeholder="Empresa Exemplo Ltda."
+                    maxlength="100"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cnpj" class="form-label">CNPJ</label>
+                  <input
+                    type="text"
+                    id="cnpj"
+                    name="cnpj"
+                    class="form-control"
+                    placeholder="00.000.000/0001-00"
+                    maxlength="18"
+                  />
+                </div>
+              </div>
+            </div>
+            <!-- Dados do Representante Legal -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-user-tie"></i> Representante Legal
+              </h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nomeRepresentante" class="form-label"
+                    >Nome Completo do Representante</label
+                  >
+                  <input
+                    type="text"
+                    id="nomeRepresentante"
+                    name="nomeRepresentante"
+                    class="form-control"
+                    placeholder="Nome do Representante"
+                    maxlength="100"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cpfRepresentante" class="form-label"
+                    >CPF do Representante</label
+                  >
+                  <input
+                    type="text"
+                    id="cpfRepresentante"
+                    name="cpfRepresentante"
+                    class="form-control"
+                    placeholder="000.000.000-00"
+                    maxlength="14"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="cargoRepresentante" class="form-label"
+                    >Cargo do Representante</label
+                  >
+                  <input
+                    type="text"
+                    id="cargoRepresentante"
+                    name="cargoRepresentante"
+                    class="form-control"
+                    placeholder="Ex: Sócio Administrador"
+                    maxlength="50"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Endereço -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fas fa-map-marker-alt"></i>
+              Endereço
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cep" class="form-label required">CEP</label>
+                <input
+                  type="text"
+                  id="cep"
+                  name="cep"
+                  class="form-control"
+                  required
+                  placeholder="12345-678"
+                  maxlength="9"
+                  autocomplete="postal-code"
+                />
+              </div>
+              <div class="form-group">
+                <label for="logradouro" class="form-label required"
+                  >Endereço (Rua, Av.)</label
+                >
+                <input
+                  type="text"
+                  id="logradouro"
+                  name="logradouro"
+                  class="form-control"
+                  required
+                  placeholder="Ex: Rua Exemplo"
+                  maxlength="100"
+                  autocomplete="street-address"
+                />
+              </div>
+              <div class="form-group">
+                <label for="numero" class="form-label required">Número</label>
+                <input
+                  type="text"
+                  id="numero"
+                  name="numero"
+                  class="form-control"
+                  required
+                  placeholder="Ex: 123"
+                  maxlength="10"
+                />
+              </div>
+              <div class="form-group">
+                <label for="complemento" class="form-label">Complemento</label>
+                <input
+                  type="text"
+                  id="complemento"
+                  name="complemento"
+                  class="form-control"
+                  placeholder="Apto, Bloco, etc."
+                  maxlength="30"
+                  autocomplete="address-line2"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bairro" class="form-label required">Bairro</label>
+                <input
+                  type="text"
+                  id="bairro"
+                  name="bairro"
+                  class="form-control"
+                  required
+                  placeholder="Ex: Centro"
+                  maxlength="64"
+                  autocomplete="address-level3"
+                />
+              </div>
+              <div class="form-group">
+                <label for="cidade" class="form-label required">Cidade</label>
+                <input
+                  type="text"
+                  id="cidade"
+                  name="cidade"
+                  class="form-control"
+                  required
+                  placeholder="Ex: São Paulo"
+                  maxlength="50"
+                  autocomplete="address-level2"
+                />
+              </div>
+              <div class="form-group">
+                <label for="estado" class="form-label required"
+                  >Estado (UF)</label
+                >
+                <select
+                  id="estado"
+                  name="estado"
+                  class="form-control"
+                  required
+                  autocomplete="address-level1"
+                >
+                  <option value="">Selecione...</option>
+                  <option value="AC">Acre (AC)</option>
+                  <option value="AL">Alagoas (AL)</option>
+                  <option value="AP">Amapá (AP)</option>
+                  <option value="AM">Amazonas (AM)</option>
+                  <option value="BA">Bahia (BA)</option>
+                  <option value="CE">Ceará (CE)</option>
+                  <option value="DF">Distrito Federal (DF)</option>
+                  <option value="ES">Espírito Santo (ES)</option>
+                  <option value="GO">Goiás (GO)</option>
+                  <option value="MA">Maranhão (MA)</option>
+                  <option value="MT">Mato Grosso (MT)</option>
+                  <option value="MS">Mato Grosso do Sul (MS)</option>
+                  <option value="MG">Minas Gerais (MG)</option>
+                  <option value="PA">Pará (PA)</option>
+                  <option value="PB">Paraíba (PB)</option>
+                  <option value="PR">Paraná (PR)</option>
+                  <option value="PE">Pernambuco (PE)</option>
+                  <option value="PI">Piauí (PI)</option>
+                  <option value="RJ">Rio de Janeiro (RJ)</option>
+                  <option value="RN">Rio Grande do Norte (RN)</option>
+                  <option value="RS">Rio Grande do Sul (RS)</option>
+                  <option value="RO">Rondônia (RO)</option>
+                  <option value="RR">Roraima (RR)</option>
+                  <option value="SC">Santa Catarina (SC)</option>
+                  <option value="SP">São Paulo (SP)</option>
+                  <option value="SE">Sergipe (SE)</option>
+                  <option value="TO">Tocantins (TO)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contato -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fas fa-phone"></i>
+              Contato
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email" class="form-label required">E-mail</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  class="form-control"
+                  required
+                  placeholder="exemplo@email.com"
+                  maxlength="100"
+                  autocomplete="email"
+                />
+              </div>
+              <div class="form-group">
+                <label for="telefoneCelular" class="form-label required"
+                  >Telefone Celular</label
+                >
+                <input
+                  type="tel"
+                  id="telefoneCelular"
+                  name="telefoneCelular"
+                  class="form-control"
+                  required
+                  placeholder="(11) 99999-9999"
+                  maxlength="15"
+                  autocomplete="tel"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="outroTelefone" class="form-label"
+                  >Telefone Adicional</label
+                >
+                <input
+                  type="tel"
+                  id="outroTelefone"
+                  name="outroTelefone"
+                  class="form-control"
+                  placeholder="(11) 3333-3333"
+                  maxlength="15"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="submit-button-container">
+            <button type="submit" class="btn" id="submitBtn">
+              <i class="fas fa-save"></i> Cadastrar Cliente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Processando cadastro...</p>
+      </div>
+    </div>
+    <script src="/static/js/main.js?v=1.0.2"></script>
+  </body>
+</html>

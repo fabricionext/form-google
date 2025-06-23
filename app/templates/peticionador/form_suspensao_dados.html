@@ -1,0 +1,147 @@
+{% extends "_base_peticionador.html" %} {% from "_form_macros.html" import
+render_field %} {% block title %}{{ title }}{% endblock %} {% block content %}
+<div class="container mt-4">
+  <h2>{{ title }}</h2>
+  <p>Preencha os dados abaixo para gerar a petição.</p>
+
+  <form
+    method="POST"
+    action="{{ url_for('peticionador.gerar_suspensao_peticao_dados_form') }}"
+    novalidate
+  >
+    {{ form.hidden_tag() }}
+    <!-- Inclui cliente_id se populado -->
+
+    <div class="card mb-3">
+      <div class="card-header">1. Buscar Cliente por CPF</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            {{ render_field(form.cpf_busca, class='form-control',
+            placeholder='Digite o CPF para buscar...') }}
+          </div>
+          <div class="col-md-4 align-self-end">
+            <button
+              type="submit"
+              name="action"
+              value="buscar_cliente_cpf"
+              class="btn btn-info w-100"
+            >
+              <i class="fas fa-search"></i> Buscar Cliente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if form.cliente_id.data %}
+    <!-- Exibir dados do cliente apenas se um cliente foi encontrado e carregado no formulário -->
+    <div class="card mb-3">
+      <div class="card-header">2. Dados do Cliente (Editar se necessário)</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            {{ render_field(form.cliente_primeiro_nome, class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ render_field(form.cliente_sobrenome, class='form-control') }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            {{ render_field(form.cliente_cpf, class='form-control',
+            placeholder='CPF do cliente') }}
+          </div>
+          <!-- CPF para edição/confirmação -->
+          <div class="col-md-6">
+            {{ render_field(form.cliente_rg_numero, class='form-control') }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            {{ render_field(form.cliente_email, class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ render_field(form.cliente_telefone_celular, class='form-control')
+            }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            {{ render_field(form.cliente_cnh_numero, class='form-control') }}
+          </div>
+        </div>
+        <hr />
+        <h5>Endereço do Cliente</h5>
+        <div class="row">
+          <div class="col-md-8">
+            {{ render_field(form.cliente_endereco_logradouro,
+            class='form-control') }}
+          </div>
+          <div class="col-md-4">
+            {{ render_field(form.cliente_endereco_numero, class='form-control')
+            }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            {{ render_field(form.cliente_endereco_complemento,
+            class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ render_field(form.cliente_endereco_bairro, class='form-control')
+            }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-5">
+            {{ render_field(form.cliente_endereco_cidade, class='form-control')
+            }}
+          </div>
+          <div class="col-md-3">
+            {{ render_field(form.cliente_endereco_estado, class='form-select')
+            }}
+          </div>
+          <div class="col-md-4">
+            {{ render_field(form.cliente_endereco_cep, class='form-control') }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card mb-3">
+      <div class="card-header">
+        {% if form.cliente_id.data or request.args.get('cpf_buscado') %}3.{%
+        else %}2.{% endif %} Dados da Petição de Suspensão
+      </div>
+      <div class="card-body">
+        {{ render_field(form.numero_processo_adm, class='form-control') }} {{
+        render_field(form.auto_infracao, class='form-control') }} {{
+        render_field(form.autoridade_transito, class='form-select') }} {{
+        render_field(form.data_notificacao, class='form-control', type='date')
+        }} {{ render_field(form.pontos_cnh, class='form-control', type='number')
+        }} {{ render_field(form.observacoes_adicionais, class='form-control',
+        rows='3') }}
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button
+        type="submit"
+        name="action"
+        value="gerar_documento_final"
+        class="btn btn-primary"
+      >
+        <i class="fas fa-file-alt"></i> Gerar Petição
+      </button>
+      <a
+        href="{{ url_for('peticionador.selecionar_modelo_peticao') }}"
+        class="btn btn-secondary"
+      >
+        <i class="fas fa-arrow-left"></i> Cancelar e Voltar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

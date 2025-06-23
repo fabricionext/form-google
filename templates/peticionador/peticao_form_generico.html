@@ -1,0 +1,54 @@
+{% extends '_base_peticionador.html' %} {% block title %}{{ title }}{% endblock
+%} {% block content %}
+<h2 class="mb-4">{{ title }}</h2>
+<form method="post" id="peticaoForm">
+  {{ form.hidden_tag() }}
+  <div class="alert alert-info">
+    Digite o CPF e clique em Buscar para preencher automaticamente os campos do
+    cliente.
+  </div>
+  <div class="input-group mb-3">
+    <input
+      type="text"
+      id="cpfBusca"
+      class="form-control"
+      placeholder="CPF do cliente"
+    />
+    <button type="button" id="btnBuscaCpf" class="btn btn-outline-primary">
+      Buscar
+    </button>
+  </div>
+  {% for field in form if field.type != 'CSRFTokenField' %}
+  <div class="mb-3">
+    {{ field.label(class="form-label") }} {{ field(class="form-control") }} {%
+    if field.errors %}
+    <div class="text-danger small">{{ field.errors[0] }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">Gerar Documento</button>
+  <a
+    href="{{ url_for('peticionador.listar_modelos') }}"
+    class="btn btn-secondary"
+    >Cancelar</a
+  >
+</form>
+<script nonce="{{ csp_nonce() }}">
+  document.getElementById('btnBuscaCpf').addEventListener('click', async () => {
+    const cpf = document.getElementById('cpfBusca').value.replace(/\D/g, '');
+    if (!cpf) return alert('Informe o CPF.');
+    const resp = await fetch(`/peticionador/api/clientes/busca_cpf?cpf=${cpf}`);
+    if (!resp.ok) {
+      alert('Cliente não encontrado');
+      return;
+    }
+    const data = await resp.json();
+    for (const [key, value] of Object.entries(data)) {
+      const input = document.querySelector(`#peticaoForm [name="${key}"]`);
+      if (input && !input.value) {
+        input.value = value || '';
+      }
+    }
+  });
+</script>
+{% endblock %}

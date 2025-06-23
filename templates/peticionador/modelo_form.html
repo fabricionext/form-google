@@ -1,0 +1,33 @@
+{% extends '_base_peticionador.html' %} {% block title %}{{ title }}{% endblock
+%} {% block content %}
+<h2 class="mb-4">{{ title }}</h2>
+<form action="{{ form_action }}" method="post">
+  {{ form.hidden_tag() }}
+  <div class="mb-3">
+    {{ form.nome.label(class="form-label") }} {{ form.nome(class="form-control")
+    }}
+  </div>
+  <div class="mb-3">
+    {{ form.doc_template_id.label(class="form-label") }} {{
+    form.doc_template_id(class="form-control") }}
+  </div>
+  <div class="mb-3">
+    {{ form.pasta_destino_id.label(class="form-label") }} {{
+    form.pasta_destino_id(class="form-control") }}
+  </div>
+  <div class="mb-3">
+    {{ form.descricao.label(class="form-label") }} {{
+    form.descricao(class="form-control", rows=3) }}
+  </div>
+  <div class="form-check mb-3">
+    {{ form.ativo(class="form-check-input") }} {{
+    form.ativo.label(class="form-check-label") }}
+  </div>
+  <button type="submit" class="btn btn-success">Salvar</button>
+  <a
+    href="{{ url_for('peticionador.listar_modelos') }}"
+    class="btn btn-secondary"
+    >Cancelar</a
+  >
+</form>
+{% endblock %}

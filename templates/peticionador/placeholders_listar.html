@@ -1,0 +1,370 @@
+{% extends '_base_peticionador.html' %} {% block title %}{{ title }}{% endblock
+%} {% block content %}
+<div class="container-fluid px-4 py-3">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">{{ title }}</h2>
+      <p class="text-muted mb-0">Gerencie a ordem dos placeholders do modelo</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a
+        href="{{ url_for('peticionador.sincronizar_placeholders', modelo_id=modelo.id) }}"
+        class="btn btn-outline-primary d-flex align-items-center gap-2"
+      >
+        <i class="fas fa-sync-alt"></i>
+        Sincronizar Template
+      </a>
+      <a
+        href="{{ url_for('peticionador.listar_modelos') }}"
+        class="btn btn-secondary d-flex align-items-center gap-2"
+      >
+        <i class="fas fa-arrow-left"></i>
+        Voltar
+      </a>
+    </div>
+  </div>
+
+  <!-- Info Card -->
+  <div
+    class="card border-0 shadow-sm mb-4"
+    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  >
+    <div class="card-body text-white">
+      <div class="d-flex align-items-center gap-3">
+        <div class="p-2 bg-white bg-opacity-20 rounded-circle">
+          <i class="fas fa-info-circle"></i>
+        </div>
+        <div>
+          <h6 class="mb-1 fw-semibold">Como usar</h6>
+          <p class="mb-0 opacity-90">
+            Arraste e solte as linhas pela alça
+            <i class="fas fa-grip-vertical"></i> para reordenar os placeholders.
+            Use os botões de seta para movimentação precisa.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Placeholders Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold text-dark">Placeholders</h5>
+        {% if placeholders %}
+        <span class="badge bg-primary rounded-pill"
+          >{{ placeholders|length }} item(s)</span
+        >
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% if placeholders %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" id="placeholdersTable">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 50px" class="text-center border-end">
+                <i class="fas fa-arrows-alt text-muted" title="Arrastar"></i>
+              </th>
+              <th style="width: 60px" class="text-center">#</th>
+              <th class="fw-semibold">Chave</th>
+              <th class="fw-semibold">Rótulo</th>
+              <th class="fw-semibold">Tipo</th>
+              <th class="fw-semibold text-center" style="width: 80px">Ordem</th>
+              <th class="fw-semibold text-center" style="width: 120px">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ph in placeholders %}
+            <tr data-id="{{ ph.id }}" class="placeholder-row">
+              <td
+                class="drag-handle text-center border-end"
+                style="cursor: move; background-color: #f8f9fa"
+              >
+                <i class="fas fa-grip-vertical text-secondary"></i>
+              </td>
+              <td class="text-center text-muted fw-medium">{{ loop.index }}</td>
+              <td>
+                <code class="bg-light px-2 py-1 rounded text-primary"
+                  >{{ ph.chave }}</code
+                >
+              </td>
+              <td class="fw-medium">{{ ph.label_form or '' }}</td>
+              <td>
+                <span class="badge bg-light text-dark border"
+                  >{{ ph.tipo }}</span
+                >
+              </td>
+              <td class="text-center">
+                <span class="badge bg-secondary rounded-pill"
+                  >{{ ph.ordem }}</span
+                >
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary move-up-btn"
+                    data-id="{{ ph.id }}"
+                    title="Mover para cima"
+                    {%
+                    if
+                    loop.first
+                    %}disabled{%
+                    endif
+                    %}
+                  >
+                    <i class="fas fa-chevron-up"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary move-down-btn"
+                    data-id="{{ ph.id }}"
+                    title="Mover para baixo"
+                    {%
+                    if
+                    loop.last
+                    %}disabled{%
+                    endif
+                    %}
+                  >
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <div class="mb-3">
+          <i class="fas fa-inbox fa-3x text-muted"></i>
+        </div>
+        <h5 class="text-muted">Nenhum placeholder configurado</h5>
+        <p class="text-muted mb-0">
+          Sincronize com o template para carregar os placeholders
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div
+  id="loadingOverlay"
+  class="position-fixed top-0 start-0 w-100 h-100 d-none"
+  style="background-color: rgba(0, 0, 0, 0.5); z-index: 9999"
+>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <div class="text-center text-white">
+      <div class="spinner-border mb-3" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p>Salvando alterações...</p>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts_extra %} {{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const table = document.getElementById('placeholdersTable');
+    if (!table) return;
+
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Função para mostrar/esconder loading
+    function showLoading() {
+      loadingOverlay.classList.remove('d-none');
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.add('d-none');
+    }
+
+    // Função para fazer requisições AJAX
+    function makeRequest(url, data = {}) {
+      showLoading();
+
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}',
+        },
+        body: JSON.stringify(data),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          hideLoading();
+          if (data.success) {
+            // Recarrega a página para atualizar a interface
+            location.reload();
+          } else {
+            throw new Error(data.error || 'Erro desconhecido');
+          }
+        })
+        .catch(error => {
+          hideLoading();
+          console.error('Erro:', error);
+
+          // Toast de erro mais elegante
+          const toast = document.createElement('div');
+          toast.className =
+            'toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3';
+          toast.style.zIndex = '10000';
+          toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Erro ao salvar: ${error.message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+
+          document.body.appendChild(toast);
+          const bsToast = new bootstrap.Toast(toast);
+          bsToast.show();
+
+          // Remove o toast após ser fechado
+          toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+          });
+        });
+    }
+
+    // Configurar Sortable para drag-and-drop
+    new Sortable(tbody, {
+      handle: '.drag-handle',
+      animation: 200,
+      ghostClass: 'table-warning',
+      chosenClass: 'table-active',
+      dragClass: 'opacity-50',
+      onStart: function () {
+        document.body.style.cursor = 'grabbing';
+      },
+      onEnd: function (evt) {
+        document.body.style.cursor = '';
+
+        const ids = Array.from(tbody.querySelectorAll('tr[data-id]'))
+          .map(tr => tr.getAttribute('data-id'))
+          .filter(id => id !== null);
+
+        if (ids.length > 0) {
+          makeRequest(
+            `{{ url_for('peticionador.reordenar_placeholders', modelo_id=modelo.id) }}`,
+            { ordem: ids }
+          );
+        }
+      },
+    });
+
+    // Botões de mover para cima/baixo
+    tbody.addEventListener('click', function (e) {
+      const btn = e.target.closest('.move-up-btn, .move-down-btn');
+      if (!btn || btn.disabled) return;
+
+      e.preventDefault();
+
+      const placeholderId = btn.getAttribute('data-id');
+      const direction = btn.classList.contains('move-up-btn')
+        ? 'cima'
+        : 'baixo';
+      // Corrigido: construir a URL diretamente em JS
+      const url = `/peticionador/modelos/{{ modelo.id }}/placeholders/${placeholderId}/mover/${direction}`;
+      makeRequest(url);
+    });
+
+    // Verificar se FontAwesome está carregado
+    setTimeout(() => {
+      const testIcon = document.querySelector('.fas.fa-grip-vertical');
+      if (
+        testIcon &&
+        window.getComputedStyle(testIcon, ':before').content === 'none'
+      ) {
+        console.warn('FontAwesome não está carregado corretamente');
+      }
+    }, 100);
+  });
+</script>
+
+<style>
+  /* Estilos customizados para melhorar a aparência */
+  .placeholder-row {
+    transition: all 0.2s ease;
+  }
+
+  .placeholder-row:hover {
+    background-color: #f8f9fa;
+  }
+
+  .drag-handle:hover {
+    background-color: #e9ecef !important;
+  }
+
+  .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    padding: 1rem 0.75rem;
+  }
+
+  .table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+  }
+
+  .card {
+    border-radius: 0.5rem;
+  }
+
+  .badge {
+    font-weight: 500;
+  }
+
+  /* Animações suaves */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .card {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  /* Sortable styles */
+  .sortable-ghost {
+    opacity: 0.4;
+  }
+
+  .sortable-chosen {
+    background-color: #e3f2fd !important;
+  }
+</style>
+{% endblock %}

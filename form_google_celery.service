@@ -1,0 +1,45 @@
+[Unit]
+Description=Celery worker para a aplicação form-google (document generation)
+After=network.target
+Requires=redis.service
+
+[Service]
+# Usuário/grupo de execução (mesmos do Gunicorn)
+User=fabricioalmeida
+Group=www-data
+
+# Diretório do projeto
+WorkingDirectory=/var/www/estevaoalmeida.com.br/form-google
+
+# Virtualenv
+Environment="PATH=/var/www/estevaoalmeida.com.br/form-google/venv/bin"
+
+# Variáveis de ambiente do projeto
+EnvironmentFile=/var/www/estevaoalmeida.com.br/form-google/.env
+# Garante que Flask leia config correta (opcional)
+Environment="FLASK_APP=app.py"
+Environment="FLASK_ENV=production"
+Environment="PYTHONPATH=/var/www/estevaoalmeida.com.br/form-google"
+
+# Comando Celery
+ExecStart=/var/www/estevaoalmeida.com.br/form-google/venv/bin/celery -A celery_worker.celery worker --loglevel=INFO --concurrency=4 --hostname=form_google@%n
+
+# Reinício automático em falhas
+Restart=always
+RestartSec=5s
+
+# Diretivas de segurança (equivalentes ao serviço Gunicorn)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/log/form_google
+ReadWritePaths=/var/www/estevaoalmeida.com.br/form-google
+
+# Logs
+StandardOutput=append:/var/log/form_google/celery_worker.log
+StandardError=append:/var/log/form_google/celery_worker_error.log
+SyslogIdentifier=form-google-celery
+
+[Install]
+WantedBy=multi-user.target

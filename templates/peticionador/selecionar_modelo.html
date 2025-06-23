@@ -1,0 +1,40 @@
+{% extends "_base_peticionador.html" %} {% block title %}{{ title }}{% endblock
+%} {% block content %}
+<div class="container mt-4">
+  <h2>{{ title }}</h2>
+  <p>Escolha o modelo de petição que deseja gerar:</p>
+
+  {% if modelos %}
+  <div class="list-group">
+    {% for modelo in modelos %} {% if modelo.id == 'suspensao_direito_dirigir'
+    %}
+    <a
+      href="{{ url_for('peticionador.gerar_suspensao_peticao_dados_form') }}"
+      class="list-group-item list-group-item-action"
+    >
+      <i class="fas fa-file-alt"></i> {{ modelo.nome }}
+    </a>
+    {% else %}
+    <a
+      href="#"
+      class="list-group-item list-group-item-action disabled"
+      tabindex="-1"
+      aria-disabled="true"
+    >
+      <i class="fas fa-file-alt"></i> {{ modelo.nome }} (Em breve)
+    </a>
+    {% endif %} {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-warning" role="alert">
+    Nenhum modelo de petição disponível no momento.
+  </div>
+  {% endif %}
+
+  <div class="mt-4">
+    <a href="{{ url_for('peticionador.index') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}

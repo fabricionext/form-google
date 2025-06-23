@@ -1,0 +1,571 @@
+{% extends "_base_peticionador.html" %} {% from "_form_macros.html" import
+render_field %} {% block title %}{{ title }}{% endblock %} {% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{{ title }}</h2>
+  </div>
+  <p class="text-muted mb-4">
+    Comece digitando o CPF do cliente. O sistema buscará automaticamente e você
+    poderá arrastá-lo para a área do formulário.
+  </p>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card shadow-sm sticky-top" style="top: 20px">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-search me-2"></i> Buscar Cliente
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+            <input
+              type="text"
+              id="cpf_busca"
+              class="form-control"
+              placeholder="Digite o CPF para buscar..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="card-footer" id="cliente_card_container">
+          <div class="text-center text-muted py-3" id="dados_cliente_area">
+            <i class="fas fa-keyboard fa-2x mb-2"></i>
+            <p class="mb-0">Aguardando digitação do CPF...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div id="drop_zone" class="card shadow-sm">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i> Petição</h5>
+        </div>
+        <div class="card-body">
+          <form
+            method="POST"
+            id="peticao_form"
+            action="{{ url_for('peticionador.gerar_suspensao_peticao_dados_form') }}"
+            novalidate
+          >
+            {{ form.hidden_tag() }}
+            <input
+              type="hidden"
+              name="modelo_id"
+              value="{{ modelo.id or 'default' }}"
+            />
+            <input type="hidden" name="cliente_id" value="" />
+
+            <div id="formulario_content">
+              <div class="text-center text-muted py-5" id="drop_placeholder">
+                <i class="fas fa-hand-pointer fa-4x mb-3"></i>
+                <h5>Arraste o card do cliente aqui</h5>
+                <p>para preencher os dados automaticamente.</p>
+              </div>
+
+              <div class="d-none" id="peticao_fields">
+                <div
+                  class="alert alert-success d-flex justify-content-between align-items-center"
+                  role="alert"
+                >
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-user-check fa-2x me-3"></i>
+                    <div>
+                      <h6 class="alert-heading mb-0" id="cliente_nome_form">
+                        Cliente Carregado!
+                      </h6>
+                      <span class="small" id="cliente_cpf_form"></span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    id="btn_reset_cliente"
+                    class="btn-close"
+                    title="Trocar Cliente"
+                  ></button>
+                </div>
+
+                <div class="accordion" id="accordionPeticao">
+                  <div class="accordion-item">
+                    <h2 class="accordion-header">
+                      <button
+                        class="accordion-button"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseOne"
+                      >
+                        <strong>1. Dados da Infração e Processo</strong>
+                      </button>
+                    </h2>
+                    <div
+                      id="collapseOne"
+                      class="accordion-collapse collapse show"
+                      data-bs-parent="#accordionPeticao"
+                    >
+                      <div class="accordion-body">
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            {{ render_field(form.numero_processo_adm) }}
+                          </div>
+                          <div class="col-md-6">
+                            {{ render_field(form.artigo_infringido) }}
+                          </div>
+                          <div class="col-md-6">
+                            {{ render_field(form.data_infracao, type='date') }}
+                          </div>
+                          <div class="col-md-6">
+                            {{ render_field(form.hora_infracao) }}
+                          </div>
+                          <div class="col-12">
+                            {{ render_field(form.local_infracao) }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="accordion-item">
+                    <h2 class="accordion-header">
+                      <button
+                        class="accordion-button collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseTwo"
+                      >
+                        <strong>2. Detalhes da Penalidade</strong>
+                      </button>
+                    </h2>
+                    <div
+                      id="collapseTwo"
+                      class="accordion-collapse collapse"
+                      data-bs-parent="#accordionPeticao"
+                    >
+                      <div class="accordion-body">
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            {{ render_field(form.velocidade_limite) }}
+                          </div>
+                          <div class="col-md-6">
+                            {{ render_field(form.velocidade_medida) }}
+                          </div>
+                          <div class="col-md-6">
+                            {{ render_field(form.pontos_penalidade) }}
+                          </div>
+                          <div class="col-md-6">
+                            {{ render_field(form.valor_multa) }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="accordion-item">
+                    <h2 class="accordion-header">
+                      <button
+                        class="accordion-button collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseThree"
+                      >
+                        <strong>3. Observações Adicionais</strong>
+                      </button>
+                    </h2>
+                    <div
+                      id="collapseThree"
+                      class="accordion-collapse collapse"
+                      data-bs-parent="#accordionPeticao"
+                    >
+                      <div class="accordion-body">
+                        {{ render_field(form.observacoes, rows='5') }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 border-top pt-3">
+                  {{ form.submit(class="btn btn-success btn-lg px-4") }}
+                  <a
+                    href="#"
+                    id="btn_cancelar_peticao"
+                    class="btn btn-secondary btn-lg ms-2"
+                    >Cancelar</a
+                  >
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="clienteDetailModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-tag me-2"></i> Detalhes do Cliente
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body" id="clienteModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div
+    id="appToast"
+    class="toast"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <div class="toast-header">
+      <i class="fas fa-bell me-2"></i>
+      <strong class="me-auto" id="toastTitle">Notificação</strong>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="toast"
+        aria-label="Close"
+      ></button>
+    </div>
+    <div class="toast-body" id="toastBody">Mensagem.</div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %} {{ super() }}
+
+<style>
+  /* Skeleton Loading */
+  .skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+  }
+  @keyframes skeleton-loading {
+    0% {
+      background-color: hsl(200, 20%, 85%);
+    }
+    100% {
+      background-color: hsl(200, 20%, 95%);
+    }
+  }
+  .skeleton-text {
+    width: 100%;
+    height: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+  }
+  .skeleton-text:last-child {
+    width: 80%;
+  }
+
+  /* Animações */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out forwards;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .fade-in-slide-up {
+    animation: fadeInSlideUp 0.5s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes fadeInSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Drag and Drop UI Feedback */
+  #draggable_cliente {
+    cursor: grab;
+  }
+  #draggable_cliente.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
+    border: 2px dashed #0d6efd;
+  }
+  #drop_zone {
+    transition: all 0.2s ease-in-out;
+    border: 2px dashed transparent;
+  }
+  #drop_zone.drag-over-active {
+    border-color: #0d6efd;
+    background-color: #f0f8ff;
+  }
+  #drop_zone.drag-over-target {
+    transform: scale(1.01);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+</style>
+
+<script nonce="{{ csp_nonce() }}">
+  document.addEventListener('DOMContentLoaded', function () {
+    // --- ELEMENTOS DO DOM ---
+    const cpfInput = document.getElementById('cpf_busca');
+    const dadosClienteArea = document.getElementById('dados_cliente_area');
+    const dropZone = document.getElementById('drop_zone');
+    const dropPlaceholder = document.getElementById('drop_placeholder');
+    const peticaoFields = document.getElementById('peticao_fields');
+    const peticaoForm = document.getElementById('peticao_form');
+    const toastElement = document.getElementById('appToast');
+    const toast = new bootstrap.Toast(toastElement);
+
+    // --- VARIÁVEIS DE ESTADO ---
+    let clienteData = null;
+    const formId = `form-progress-${peticaoForm.querySelector('[name=modelo_id]').value || 'default'}`;
+
+    // --- FUNÇÕES HELPER ---
+    const debounce = (func, delay) => {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    };
+
+    const showToast = (title, message, type = 'success') => {
+      const toastHeader = toastElement.querySelector('.toast-header');
+      toastHeader.classList.remove(
+        'bg-success',
+        'bg-danger',
+        'bg-warning',
+        'bg-info',
+        'text-white'
+      );
+      toastHeader.classList.add(`bg-${type}`, 'text-white');
+      document.getElementById('toastTitle').innerText = title;
+      document.getElementById('toastBody').innerText = message;
+      toast.show();
+    };
+
+    const showSkeleton = () => {
+      dadosClienteArea.innerHTML = `
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+        `;
+    };
+
+    // --- LÓGICA PRINCIPAL ---
+
+    // 1. BUSCA DE CLIENTE (LIVE SEARCH)
+    const buscarCliente = () => {
+      const cpf = cpfInput.value.replace(/\D/g, '');
+      if (cpf.length < 3) {
+        limparDadosCliente(false);
+        return;
+      }
+      if (cpf.length !== 11) return;
+
+      showSkeleton();
+
+      fetch(`/peticionador/api/clientes/busca_cpf?cpf=${cpf}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.cliente) {
+            clienteData = data.cliente;
+            exibirDadosCliente(clienteData);
+            showToast(
+              'Sucesso',
+              'Cliente encontrado! Arraste para o formulário.'
+            );
+          } else {
+            limparDadosCliente();
+          }
+        })
+        .catch(error => {
+          console.error('Erro na busca:', error);
+          limparDadosCliente();
+          showToast('Erro', 'Não foi possível conectar ao servidor.', 'danger');
+        });
+    };
+
+    // 2. EXIBIÇÃO E LIMPEZA
+    const exibirDadosCliente = cliente => {
+      const nomeCompleto =
+        `${cliente.primeiro_nome || ''} ${cliente.sobrenome || ''}`.trim();
+      dadosClienteArea.innerHTML = `
+            <div id="draggable_cliente" draggable="true" class="cliente-info-drag p-2 rounded text-start fade-in">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary"><i class="fas fa-user-check"></i> ${nomeCompleto}</h6>
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" id="btn_quick_view" title="Visualizar Detalhes">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <small class="d-block"><strong>CPF:</strong> ${cliente.cpf || 'N/A'}</small>
+            </div>
+        `;
+    };
+
+    const limparDadosCliente = (showInitialMsg = true) => {
+      clienteData = null;
+      if (showInitialMsg) {
+        dadosClienteArea.innerHTML = `
+                <div class="text-center text-muted py-3 fade-in">
+                    <i class="fas fa-keyboard fa-2x mb-2"></i>
+                    <p class="mb-0">Aguardando digitação do CPF...</p>
+                </div>`;
+      }
+    };
+
+    const resetarFormulario = () => {
+      peticaoForm.reset();
+      peticaoForm.querySelector('[name=cliente_id]').value = '';
+      peticaoFields.classList.add('d-none');
+      dropPlaceholder.classList.remove('d-none');
+      limparDadosCliente();
+      localStorage.removeItem(formId);
+      showToast('Aviso', 'Formulário resetado.', 'info');
+    };
+
+    // 3. DRAG & DROP
+    document.addEventListener('dragstart', e => {
+      if (e.target.id === 'draggable_cliente') {
+        e.dataTransfer.setData('application/json', JSON.stringify(clienteData));
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => e.target.classList.add('dragging'), 0);
+        dropZone.classList.add('drag-over-active');
+      }
+    });
+
+    document.addEventListener('dragend', e => {
+      if (e.target.id === 'draggable_cliente') {
+        e.target.classList.remove('dragging');
+        dropZone.classList.remove('drag-over-active', 'drag-over-target');
+      }
+    });
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      dropZone.classList.add('drag-over-target');
+    });
+
+    dropZone.addEventListener('dragleave', () =>
+      dropZone.classList.remove('drag-over-target')
+    );
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over-active', 'drag-over-target');
+      const data = e.dataTransfer.getData('application/json');
+      if (data) {
+        const cliente = JSON.parse(data);
+        peticaoForm.querySelector('[name="cliente_id"]').value = cliente.id;
+        const nomeCompleto =
+          `${cliente.primeiro_nome || ''} ${cliente.sobrenome || ''}`.trim();
+        document.getElementById('cliente_nome_form').textContent = nomeCompleto;
+        document.getElementById('cliente_cpf_form').textContent =
+          `CPF: ${cliente.cpf}`;
+
+        dropPlaceholder.classList.add('d-none');
+        peticaoFields.classList.remove('d-none');
+        peticaoFields.classList.add('fade-in-slide-up');
+      }
+    });
+
+    // 4. EVENT LISTENERS DINÂMICOS (MODAL, RESET)
+    document.addEventListener('click', e => {
+      if (e.target.closest('#btn_quick_view')) {
+        const modalBody = document.getElementById('clienteModalBody');
+        modalBody.innerHTML = `
+                <dl class="row">
+                  <dt class="col-sm-3">Nome Completo</dt><dd class="col-sm-9">${clienteData.primeiro_nome} ${clienteData.sobrenome}</dd>
+                  <dt class="col-sm-3">CPF</dt><dd class="col-sm-9">${clienteData.cpf}</dd>
+                  <dt class="col-sm-3">Email</dt><dd class="col-sm-9">${clienteData.email || 'N/A'}</dd>
+                  <dt class="col-sm-3">Celular</dt><dd class="col-sm-9">${clienteData.telefone_celular || 'N/A'}</dd>
+                  <dt class="col-sm-3">Endereço</dt><dd class="col-sm-9">${clienteData.endereco_logradouro || ''}, ${clienteData.endereco_numero || ''}</dd>
+                </dl>`;
+        new bootstrap.Modal(
+          document.getElementById('clienteDetailModal')
+        ).show();
+      }
+      if (e.target.id === 'btn_reset_cliente') {
+        resetarFormulario();
+      }
+      if (e.target.id === 'btn_cancelar_peticao') {
+        if (confirm('Tem certeza que deseja cancelar e limpar o formulário?')) {
+          resetarFormulario();
+        }
+      }
+    });
+
+    // 5. LOCALSTORAGE (SALVAR E CARREGAR)
+    peticaoForm.addEventListener(
+      'input',
+      debounce(() => {
+        const formData = new FormData(peticaoForm);
+        const data = Object.fromEntries(formData.entries());
+        localStorage.setItem(formId, JSON.stringify(data));
+        showToast('Automático', 'Progresso salvo localmente.', 'info');
+      }, 2500)
+    );
+
+    window.addEventListener('load', () => {
+      const savedData = localStorage.getItem(formId);
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        if (
+          data.cliente_id &&
+          confirm('Encontramos um progresso salvo. Deseja restaurá-lo?')
+        ) {
+          for (const key in data) {
+            if (peticaoForm.elements[key]) {
+              peticaoForm.elements[key].value = data[key];
+            }
+          }
+          // Dispara o evento de drop artificialmente para restaurar o estado da UI
+          const fakeDropEvent = new DragEvent('drop', {
+            dataTransfer: new DataTransfer(),
+          });
+          fakeDropEvent.dataTransfer.setData(
+            'application/json',
+            JSON.stringify({
+              id: data.cliente_id,
+              primeiro_nome: 'Cliente',
+              sobrenome: 'Restaurado',
+              cpf: '...',
+            })
+          );
+          dropZone.dispatchEvent(fakeDropEvent);
+          showToast('Restaurado', 'Seu progresso anterior foi carregado.');
+        } else {
+          localStorage.removeItem(formId); // descarta se não houver cliente ou se o usuário recusar
+        }
+      }
+    });
+
+    // --- INICIALIZAÇÃO ---
+    cpfInput.addEventListener('input', debounce(buscarCliente, 400));
+  });
+</script>
+{% endblock %}

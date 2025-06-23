@@ -1,0 +1,143 @@
+###############################################################################
+#  🔥  PROJETO PYTHON / FLASK – .gitignore                                   #
+#  Inspirado nos templates do GitHub + boas práticas de deploy               #
+###############################################################################
+
+########################
+# 1. Compilação Python #
+########################
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+##############################
+# 2. Ambientes Virtuais      #
+##############################
+# virtualenv / pipenv / poetry
+.env/
+.venv/
+venv/
+env/
+ENV/
+# pyenv venvs (diretório local)
+.python-version
+
+#########################
+# 3. Gerenciadores de Pacotes
+#########################
+# pip-tools
+requirements*.txt
+# Poetry
+poetry.lock
+# conda
+conda-meta/
+
+#########################
+# 4. Variáveis de Ambiente #
+#########################
+.env
+.env.*
+!.env.example        # mantenha um exemplo para documentação
+
+#########################
+# 5. Ferramentas Python  #
+#########################
+.pytest_cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+.tox/
+.mypy_cache/
+.dmypy.json
+.pyre/
+bandit_report.json
+
+##################################
+# 6. Build / Distribuição Python #
+##################################
+dist/
+build/
+*.egg-info/
+*.wheel
+pip-wheel-metadata/
+
+############################
+# 7. Logs & Outras Saídas  #
+############################
+*.log
+logs/
+*.sqlite3
+instance/         # pasta padrão do Flask para configs/DB locais
+*.db
+*.bak
+*.tmp
+*.swp
+
+##############################
+# 8. IDEs e Editores         #
+##############################
+# VS Code
+.vscode/
+# PyCharm / IntelliJ
+.idea/
+# Eclipse / PyDev
+.project
+.pydevproject
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+###########################
+# 9. Docker & Containeres #
+###########################
+# Build e runtime
+docker-compose.override.yml
+.docker/
+docker-data/
+# Volumes
+volumes/
+# Imagens geradas
+*.tar
+
+##########################
+# 10. Front-end (Node)   #
+##########################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+
+# Vite / Webpack / Parcel builds
+dist-frontend/
+build-frontend/
+*.bundle.js
+*.map
+
+##################################
+# 11. Documentação & CI temporário
+##################################
+# Sphinx / MkDocs
+_build/
+site/
+# Coverage badge temporário
+coverage_badge.svg
+# Artefatos de CI
+*.cache
+*.pytest_cache
+
+#####################################
+# 12. Arquivos de Sistemas Operacionais
+#####################################
+# Linux
+*~
+# Windows
+desktop.ini
+# macOS adicionais
+.AppleDouble
+.LSOverride

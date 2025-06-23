@@ -1,0 +1,795 @@
+{% extends '_base_peticionador.html' %} {% block title %}{{ form_gerado.nome }}
+- {{ modelo.nome }}{% endblock %} {% block content %}
+<div class="container-fluid px-4 py-3">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a
+          href="{{ url_for('peticionador.listar_modelos') }}"
+          class="text-decoration-none"
+        >
+          <i class="fas fa-home me-1"></i>Modelos
+        </a>
+      </li>
+      <li class="breadcrumb-item active">{{ form_gerado.nome }}</li>
+    </ol>
+  </nav>
+
+  <!-- Header Card -->
+  <div
+    class="card border-0 shadow-sm mb-4"
+    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  >
+    <div class="card-body text-white py-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+          <div class="me-3">
+            <div class="bg-white bg-opacity-20 rounded-circle p-3">
+              <i class="fas fa-file-alt fa-2x"></i>
+            </div>
+          </div>
+          <div>
+            <h2 class="mb-1 fw-bold">{{ form_gerado.nome }}</h2>
+            <p class="mb-0 opacity-90">
+              Baseado no modelo: <strong>{{ modelo.nome }}</strong>
+            </p>
+          </div>
+        </div>
+        <div class="text-end">
+          <small class="opacity-75">
+            <i class="fas fa-calendar me-1"></i>
+            Criado em: {{ form_gerado.criado_em.strftime('%d/%m/%Y às %H:%M') }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Busca por CPF Card -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom-0 py-3">
+      <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+        <i class="fas fa-search me-2 text-primary"></i>
+        Buscar Cliente por CPF
+      </h5>
+    </div>
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="cpf_busca" class="form-label fw-semibold">
+            <i class="fas fa-id-card me-1"></i>
+            CPF do Cliente
+          </label>
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              id="cpf_busca"
+              placeholder="000.000.000-00"
+              maxlength="14"
+            />
+            <button type="button" class="btn btn-primary" id="btn_buscar_cpf">
+              <i class="fas fa-search me-1"></i>
+              Buscar
+            </button>
+          </div>
+          <div class="form-text">
+            <i class="fas fa-info-circle me-1"></i>
+            Digite o CPF para buscar e preencher automaticamente os dados do
+            cliente
+          </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+          <div id="resultado_busca" class="w-100"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Form Card -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom-0 py-3">
+      <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+        <i class="fas fa-edit me-2 text-primary"></i>
+        Preencher Formulário
+      </h5>
+    </div>
+    <div class="card-body p-4">
+      <form method="post" id="formulario_dinamico" novalidate>
+        {% if csrf_token %} {{ csrf_token() }} {% endif %} {% set campos_cliente
+        = [ 'primeiro_nome', 'sobrenome', 'nacionalidade', 'estado_civil',
+        'profissao', 'cpf', 'rg', 'estado_emissor_rg', 'cnh', 'endereco_cep',
+        'endereco_logradouro', 'endereco_numero', 'endereco_complemento',
+        'endereco_bairro', 'endereco_cidade', 'endereco_estado', 'email',
+        'telefone_celular', 'telefone_outro', 'razao_social', 'cnpj',
+        'nome_representante_legal', 'cpf_representante_legal',
+        'cargo_representante_legal' ] %} {% set campos_infracao = [
+        'processo_numero', 'auto_infracao', 'data_infracao', 'local_infracao',
+        'descricao_infracao', 'orgao_autuador', 'pontos_infracao' ] %} {% set
+        campos_penalidade = [ 'tipo_penalidade', 'data_inicio_penalidade',
+        'data_fim_penalidade', 'observacoes_penalidade' ] %}
+        <div class="card mb-4 border-primary">
+          <div class="card-header bg-primary text-white">
+            <strong>A. Dados do Cliente (Preenchido Automaticamente)</strong>
+          </div>
+          <div class="card-body p-3">
+            {% for field in form if field.name in campos_cliente %}
+            <div class="mb-3">
+              {{ field.label(class="form-label fw-semibold") }} {{
+              field(class_="form-control") }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card mb-4 border-secondary">
+          <div class="card-header bg-secondary text-white">
+            <strong>B. Dados da Infração e Processo</strong>
+          </div>
+          <div class="card-body p-3">
+            {% for field in form if field.name in campos_infracao %}
+            <div class="mb-3">
+              {{ field.label(class="form-label fw-semibold") }} {{
+              field(class_="form-control") }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card mb-4 border-warning">
+          <div class="card-header bg-warning text-dark">
+            <strong>C. Detalhes da Penalidade</strong>
+          </div>
+          <div class="card-body p-3">
+            {% for field in form if field.name in campos_penalidade %}
+            <div class="mb-3">
+              {{ field.label(class="form-label fw-semibold") }} {{
+              field(class_="form-control") }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card mb-4 border-info">
+          <div class="card-header bg-info text-white">
+            <strong>D. Outros Campos</strong>
+          </div>
+          <div class="card-body p-3">
+            {% set campos_ja_usados = campos_cliente + campos_infracao +
+            campos_penalidade + ['csrf_token'] %} {% for field in form if
+            field.widget.input_type != 'hidden' and field.name not in
+            campos_ja_usados %}
+            <div class="mb-3">
+              {{ field.label(class="form-label fw-semibold") }} {{
+              field(class_="form-control") }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="autoridades-container">
+          <h5 class="fw-bold mb-3 mt-4">
+            <i class="fas fa-building me-2 text-primary"></i>Autoridades de
+            Trânsito
+          </h5>
+        </div>
+        <button
+          type="button"
+          class="btn btn-outline-primary mb-4"
+          id="btn-add-autoridade"
+        >
+          <i class="fas fa-plus-circle me-1"></i>Adicionar Autoridade
+        </button>
+        <div class="d-flex gap-3 pt-4 border-top">
+          <button
+            type="submit"
+            class="btn btn-success btn-lg px-4 d-flex align-items-center gap-2"
+            id="btnSubmit"
+          >
+            <i class="fas fa-save"></i>
+            <span>Salvar e Gerar Documento</span>
+            <div
+              class="spinner-border spinner-border-sm d-none ms-2"
+              id="submitSpinner"
+            ></div>
+          </button>
+          <a
+            href="{{ url_for('peticionador.listar_modelos') }}"
+            class="btn btn-outline-secondary btn-lg px-4 d-flex align-items-center gap-2"
+          >
+            <i class="fas fa-times"></i>
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('peticionador.static', filename='js/input_masks.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Aplicar máscaras de input
+    if (typeof IMask !== 'undefined') {
+      // Máscara para CPF
+      const cpfInput = document.getElementById('cpf_busca');
+      if (cpfInput) {
+        IMask(cpfInput, {
+          mask: '000.000.000-00',
+        });
+      }
+    }
+
+    // Busca por CPF
+    const btnBuscarCpf = document.getElementById('btn_buscar_cpf');
+    const resultadoBusca = document.getElementById('resultado_busca');
+
+    if (btnBuscarCpf) {
+      btnBuscarCpf.addEventListener('click', function () {
+        const cpf = document
+          .getElementById('cpf_busca')
+          .value.replace(/\D/g, '');
+
+        if (cpf.length !== 11) {
+          resultadoBusca.innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        CPF inválido. Digite um CPF válido com 11 dígitos.
+                    </div>
+                `;
+          return;
+        }
+
+        btnBuscarCpf.disabled = true;
+        btnBuscarCpf.innerHTML =
+          '<i class="fas fa-spinner fa-spin me-1"></i>Buscando...';
+        resultadoBusca.innerHTML = '';
+
+        fetch(`/peticionador/api/clientes/busca_cpf?cpf=${cpf}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.cliente) {
+              preencherFormularioComCliente(data.cliente);
+              resultadoBusca.innerHTML = `
+                            <div class="alert alert-success mb-0">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Cliente encontrado: <strong>${
+                                  data.cliente.primeiro_nome || ''
+                                } ${data.cliente.sobrenome || ''}</strong>
+                            </div>
+                        `;
+            } else {
+              resultadoBusca.innerHTML = `
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Nenhum cliente encontrado com este CPF. Você pode preencher os dados manualmente.
+                            </div>
+                        `;
+            }
+          })
+          .catch(error => {
+            console.error('Erro na busca:', error);
+            resultadoBusca.innerHTML = `
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Erro ao buscar cliente. Tente novamente.
+                        </div>
+                    `;
+          })
+          .finally(() => {
+            btnBuscarCpf.disabled = false;
+            btnBuscarCpf.innerHTML = '<i class="fas fa-search me-1"></i>Buscar';
+          });
+      });
+    }
+
+    // Função para preencher formulário com dados do cliente
+    function preencherFormularioComCliente(cliente) {
+      if (!cliente) {
+        console.error('Função de preenchimento chamada sem dados do cliente.');
+        return;
+      }
+      const form = document.getElementById('formulario_dinamico');
+      console.log(
+        'Iniciando preenchimento do formulário com os dados:',
+        cliente
+      );
+
+      const setFieldValue = (fieldName, value) => {
+        const field = form.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+          field.value = value || '';
+        } else {
+          console.warn(
+            `❌ Campo de formulário com nome "${fieldName}" não foi encontrado no HTML.`
+          );
+        }
+      };
+
+      // Identificação Pessoal
+      setFieldValue('primeiro_nome', cliente.primeiro_nome);
+      setFieldValue('sobrenome', cliente.sobrenome);
+      setFieldValue('nacionalidade', cliente.nacionalidade);
+      setFieldValue('estado_civil', cliente.estado_civil);
+      setFieldValue('profissao', cliente.profissao);
+
+      // Documentos
+      setFieldValue('cpf', cliente.cpf);
+      setFieldValue('rg', cliente.rg);
+      setFieldValue('estado_emissor_rg', cliente.estado_emissor_rg);
+      setFieldValue('cnh', cliente.cnh);
+
+      // Endereço
+      setFieldValue('endereco_cep', cliente.endereco_cep);
+      setFieldValue('endereco_logradouro', cliente.endereco_logradouro);
+      setFieldValue('endereco_numero', cliente.endereco_numero);
+      setFieldValue('endereco_complemento', cliente.endereco_complemento);
+      setFieldValue('endereco_bairro', cliente.endereco_bairro);
+      setFieldValue('endereco_cidade', cliente.endereco_cidade);
+      setFieldValue('endereco_estado', cliente.endereco_estado);
+
+      // Contato
+      setFieldValue('email', cliente.email);
+      setFieldValue('telefone_celular', cliente.telefone_celular);
+      setFieldValue('telefone_outro', cliente.telefone_outro);
+
+      // Pessoa Jurídica
+      setFieldValue('razao_social', cliente.razao_social);
+      setFieldValue('cnpj', cliente.cnpj);
+      setFieldValue(
+        'nome_representante_legal',
+        cliente.nome_representante_legal
+      );
+      setFieldValue('cpf_representante_legal', cliente.cpf_representante_legal);
+      setFieldValue(
+        'cargo_representante_legal',
+        cliente.cargo_representante_legal
+      );
+      console.log('Preenchimento do formulário concluído.');
+
+      // Após preencher todos os campos, sincronize as máscaras (IMask)
+      if (typeof IMask !== 'undefined') {
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+          if (input._imask) {
+            input._imask.updateValue();
+          }
+        });
+      }
+    }
+
+    // Função para resetar o formulário para um novo uso
+    function resetarFormularioParaNovoUso() {
+      const form = document.getElementById('formulario_dinamico');
+      const resultadoBusca = document.getElementById('resultado_busca');
+      const cpfBuscaInput = document.getElementById('cpf_busca');
+
+      // Limpa todos os campos do formulário, exceto os hidden (como o csrf_token)
+      Array.from(form.elements).forEach(field => {
+        if (
+          field.type !== 'hidden' &&
+          field.type !== 'submit' &&
+          field.type !== 'button'
+        ) {
+          field.value = '';
+        }
+      });
+
+      // Remove os blocos de autoridade de trânsito que foram adicionados
+      document
+        .querySelectorAll('.autoridade-bloco')
+        .forEach(bloco => bloco.remove());
+      autoridadeCount = 0; // Reseta o contador global de autoridades
+      if (btnAddAutoridade) btnAddAutoridade.disabled = false;
+
+      // Limpa a mensagem de resultado da busca de CPF
+      if (resultadoBusca) resultadoBusca.innerHTML = '';
+      if (cpfBuscaInput) cpfBuscaInput.value = '';
+
+      console.log('Formulário resetado para novo uso.');
+    }
+
+    // Submissão do formulário (versão corrigida com AJAX e UX)
+    const form = document.getElementById('formulario_dinamico');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const resultadoBuscaGlobal = document.getElementById('resultado_busca'); // Div para mostrar o link
+
+    console.log('DEBUG: Elementos encontrados:', {
+      form,
+      btnSubmit,
+      submitSpinner,
+      resultadoBuscaGlobal,
+    });
+
+    if (form && btnSubmit) {
+      console.log('DEBUG: Adicionando listener de submit ao formulário');
+      form.addEventListener('submit', function (e) {
+        console.log('DEBUG: Submit do formulário interceptado!');
+        // --- CORREÇÃO CRÍTICA: Impede a submissão padrão do formulário ---
+        e.preventDefault();
+
+        console.log('DEBUG: Iniciando submissão AJAX');
+        btnSubmit.disabled = true;
+        if (submitSpinner) submitSpinner.classList.remove('d-none');
+
+        // Envia os dados do formulário via AJAX
+        fetch(form.action, {
+          // form.action estará vazio, submetendo para a URL atual, o que está correto
+          method: 'POST',
+          body: new FormData(form),
+          headers: {
+            // Adiciona o header do CSRF token se estiver usando Flask-WTF
+            'X-CSRFToken': form.querySelector('[name=csrf_token]')?.value,
+          },
+        })
+          .then(response => {
+            console.log('DEBUG: Resposta recebida:', response.status);
+            if (!response.ok) {
+              // Se a resposta não for OK (ex: erro 500, 404), lança um erro para o .catch
+              return response.json().then(err => {
+                throw new Error(err.error || 'Erro no servidor');
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('DEBUG: Dados recebidos:', data);
+            if (data.success && data.link) {
+              // --- MELHORIA DA EXPERIÊNCIA PÓS-ENVIO ---
+
+              // 1. Mostra uma mensagem de sucesso com o link
+              if (resultadoBuscaGlobal) {
+                resultadoBuscaGlobal.innerHTML = `
+                <div class="alert alert-success d-flex justify-content-between align-items-center">
+                  <span>Documento gerado com sucesso!</span>
+                  <a href="${data.link}" target="_blank" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-external-link-alt me-1"></i> Abrir Documento
+                  </a>
+                </div>
+              `;
+              }
+
+              // 2. Abre o documento em nova aba
+              window.open(data.link, '_blank');
+
+              // 3. Reseta o formulário para o próximo uso
+              resetarFormularioParaNovoUso();
+            } else {
+              // Mostra a mensagem de erro vinda do backend
+              alert(
+                `Erro ao gerar documento: ${data.error || 'Resposta inesperada.'}`
+              );
+              if (resultadoBuscaGlobal) {
+                resultadoBuscaGlobal.innerHTML = `<div class="alert alert-danger">${data.error || 'Resposta inesperada.'}</div>`;
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Erro na submissão AJAX:', error);
+            alert(`Erro fatal na comunicação: ${error.message}`);
+            if (resultadoBuscaGlobal) {
+              resultadoBuscaGlobal.innerHTML = `<div class="alert alert-danger">Erro fatal na comunicação. Verifique o console.</div>`;
+            }
+          })
+          .finally(() => {
+            // Reativa o botão em qualquer caso
+            btnSubmit.disabled = false;
+            if (submitSpinner) submitSpinner.classList.add('d-none');
+          });
+      });
+    } else {
+      console.error('DEBUG: Formulário ou botão não encontrado!', {
+        form,
+        btnSubmit,
+      });
+    }
+
+    // --- Autoridades Dinâmicas ---
+    const MAX_AUTORIDADES = 3;
+    let autoridadeCount = 0;
+    const autoridadesContainer = document.getElementById(
+      'autoridades-container'
+    );
+    const btnAddAutoridade = document.getElementById('btn-add-autoridade');
+
+    function criarCamposAutoridade(idx) {
+      return `
+      <div class="card mb-3 autoridade-bloco" data-idx="${idx}">
+        <div class="card-header d-flex justify-content-between align-items-center bg-light">
+          <span><strong>Autoridade ${idx + 1}</strong></span>
+          <button type="button" class="btn btn-sm btn-danger btn-remove-autoridade" title="Remover Autoridade"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="card-body row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nome</label>
+            <div class="input-group position-relative">
+              <input type="text" class="form-control autoridade-nome-autocomplete" name="orgao_transito_${idx + 1}_nome" placeholder="Nome da autoridade" required autocomplete="off" />
+              <button type="button" class="btn btn-outline-secondary btn-buscar-autoridade" title="Buscar Autoridade"><i class="fas fa-search"></i></button>
+              <div class="autocomplete-sugestoes position-absolute w-100 bg-white border rounded shadow-sm d-none" style="z-index: 10;"></div>
+              <button type="button" class="btn btn-outline-success btn-cadastrar-autoridade ms-2" title="Cadastrar Nova Autoridade"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">CPF/CNPJ</label>
+            <input type="text" class="form-control" name="orgao_transito_${idx + 1}_cnpj" placeholder="CPF ou CNPJ" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Logradouro</label>
+            <input type="text" class="form-control" name="orgao_transito_${idx + 1}_endereco" placeholder="Logradouro" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Cidade</label>
+            <input type="text" class="form-control" name="orgao_transito_${idx + 1}_cidade" placeholder="Cidade" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">CEP</label>
+            <input type="text" class="form-control" name="orgao_transito_${idx + 1}_cep" placeholder="CEP" />
+          </div>
+          <div class="col-md-1">
+            <label class="form-label">UF</label>
+            <input type="text" class="form-control" name="orgao_transito_${idx + 1}_uf" placeholder="UF" maxlength="2" />
+          </div>
+        </div>
+      </div>
+      `;
+    }
+
+    // Modal de cadastro de autoridade
+    const modalHtml = `
+    <div class="modal fade" id="modalCadastroAutoridade" tabindex="-1" aria-labelledby="modalCadastroAutoridadeLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalCadastroAutoridadeLabel">Cadastrar Nova Autoridade</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <form id="formCadastroAutoridade">
+              <div class="mb-3">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-control" name="nome" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">CPF/CNPJ</label>
+                <input type="text" class="form-control" name="cnpj" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Logradouro</label>
+                <input type="text" class="form-control" name="logradouro" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Cidade</label>
+                <input type="text" class="form-control" name="cidade" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">CEP</label>
+                <input type="text" class="form-control" name="cep" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">UF</label>
+                <input type="text" class="form-control" name="estado" maxlength="2" />
+              </div>
+              <button type="submit" class="btn btn-success">Cadastrar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modalCadastroAutoridade = new bootstrap.Modal(
+      document.getElementById('modalCadastroAutoridade')
+    );
+    const formCadastroAutoridade = document.getElementById(
+      'formCadastroAutoridade'
+    );
+
+    // Função para autocomplete
+    function autocompleteAutoridade(input, idx) {
+      const sugestoesDiv = input.parentElement.querySelector(
+        '.autocomplete-sugestoes'
+      );
+      input.addEventListener('input', async function () {
+        const valor = input.value.trim();
+        if (valor.length < 2) {
+          sugestoesDiv.classList.add('d-none');
+          sugestoesDiv.innerHTML = '';
+          return;
+        }
+        const resp = await fetch(
+          `/peticionador/api/autoridades/busca?nome=${encodeURIComponent(valor)}&autocomplete=1`
+        );
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data.success || !data.sugestoes.length) {
+          sugestoesDiv.classList.add('d-none');
+          sugestoesDiv.innerHTML = '';
+          return;
+        }
+        sugestoesDiv.innerHTML = data.sugestoes
+          .map(
+            a =>
+              `<div class='autocomplete-item p-2' style='cursor:pointer' data-json='${JSON.stringify(a)}'>${a.nome}</div>`
+          )
+          .join('');
+        sugestoesDiv.classList.remove('d-none');
+        sugestoesDiv.querySelectorAll('.autocomplete-item').forEach(item => {
+          item.onclick = function () {
+            const a = JSON.parse(this.getAttribute('data-json'));
+            input.value = a.nome;
+            input
+              .closest('.autoridade-bloco')
+              .querySelector(`[name="orgao_transito_${idx + 1}_cnpj"]`).value =
+              a.cnpj || '';
+            input
+              .closest('.autoridade-bloco')
+              .querySelector(
+                `[name="orgao_transito_${idx + 1}_endereco"]`
+              ).value = a.logradouro || '';
+            input
+              .closest('.autoridade-bloco')
+              .querySelector(
+                `[name="orgao_transito_${idx + 1}_cidade"]`
+              ).value = a.cidade || '';
+            input
+              .closest('.autoridade-bloco')
+              .querySelector(`[name="orgao_transito_${idx + 1}_cep"]`).value =
+              a.cep || '';
+            input
+              .closest('.autoridade-bloco')
+              .querySelector(`[name="orgao_transito_${idx + 1}_uf"]`).value =
+              a.estado || '';
+            sugestoesDiv.classList.add('d-none');
+            sugestoesDiv.innerHTML = '';
+          };
+        });
+      });
+      // Esconde sugestões ao perder foco
+      input.addEventListener('blur', function () {
+        setTimeout(() => {
+          sugestoesDiv.classList.add('d-none');
+        }, 200);
+      });
+    }
+
+    function atualizarAutocompleteAutoridades() {
+      document
+        .querySelectorAll('.autoridade-nome-autocomplete')
+        .forEach((input, idx) => {
+          autocompleteAutoridade(input, idx);
+        });
+    }
+
+    function atualizarCadastroAutoridade() {
+      document.querySelectorAll('.btn-cadastrar-autoridade').forEach(btn => {
+        btn.onclick = function () {
+          modalCadastroAutoridade.show();
+          // Ao abrir, limpa o formulário
+          formCadastroAutoridade.reset();
+          // Salva referência do bloco para preencher depois
+          formCadastroAutoridade.setAttribute(
+            'data-bloco-idx',
+            btn.closest('.autoridade-bloco').getAttribute('data-idx')
+          );
+        };
+      });
+      formCadastroAutoridade.onsubmit = async function (e) {
+        e.preventDefault();
+        const formData = new FormData(formCadastroAutoridade);
+        const json = {};
+        for (const [k, v] of formData.entries()) json[k] = v;
+        const resp = await fetch('/peticionador/api/autoridades', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(json),
+        });
+        const data = await resp.json();
+        if (!data.success) {
+          alert(data.error || 'Erro ao cadastrar autoridade.');
+          return;
+        }
+        // Preencher o bloco correspondente
+        const idx = formCadastroAutoridade.getAttribute('data-bloco-idx');
+        const bloco = document.querySelector(
+          `.autoridade-bloco[data-idx="${idx}"]`
+        );
+        if (bloco) {
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_nome"]`
+          ).value = data.autoridade.nome || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_cnpj"]`
+          ).value = data.autoridade.cnpj || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_endereco"]`
+          ).value = data.autoridade.logradouro || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_cidade"]`
+          ).value = data.autoridade.cidade || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_cep"]`
+          ).value = data.autoridade.cep || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_uf"]`
+          ).value = data.autoridade.estado || '';
+        }
+        modalCadastroAutoridade.hide();
+      };
+    }
+
+    function atualizarRemocaoAutoridades() {
+      document.querySelectorAll('.btn-remove-autoridade').forEach(btn => {
+        btn.onclick = function () {
+          btn.closest('.autoridade-bloco').remove();
+          autoridadeCount--;
+          btnAddAutoridade.disabled = autoridadeCount >= MAX_AUTORIDADES;
+        };
+      });
+    }
+
+    function atualizarBuscaAutoridades() {
+      document.querySelectorAll('.btn-buscar-autoridade').forEach(btn => {
+        btn.onclick = async function () {
+          const bloco = btn.closest('.autoridade-bloco');
+          const idx = bloco.getAttribute('data-idx');
+          const nomeInput = bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_nome"]`
+          );
+          // Aqui você pode abrir um modal ou autocomplete para buscar autoridades cadastradas
+          // Exemplo: buscar por nome e preencher os campos abaixo
+          // --- Exemplo de busca simplificada ---
+          const nomeBusca = nomeInput.value.trim();
+          if (!nomeBusca) {
+            alert('Digite parte do nome da autoridade para buscar.');
+            return;
+          }
+          // TODO: Substitua a URL abaixo pela sua API real
+          const resp = await fetch(
+            `/peticionador/api/autoridades/busca?nome=${encodeURIComponent(nomeBusca)}`
+          );
+          if (!resp.ok) {
+            alert('Erro ao buscar autoridade.');
+            return;
+          }
+          const data = await resp.json();
+          if (!data.success || !data.autoridade) {
+            alert('Autoridade não encontrada.');
+            return;
+          }
+          // Preencher campos
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_nome"]`
+          ).value = data.autoridade.nome || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_cnpj"]`
+          ).value = data.autoridade.cnpj || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_endereco"]`
+          ).value = data.autoridade.logradouro || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_cidade"]`
+          ).value = data.autoridade.cidade || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_cep"]`
+          ).value = data.autoridade.cep || '';
+          bloco.querySelector(
+            `[name="orgao_transito_${parseInt(idx) + 1}_uf"]`
+          ).value = data.autoridade.estado || '';
+        };
+      });
+    }
+
+    btnAddAutoridade.onclick = function () {
+      if (autoridadeCount >= MAX_AUTORIDADES) return;
+      autoridadesContainer.insertAdjacentHTML(
+        'beforeend',
+        criarCamposAutoridade(autoridadeCount)
+      );
+      autoridadeCount++;
+      btnAddAutoridade.disabled = autoridadeCount >= MAX_AUTORIDADES;
+      atualizarRemocaoAutoridades();
+      atualizarBuscaAutoridades();
+      atualizarAutocompleteAutoridades();
+      atualizarCadastroAutoridade();
+    };
+  });
+</script>
+{% endblock %}
