@@ -10,9 +10,6 @@ from flask import (
     redirect,
     render_template,
     request,
-)
-from flask import session as flask_session
-from flask import (
     url_for,
 )
 from flask_login import current_user, login_required, login_user, logout_user
@@ -22,6 +19,7 @@ from wtforms.validators import DataRequired
 
 from app.peticionador import google_services
 from app.peticionador.utils import get_enum_display_name
+from config import CONFIG
 
 # Ajuste o import de 'db' conforme a estrutura do seu projeto.
 # from app import db
@@ -120,7 +118,9 @@ def gerar_suspensao_peticao_dados_form():
                 flash("Cliente encontrado e dados carregados no formulário.", "info")
             else:
                 flash(
-                    f"Nenhum cliente encontrado com o CPF {cpf_para_buscar}. Você pode preencher os dados para um novo cliente se desejar (funcionalidade futura) ou tentar outro CPF.",
+                    f"Nenhum cliente encontrado com o CPF {cpf_para_buscar}. "
+                    f"Você pode preencher os dados para um novo cliente se desejar "
+                    f"(funcionalidade futura) ou tentar outro CPF.",
                     "warning",
                 )
                 form.cpf_busca.data = cpf_para_buscar  # Mantém o CPF buscado no campo
@@ -259,9 +259,15 @@ def gerar_suspensao_peticao_dados_form():
                         "cnpj": cliente_para_documento.cnpj or "",
                         "rg_numero": cliente_para_documento.rg_numero or "",
                         "cnh_numero": cliente_para_documento.cnh_numero or "",
-                        "endereco_completo": f"{cliente_para_documento.endereco_logradouro or ''}, {cliente_para_documento.endereco_numero or ''} {cliente_para_documento.endereco_complemento or ''} - {cliente_para_documento.endereco_bairro or ''}, {cliente_para_documento.endereco_cidade or ''}/{cliente_para_documento.endereco_estado or ''} - CEP: {cliente_para_documento.endereco_cep or ''}".strip(
-                            ", - CEP: "
-                        ),
+                        "endereco_completo": (
+                            f"{cliente_para_documento.endereco_logradouro or ''}, "
+                            f"{cliente_para_documento.endereco_numero or ''} "
+                            f"{cliente_para_documento.endereco_complemento or ''} - "
+                            f"{cliente_para_documento.endereco_bairro or ''}, "
+                            f"{cliente_para_documento.endereco_cidade or ''}/"
+                            f"{cliente_para_documento.endereco_estado or ''} - "
+                            f"CEP: {cliente_para_documento.endereco_cep or ''}"
+                        ).strip(", - CEP: "),
                         "email": cliente_para_documento.email or "",
                         "telefone_celular": cliente_para_documento.telefone_celular
                         or "",
@@ -1182,7 +1188,8 @@ def gerar_documento_suspensao(cliente_id):
 
             if not drive_service or not docs_service:
                 flash(
-                    "Não foi possível conectar aos serviços do Google. Verifique a configuração da conta de serviço ou tente novamente mais tarde.",
+                    "Não foi possível conectar aos serviços do Google. "
+                    "Verifique a configuração da conta de serviço ou tente novamente mais tarde.",
                     "danger",
                 )
                 return render_template(
@@ -1205,7 +1212,9 @@ def gerar_documento_suspensao(cliente_id):
                         "ID do template de suspensão não encontrado nas configurações."
                     )
             except KeyError as e:
-                logger.error(f"Erro ao obter ID do template de suspensão: {e}")
+                current_app.logger.error(
+                    f"Erro ao obter ID do template de suspensão: {e}"
+                )
                 flash(
                     "Erro de configuração: ID do template de suspensão não definido. Contate o administrador.",
                     "danger",
@@ -1299,10 +1308,15 @@ def gerar_documento_suspensao(cliente_id):
                     if cliente.tipo_pessoa == TipoPessoaEnum.JURIDICA
                     else ""
                 ),
-                "proprietario.endereco_completo": f"{cliente.endereco_logradouro or ''}, {cliente.endereco_numero or ''} {cliente.endereco_complemento or ''} - {cliente.endereco_bairro or ''} - {cliente.endereco_cidade or ''}/{cliente.endereco_estado or ''} - CEP: {cliente.endereco_cep or ''}".strip()
-                .strip(",")
-                .strip("-")
-                .strip(),
+                "proprietario.endereco_completo": (
+                    f"{cliente.endereco_logradouro or ''}, "
+                    f"{cliente.endereco_numero or ''} "
+                    f"{cliente.endereco_complemento or ''} - "
+                    f"{cliente.endereco_bairro or ''}, "
+                    f"{cliente.endereco_cidade or ''}/"
+                    f"{cliente.endereco_estado or ''} - "
+                    f"CEP: {cliente.endereco_cep or ''}"
+                ).strip(", - CEP: "),
                 "proprietario.endereco_logradouro": cliente.endereco_logradouro or "",
                 "proprietario.endereco_numero": cliente.endereco_numero or "",
                 "proprietario.endereco_complemento": cliente.endereco_complemento or "",
@@ -1346,13 +1360,15 @@ def gerar_documento_suspensao(cliente_id):
                     db.session.rollback()
                     current_app.logger.error(f"Erro ao registrar PeticaoGerada: {e}")
                 flash(
-                    f'Documento "{file_name}" gerado com sucesso! <a href="{new_document_url}" target="_blank">Abrir documento</a>',
+                    f'Documento "{file_name}" gerado com sucesso! '
+                    f'<a href="{new_document_url}" target="_blank">Abrir documento</a>',
                     "success",
                 )
                 return jsonify({"success": True, "link": new_document_url})
             else:
                 flash(
-                    "Erro ao gerar o documento no Google Docs. Verifique os logs para mais detalhes.",
+                    "Erro ao gerar o documento no Google Docs. "
+                    "Verifique os logs para mais detalhes.",
                     "danger",
                 )
 

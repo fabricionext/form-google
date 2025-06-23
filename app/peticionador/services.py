@@ -7,18 +7,14 @@ Google e tratamento de exceções de quota.
 from __future__ import annotations
 
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, List
 
 from flask import current_app
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
 from document_generator import (
-    _initialize_google_services,
     buscar_ou_criar_pasta_cliente,
     gerar_documento_cliente,
 )
@@ -41,7 +37,7 @@ class DocumentGenerationService:
                 self._drive_service = build(
                     "drive", "v3", credentials=self._get_credentials()
                 )
-            except Exception as e:
+            except Exception:
                 raise
         return self._drive_service
 
@@ -53,7 +49,7 @@ class DocumentGenerationService:
                 self._docs_service = build(
                     "docs", "v1", credentials=self._get_credentials()
                 )
-            except Exception as e:
+            except Exception:
                 raise
         return self._docs_service
 
@@ -65,7 +61,7 @@ class DocumentGenerationService:
                 self._sheets_service = build(
                     "sheets", "v4", credentials=self._get_credentials()
                 )
-            except Exception as e:
+            except Exception:
                 raise
         return self._sheets_service
 
@@ -88,7 +84,7 @@ class DocumentGenerationService:
                 ],
             )
             return credentials
-        except Exception as e:
+        except Exception:
             raise
 
     def generate_documents(
@@ -112,7 +108,7 @@ class DocumentGenerationService:
         current_app.logger.info(f"tipo_pessoa: {tipo_pessoa}")
         current_app.logger.info(f"documentos_requeridos: {documentos_requeridos}")
 
-        templates_disponiveis = CONFIG["TEMPLATES"].get(tipo_pessoa, {})
+        templates_disponiveis = CONFIG["TEMPLATES"].get(tipo_pessoa, {})  # type: ignore
         current_app.logger.info(f"templates_disponiveis: {templates_disponiveis}")
 
         docs_a_gerar = documentos_requeridos or templates_disponiveis.keys()

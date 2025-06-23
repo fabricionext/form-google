@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from celery import Celery
+from celery import Celery, Task
 from flask import Flask
 
 
@@ -33,7 +33,7 @@ def make_celery(app: Flask) -> Celery:
     # Copia todas as configs começando com CELERY_ para o objeto Celery
     celery.conf.update({k: v for k, v in app.config.items() if k.startswith("CELERY_")})
 
-    class AppContextTask(celery.Task):
+    class AppContextTask(Task):
         abstract = True
 
         def __call__(self, *args, **kwargs):
