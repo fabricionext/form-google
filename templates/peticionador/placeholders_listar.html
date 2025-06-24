@@ -105,7 +105,12 @@
                   type="checkbox"
                   class="form-check-input required-toggle"
                   data-id="{{ ph.id }}"
-                  {% if ph.obrigatorio %}checked{% endif %}
+                  {%
+                  if
+                  ph.obrigatorio
+                  %}checked{%
+                  endif
+                  %}
                 />
               </td>
               <td class="text-center">

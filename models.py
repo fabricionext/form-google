@@ -46,18 +46,3 @@ class RespostaForm(db.Model):
     link_pasta_cliente = Column(String(256))
     status_processamento = Column(String(64))
     observacoes_processamento = Column(Text)
-
-
-class FormularioGerado(db.Model):
-    __tablename__ = "formularios_gerados"
-    id = Column(Integer, primary_key=True)
-    modelo_id = Column(Integer, ForeignKey("peticao_modelos.id"), nullable=False)
-    nome = Column(String(150), nullable=False)
-    slug = Column(String(150), unique=True, nullable=False)
-    criado_em = Column(DateTime, default=datetime.utcnow)
-    modelo = relationship(
-        "PeticaoModelo", backref=db.backref("formularios_gerados", lazy=True)
-    )
-
-    def __repr__(self):
-        return f"<FormularioGerado {self.nome} ({self.modelo_id})>"

@@ -1,22 +1,25 @@
-{% extends '_base_peticionador.html' %}
-{% block title %}{{ title }}{% endblock %}
-{% block content %}
+{% extends '_base_peticionador.html' %} {% block title %}{{ title }}{% endblock
+%} {% block content %}
 <h2 class="mb-4">{{ title }}</h2>
 <form action="{{ form_action }}" method="post">
   {{ form.hidden_tag() }}
   <div class="mb-3">
-    {{ form.tipo_pessoa.label(class='form-label') }}
-    {{ form.tipo_pessoa(class='form-select') }}
+    {{ form.tipo_pessoa.label(class='form-label') }} {{
+    form.tipo_pessoa(class='form-select') }}
   </div>
   <div class="mb-3">
-    {{ form.nome.label(class='form-label') }}
-    {{ form.nome(class='form-control') }}
+    {{ form.nome.label(class='form-label') }} {{ form.nome(class='form-control')
+    }}
   </div>
   <div class="mb-3">
-    {{ form.template_id.label(class='form-label') }}
-    {{ form.template_id(class='form-control') }}
+    {{ form.template_id.label(class='form-label') }} {{
+    form.template_id(class='form-control') }}
   </div>
   <button type="submit" class="btn btn-success">Salvar</button>
-  <a href="{{ url_for('peticionador.listar_doc_templates') }}" class="btn btn-secondary">Cancelar</a>
+  <a
+    href="{{ url_for('peticionador.listar_doc_templates') }}"
+    class="btn btn-secondary"
+    >Cancelar</a
+  >
 </form>
 {% endblock %}

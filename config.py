@@ -145,8 +145,8 @@ CONFIG = {
 # -------------------------
 class BaseConfig(object):
     """Configuração base construída a partir do dicionário CONFIG legacy."""
-
-    pass
+    # As configurações são adicionadas dinamicamente abaixo
+    DEBUG = False
 
 
 # Copia dinamicamente todas as entradas do dicionário CONFIG para a BaseConfig

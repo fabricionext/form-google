@@ -91,7 +91,7 @@ def home():
 
 # Definição do formulário para carregar o token CSRF
 class ClientForm(FlaskForm):
-    pass
+    dummy = None  # Campo mínimo para evitar classe vazia
 
 
 @main_bp.route("/cadastrodecliente")

@@ -96,12 +96,6 @@ class DocumentGenerationService:
         """Gera documentos e retorna links."""
         from config import CONFIG
 
-        with open(
-            "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log", "a"
-        ) as f:
-            f.write(f"[DEBUG] Tipo de dados_cliente: {type(dados_cliente)}\n")
-            f.write(f"[DEBUG] Conteúdo de dados_cliente: {dados_cliente}\n")
-
         current_app.logger.info(
             f"generate_documents iniciado com dados_cliente: {dados_cliente}"
         )
@@ -135,11 +129,6 @@ class DocumentGenerationService:
                 f"[ERRO] Nome ou sobrenome ausente para dados_cliente: {dados_cliente}"
             )
             current_app.logger.error(msg)
-            with open(
-                "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log",
-                "a",
-            ) as f:
-                f.write(msg + "\n")
             raise ValueError(
                 "Nome e sobrenome do cliente são obrigatórios para criação da pasta!"
             )
@@ -147,12 +136,6 @@ class DocumentGenerationService:
         current_app.logger.info(
             f"Gerando pasta para: primeiro_nome='{primeiro_nome}', sobrenome='{sobrenome}'"
         )
-        with open(
-            "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log", "a"
-        ) as f:
-            f.write(
-                f"[DEBUG] Gerando pasta para: primeiro_nome='{primeiro_nome}', sobrenome='{sobrenome}'\n"
-            )
 
         try:
             pasta_id = buscar_ou_criar_pasta_cliente(
@@ -163,20 +146,8 @@ class DocumentGenerationService:
             )
             current_app.logger.info(f"Pasta criada/encontrada com ID: {pasta_id}")
 
-            with open(
-                "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log",
-                "a",
-            ) as f:
-                f.write(f"[DEBUG] Pasta criada/encontrada com ID: {pasta_id}\n")
-
         except Exception as e:
             current_app.logger.error(f"Erro ao criar pasta: {e}", exc_info=True)
-
-            with open(
-                "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log",
-                "a",
-            ) as f:
-                f.write(f"[DEBUG] Erro ao criar pasta: {e}\n")
 
             raise RuntimeError(
                 f"Falha ao criar/encontrar pasta do cliente no Drive: {e}"
@@ -200,14 +171,6 @@ class DocumentGenerationService:
                     f"Gerando documento {tipo_doc} com template {id_template}"
                 )
 
-                with open(
-                    "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log",
-                    "a",
-                ) as f:
-                    f.write(
-                        f"[DEBUG] Gerando documento {tipo_doc} com template {id_template}\n"
-                    )
-
                 resultado = gerar_documento_cliente(
                     drive_service=self.drive_service,
                     docs_service=self.docs_service,
@@ -220,14 +183,6 @@ class DocumentGenerationService:
                 current_app.logger.info(
                     f"Resultado da geração do documento {tipo_doc}: {resultado}"
                 )
-
-                with open(
-                    "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log",
-                    "a",
-                ) as f:
-                    f.write(
-                        f"[DEBUG] Resultado da geração do documento {tipo_doc}: {resultado}\n"
-                    )
 
                 if resultado and resultado.get("status") == "sucesso":
                     links.append(resultado["link_documento"])
@@ -243,12 +198,6 @@ class DocumentGenerationService:
                 current_app.logger.error(
                     f"Erro ao gerar documento {tipo_doc}: {e}", exc_info=True
                 )
-
-                with open(
-                    "/var/www/estevaoalmeida.com.br/form-google/debug_dados_cliente.log",
-                    "a",
-                ) as f:
-                    f.write(f"[DEBUG] Erro ao gerar documento {tipo_doc}: {e}\n")
 
         current_app.logger.info(
             "Documentos gerados para %s %s: %s", primeiro_nome, sobrenome, links

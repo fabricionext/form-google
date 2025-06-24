@@ -3,12 +3,12 @@ repos:
     rev: 23.9.1
     hooks:
       - id: black
-        args: ["--check"]
+        args: ['--check']
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        args: ["--profile", "black", "--check"]
+        args: ['--profile', 'black', '--check']
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
     hooks:
@@ -17,7 +17,7 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: ["types-requests", "types-python-dateutil"]
+        additional_dependencies: ['types-requests', 'types-python-dateutil']
   - repo: local
     hooks:
       - id: pytest

@@ -143,3 +143,23 @@ class DocumentTemplate(db.Model):
 
     def __repr__(self):
         return f"<DocumentTemplate {self.tipo_pessoa}:{self.nome}>"
+
+
+class FormularioGerado(db.Model):
+    """Modelo para formulários gerados dinamicamente."""
+    
+    __tablename__ = "formularios_gerados"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    modelo_id = db.Column(db.Integer, db.ForeignKey("peticao_modelos.id"), nullable=False)
+    nome = db.Column(db.String(150), nullable=False)
+    slug = db.Column(db.String(150), unique=True, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    modelo = db.relationship(
+        "PeticaoModelo", 
+        backref=db.backref("formularios_gerados", lazy=True)
+    )
+
+    def __repr__(self):
+        return f"<FormularioGerado {self.nome} ({self.modelo_id})>"

@@ -475,42 +475,6 @@ def import_clients_cli():
                             nome_coluna_planilha, ""
                         ).strip()
 
-                # Logs de depuração para campos problemáticos
-                target_cpf_debug = "030.145.628-31"  # CPF da planilha para Valter Berti
-                if cpf_para_log.strip() == target_cpf_debug:
-                    logger.info(
-                        f"--- DEBUGGING VALTER BERTI (CPF Planilha: {cpf_para_log}, Linha: {linha_num_planilha}) ---"
-                    )
-                    logger.info(f"Raw row_data: {row_data}")
-
-                    email_key_original = "E-mail"  # Chave conforme planilha
-                    email_val_raw = row_data.get(email_key_original)
-                    logger.info(
-                        f"Tentando obter '{email_key_original}'. Valor de row_data.get('{email_key_original}'): '{email_val_raw}'"
-                    )
-                    logger.info(
-                        f"dados_cliente['email'] após mapeamento geral: '{dados_cliente.get('email')}'"
-                    )
-
-                    tel_key_original = "Telefone celular"  # Chave conforme planilha
-                    tel_val_raw = row_data.get(tel_key_original)
-                    logger.info(
-                        f"Tentando obter '{tel_key_original}'. Valor de row_data.get('{tel_key_original}'): '{tel_val_raw}'"
-                    )
-                    logger.info(
-                        f"dados_cliente['telefone_celular'] após mapeamento geral: '{dados_cliente.get('telefone_celular')}'"
-                    )
-
-                    estado_key_original = "Estado"  # Chave conforme planilha
-                    estado_val_raw = row_data.get(estado_key_original)
-                    logger.info(
-                        f"Tentando obter '{estado_key_original}'. Valor de row_data.get('{estado_key_original}'): '{estado_val_raw}'"
-                    )
-                    logger.info(
-                        f"dados_cliente['endereco_estado_csv'] após mapeamento geral: '{dados_cliente.get('endereco_estado_csv')}'"
-                    )
-                    logger.info(f"--- END DEBUGGING VALTER BERTI ---")
-
                 # 2. Validação de CPF
                 cpf_bruto = dados_cliente.get("cpf", "")  # Usa o campo_modelo 'cpf'
                 if not cpf_bruto:

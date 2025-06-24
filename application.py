@@ -31,7 +31,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import CONFIG
 from document_generator import buscar_ou_criar_pasta_cliente, gerar_documento_cliente
-from security_config import get_security_config
 from security_middleware import SecurityMiddleware, require_api_key
 
 # Inicializar extensões
@@ -70,7 +69,7 @@ app.config.update(
 )
 
 # Carregar configurações adicionais de segurança
-app.config.update(get_security_config())
+# app.config.update(get_security_config())  # Removido pois o módulo não existe mais
 
 # Inicializar extensões
 csrf.init_app(app)
@@ -217,7 +216,9 @@ def before_request():
 def add_security_headers(response):
     duration = time.time() - getattr(g, "start_time", time.time())
     try:
-        log_request_info(request, response, duration)
+        # Verificar se a resposta não é streaming antes de tentar acessar get_data()
+        if not response.direct_passthrough:
+            log_request_info(request, response, duration)
     except Exception as log_exc:
         app.logger.error(f"Erro ao registrar log da resposta: {log_exc}", exc_info=True)
     response.headers["X-Content-Type-Options"] = "nosniff"

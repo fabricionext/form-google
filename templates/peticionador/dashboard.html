@@ -1,8 +1,5 @@
-{% extends "_base_peticionador.html" %}
-
-{% block title %}Dashboard - Peticionador{% endblock %}
-
-{% block content %}
+{% extends "_base_peticionador.html" %} {% block title %}Dashboard -
+Peticionador{% endblock %} {% block content %}
 <div class="fade-in">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">
@@ -16,7 +13,9 @@
   <div class="row g-4 mb-5">
     <div class="col-12 col-md-4">
       <div class="card border-0 shadow-sm h-100">
-        <div class="card-body text-center bg-gradient-primary text-white rounded">
+        <div
+          class="card-body text-center bg-gradient-primary text-white rounded"
+        >
           <div class="d-flex align-items-center justify-content-between">
             <div>
               <h5 class="card-title mb-1">Clientes</h5>
@@ -30,7 +29,9 @@
 
     <div class="col-12 col-md-4">
       <div class="card border-0 shadow-sm h-100">
-        <div class="card-body text-center bg-gradient-success text-white rounded">
+        <div
+          class="card-body text-center bg-gradient-success text-white rounded"
+        >
           <div class="d-flex align-items-center justify-content-between">
             <div>
               <h5 class="card-title mb-1">Petições Geradas</h5>
@@ -61,9 +62,12 @@
   <div class="alert alert-light border-start border-primary border-4 mb-4">
     <h5 class="alert-heading mb-2">
       <i class="fa-solid fa-hand-wave me-2 text-warning"></i>
-      Bem-vindo(a), <strong>{{ current_user.name or current_user.email }}</strong>!
+      Bem-vindo(a),
+      <strong>{{ current_user.name or current_user.email }}</strong>!
     </h5>
-    <p class="mb-0">Gerencie petições, modelos e clientes através do painel de controle.</p>
+    <p class="mb-0">
+      Gerencie petições, modelos e clientes através do painel de controle.
+    </p>
   </div>
 
   <!-- Ações Rápidas -->
@@ -73,24 +77,33 @@
         <i class="fa-solid fa-bolt me-2 text-warning"></i>
         Ações Rápidas
       </h4>
-      
+
       <div class="row g-3">
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="{{ url_for('peticionador.selecionar_modelo_peticao') }}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center gap-2 py-3">
+          <a
+            href="{{ url_for('peticionador.selecionar_modelo_peticao') }}"
+            class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center gap-2 py-3"
+          >
             <i class="fa-solid fa-file-circle-plus fa-lg"></i>
             <span>Nova Petição</span>
           </a>
         </div>
-        
+
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="{{ url_for('peticionador.listar_modelos') }}" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2 py-3">
+          <a
+            href="{{ url_for('peticionador.listar_modelos') }}"
+            class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center gap-2 py-3"
+          >
             <i class="fa-solid fa-layer-group fa-lg"></i>
             <span>Modelos</span>
           </a>
         </div>
-        
+
         <div class="col-12 col-md-6 col-lg-4">
-          <a href="{{ url_for('peticionador.listar_autoridades') }}" class="btn btn-outline-info btn-lg w-100 d-flex align-items-center justify-content-center gap-2 py-3">
+          <a
+            href="{{ url_for('peticionador.listar_autoridades') }}"
+            class="btn btn-outline-info btn-lg w-100 d-flex align-items-center justify-content-center gap-2 py-3"
+          >
             <i class="fa-solid fa-building-shield fa-lg"></i>
             <span>Autoridades</span>
           </a>
@@ -106,12 +119,14 @@
         <i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>
         Atividade Recente
       </h4>
-      
+
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
           <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
           <h6 class="text-muted mb-2">Nenhuma atividade recente</h6>
-          <p class="text-muted small mb-0">As últimas petições geradas aparecerão aqui</p>
+          <p class="text-muted small mb-0">
+            As últimas petições geradas aparecerão aqui
+          </p>
         </div>
       </div>
     </div>

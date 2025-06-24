@@ -1,5 +1,6 @@
-{% extends "_base_peticionador.html" %} {% from "_form_macros.html" import
-render_field %} {% block title %}{{ title }}{% endblock %} {% block content %}
+{% extends "_base_peticionador.html" %} {% from "peticionador/_form_macros.html"
+import render_field %} {% block title %}{{ title }}{% endblock %} {% block
+content %}
 <div class="container-fluid mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>{{ title }}</h2>
@@ -446,7 +447,9 @@ render_field %} {% block title %}{{ title }}{% endblock %} {% block content %}
       const cpfStrong = document.createElement('strong');
       cpfStrong.textContent = 'CPF:';
       cpfSmall.appendChild(cpfStrong);
-      cpfSmall.appendChild(document.createTextNode(' ' + (cliente.cpf || 'N/A')));
+      cpfSmall.appendChild(
+        document.createTextNode(' ' + (cliente.cpf || 'N/A'))
+      );
 
       container.appendChild(header);
       container.appendChild(cpfSmall);

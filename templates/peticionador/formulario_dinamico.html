@@ -115,8 +115,8 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
                         <div class="row g-3">
                           {% set campos_cliente = [ 'primeiro_nome',
                           'sobrenome', 'nacionalidade', 'estado_civil',
-                          'profissao', 'cpf', 'rg', 'estado_emissor_rg',
-                          'cnh', 'endereco_logradouro', 'endereco_numero',
+                          'profissao', 'cpf', 'rg', 'estado_emissor_rg', 'cnh',
+                          'endereco_logradouro', 'endereco_numero',
                           'endereco_complemento', 'endereco_bairro',
                           'endereco_cep', 'endereco_cidade', 'endereco_estado' ]
                           %} {% for field in form if field.name in
@@ -524,7 +524,9 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
       const cpfStrong = document.createElement('strong');
       cpfStrong.textContent = 'CPF:';
       cpfSmall.appendChild(cpfStrong);
-      cpfSmall.appendChild(document.createTextNode(' ' + (cliente.cpf || 'N/A')));
+      cpfSmall.appendChild(
+        document.createTextNode(' ' + (cliente.cpf || 'N/A'))
+      );
 
       container.appendChild(header);
       container.appendChild(cpfSmall);

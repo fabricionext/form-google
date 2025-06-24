@@ -43,6 +43,7 @@ from .models import (  # Cliente removido daqui
     TipoPessoaEnum,
     User,
 )
+from app.peticionador.models import FormularioGerado
 
 
 @peticionador_bp.route("/")
@@ -189,18 +190,110 @@ def gerar_suspensao_peticao_dados_form():
                         cliente_para_documento.cnh_numero = form.cliente_cnh_numero.data
                         # Adicionar outros campos conforme necessário
                         try:
-                            with db.session.begin():
-                                pass
-                            flash(
-                                "Dados do cliente atualizados com sucesso.", "success"
+                            # Preparar dados completos para o template do documento
+                            cliente_data_para_template = {
+                                "nome_completo": f"{cliente_para_documento.primeiro_nome or ''} {cliente_para_documento.sobrenome or ''}".strip(),
+                                "razao_social": cliente_para_documento.razao_social
+                                or "",  # Assumindo que pode ser PJ, mas o form atual foca em PF
+                                "tipo_pessoa": get_enum_display_name(
+                                    cliente_para_documento.tipo_pessoa, TipoPessoaEnum
+                                ),
+                                "cpf": cliente_para_documento.cpf or "",
+                                "cnpj": cliente_para_documento.cnpj or "",
+                                "rg_numero": cliente_para_documento.rg_numero or "",
+                                "cnh_numero": cliente_para_documento.cnh_numero or "",
+                                "endereco_completo": (
+                                    f"{cliente_para_documento.endereco_logradouro or ''}, "
+                                    f"{cliente_para_documento.endereco_numero or ''} "
+                                    f"{cliente_para_documento.endereco_complemento or ''} - "
+                                    f"{cliente_para_documento.endereco_bairro or ''}, "
+                                    f"{cliente_para_documento.endereco_cidade or ''}/"
+                                    f"{cliente_para_documento.endereco_estado or ''} - "
+                                    f"CEP: {cliente_para_documento.endereco_cep or ''}"
+                                ).strip(", - CEP: "),
+                                "email": cliente_para_documento.email or "",
+                                "telefone_celular": cliente_para_documento.telefone_celular
+                                or "",
+                                "data_atual": datetime.datetime.now().strftime(
+                                    "%d de %B de %Y"
+                                ),
+                                **dados_peticao,  # Adiciona os dados específicos da petição
+                            }
+
+                            template_id = current_app.config.get(
+                                "TEMPLATE_PET_SUSPENSAO_DIREITO_DIRIGIR"
                             )
+                            parent_folder_id = current_app.config.get(
+                                "PETICIONADOR_PARENT_FOLDER_ID"
+                            )
+
+                            if not template_id or not parent_folder_id:
+                                flash(
+                                    "IDs de template ou pasta pai não configurados.", "danger"
+                                )
+                                return render_template(
+                                    "peticionador/form_suspensao_dados.html",
+                                    title="Gerar Defesa de Suspensão",
+                                    form=form,
+                                )
+
+                            cliente_folder_name = (
+                                f"{cliente_para_documento.primeiro_nome or ''} {cliente_para_documento.sobrenome or ''}".strip()
+                                or cliente_para_documento.razao_social
+                                or "Cliente Desconhecido"
+                            )
+                            year = datetime.datetime.now().year
+                            file_name = f"{year}-{cliente_folder_name}-Suspensão Direito Dirigir-{dados_peticao['numero_processo_adm']}"
+
+                            drive_service = google_services.create_drive_service()
+                            docs_service = google_services.create_docs_service()
+                            target_folder_id = google_services.create_folder_if_not_exists(
+                                drive_service, parent_folder_id, cliente_folder_name
+                            )
+
+                            if not target_folder_id:
+                                flash(
+                                    "Erro ao criar ou encontrar a pasta do cliente no Google Drive.",
+                                    "danger",
+                                )
+                                return render_template(
+                                    "peticionador/form_suspensao_dados.html",
+                                    title="Gerar Defesa de Suspensão",
+                                    form=form,
+                                )
+
+                            document_id, link = (
+                                google_services.generate_google_docs_from_template_peticionador(
+                                    docs_service,
+                                    drive_service,
+                                    template_id,
+                                    target_folder_id,
+                                    file_name,
+                                    cliente_data_para_template,
+                                )
+                            )
+
+                            if document_id:
+                                flash("Documento gerado com sucesso!", "success")
+                                pet = PeticaoGerada(
+                                    cliente_id=None,
+                                    modelo="Suspensao_Direito_Dirigir",
+                                    google_id=document_id,
+                                    link=link,
+                                )
+                                # Retornar JSON para o frontend abrir em nova aba
+                                return jsonify({"success": True, "link": link})
+                            else:
+                                flash("Erro ao gerar o documento.", "danger")
+
                         except Exception as e:
-                            current_app.logger.error(f"Erro ao atualizar cliente: {e}")
-                            flash("Erro ao atualizar dados do cliente.", "danger")
-                            return render_template(
-                                "peticionador/form_suspensao_dados.html",
-                                title="Gerar Defesa de Suspensão",
-                                form=form,
+                            current_app.logger.error(
+                                f"Erro ao gerar documento de suspensão: {e}"
+                            )
+                            current_app.logger.error(traceback.format_exc())
+                            flash(
+                                f"Ocorreu um erro inesperado ao gerar o documento: {e}",
+                                "danger",
                             )
                     else:
                         flash(
@@ -334,13 +427,8 @@ def gerar_suspensao_peticao_dados_form():
                     if document_id:
                         flash("Documento gerado com sucesso!", "success")
                         pet = PeticaoGerada(
-                            cliente_id=None,
-                            modelo="Suspensao_Direito_Dirigir",
-                            google_id=document_id,
-                            link=link,
+                            cliente_id=None, modelo="Suspensao_Direito_Dirigir", google_id=document_id, link=link
                         )
-                        with db.session.begin():
-                            db.session.add(pet)
                         # Retornar JSON para o frontend abrir em nova aba
                         return jsonify({"success": True, "link": link})
                     else:
@@ -393,8 +481,8 @@ def adicionar_autoridade():
             cep=form.cep.data or None,
         )
         try:
-            with db.session.begin():
-                db.session.add(nova_autoridade)
+            db.session.add(nova_autoridade)
+            db.session.commit()
             flash("Autoridade de trânsito adicionada com sucesso!", "success")
             return redirect(url_for("peticionador.listar_autoridades"))
         except Exception as e:
@@ -413,16 +501,12 @@ def adicionar_autoridade():
 @login_required
 def editar_autoridade(autoridade_id):
     autoridade = AutoridadeTransito.query.get_or_404(autoridade_id)
-    form = AutoridadeTransitoForm(
-        obj=autoridade
-    )  # Popula o formulário com dados do objeto
-
+    form = AutoridadeTransitoForm(obj=autoridade)
     if form.validate_on_submit():
         # Atualiza os campos do objeto 'autoridade' com os dados do formulário
         form.populate_obj(autoridade)
         try:
-            with db.session.begin():
-                pass
+            db.session.commit()
             flash("Autoridade atualizada com sucesso.", "success")
             return redirect(url_for("peticionador.listar_autoridades"))
         except Exception as e:
@@ -445,8 +529,8 @@ def editar_autoridade(autoridade_id):
 def excluir_autoridade(autoridade_id):
     autoridade = AutoridadeTransito.query.get_or_404(autoridade_id)
     try:
-        with db.session.begin():
-            db.session.delete(autoridade)
+        db.session.delete(autoridade)
+        db.session.commit()
         flash("Autoridade excluída com sucesso.", "success")
     except Exception as e:
         flash(f"Erro ao excluir autoridade: {e}", "danger")
@@ -500,8 +584,7 @@ def setup_admin_dev():
         admin_user.set_password("fea71868")  # Defina uma senha forte
         db.session.add(admin_user)
         try:
-            with db.session.begin():
-                pass
+            db.session.commit()
             flash(f"Usuário admin {email_admin} criado com senha admin123.", "success")
         except Exception as e:
             flash(f"Erro ao criar usuário admin: {str(e)}", "danger")
@@ -514,8 +597,6 @@ def setup_admin_dev():
 @peticionador_bp.route("/modelos")
 @login_required
 def listar_modelos():
-    from .models import PeticaoModelo
-
     modelos = PeticaoModelo.query.order_by(PeticaoModelo.criado_em.desc()).all()
     return render_template(
         "peticionador/modelos_listar.html", title="Modelos de Petição", modelos=modelos
@@ -525,9 +606,6 @@ def listar_modelos():
 @peticionador_bp.route("/modelos/novo", methods=["GET", "POST"])
 @login_required
 def adicionar_modelo():
-    from .forms import PeticaoModeloForm
-    from .models import PeticaoModelo
-
     form = PeticaoModeloForm()
     if form.validate_on_submit():
         novo_modelo = PeticaoModelo(
@@ -538,8 +616,8 @@ def adicionar_modelo():
             ativo=form.ativo.data,
         )
         try:
-            with db.session.begin():
-                db.session.add(novo_modelo)
+            db.session.add(novo_modelo)
+            db.session.commit()
             flash("Modelo adicionado com sucesso!", "success")
             return redirect(
                 url_for("peticionador.placeholders_modelo", modelo_id=novo_modelo.id)
@@ -557,20 +635,16 @@ def adicionar_modelo():
 @peticionador_bp.route("/modelos/<int:modelo_id>/editar", methods=["GET", "POST"])
 @login_required
 def editar_modelo(modelo_id):
-    from .forms import PeticaoModeloForm
-    from .models import PeticaoModelo
-
-    modelo = PeticaoModelo.query.get_or_404(modelo_id)
-    form = PeticaoModeloForm(obj=modelo)
+    form = PeticaoModeloForm()
     if form.validate_on_submit():
+        modelo = PeticaoModelo.query.get_or_404(modelo_id)
         modelo.nome = form.nome.data
         modelo.doc_template_id = form.doc_template_id.data
         modelo.pasta_destino_id = form.pasta_destino_id.data
         modelo.descricao = form.descricao.data
         modelo.ativo = form.ativo.data
         try:
-            with db.session.begin():
-                pass
+            db.session.commit()
             flash("Modelo atualizado com sucesso!", "success")
             return redirect(
                 url_for("peticionador.placeholders_modelo", modelo_id=modelo.id)
@@ -602,8 +676,6 @@ def listar_doc_templates():
 @peticionador_bp.route("/doc-templates/novo", methods=["GET", "POST"])
 @login_required
 def adicionar_doc_template():
-    from .forms import DocumentTemplateForm
-
     form = DocumentTemplateForm()
     if form.validate_on_submit():
         novo = DocumentTemplate(
@@ -632,11 +704,9 @@ def adicionar_doc_template():
 )
 @login_required
 def editar_doc_template(template_id):
-    from .forms import DocumentTemplateForm
-
-    tpl = DocumentTemplate.query.get_or_404(template_id)
-    form = DocumentTemplateForm(obj=tpl)
+    form = DocumentTemplateForm()
     if form.validate_on_submit():
+        tpl = DocumentTemplate.query.get_or_404(template_id)
         tpl.tipo_pessoa = form.tipo_pessoa.data
         tpl.nome = form.nome.data
         tpl.template_id = form.template_id.data
@@ -709,10 +779,6 @@ def mover_placeholder(modelo_id, ph_id, direcao):
         swap_idx = idx - 1 if direcao == "cima" else idx + 1
         other = placeholders[swap_idx]
         ph.ordem, other.ordem = other.ordem, ph.ordem
-        with db.session.begin():
-            pass
-        if request.method == "POST":
-            return jsonify({"success": True})
         flash("Ordem atualizada.", "success")
     if request.method == "POST":
         return jsonify({"success": True})
@@ -739,7 +805,6 @@ def toggle_placeholder_obrigatorio(modelo_id, ph_id):
         ph.obrigatorio = bool(data["obrigatorio"])
     else:
         ph.obrigatorio = not ph.obrigatorio
-    db.session.commit()
     return jsonify({"success": True, "obrigatorio": ph.obrigatorio})
 
 
@@ -789,8 +854,6 @@ def sincronizar_placeholders(modelo_id):
             )
             db.session.add(ph)
             criados += 1
-    with db.session.begin():
-        pass
     flash(
         f"Sincronização concluída. {criados} novos placeholders adicionados.", "success"
     )
@@ -813,8 +876,6 @@ def reordenar_placeholders(modelo_id):
             ).first()
             if ph:
                 ph.ordem = idx
-        with db.session.begin():
-            pass
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -959,8 +1020,7 @@ def gerar_peticao_dinamica(modelo_id):
             pet = PeticaoGerada(
                 cliente_id=None, modelo=modelo.nome, google_id=novo_id, link=link
             )
-            with db.session.begin():
-                db.session.add(pet)
+            db.session.add(pet)
             # Retorna a resposta JSON que o JavaScript espera
             return jsonify({"success": True, "link": link})
         else:
@@ -978,8 +1038,6 @@ def gerar_peticao_dinamica(modelo_id):
 )
 @login_required
 def criar_formulario_dinamico(modelo_id):
-    from models import FormularioGerado
-
     try:
         modelo = PeticaoModelo.query.get_or_404(modelo_id)
 
@@ -1022,8 +1080,7 @@ def criar_formulario_dinamico(modelo_id):
                 form_gerado = FormularioGerado(
                     modelo_id=modelo.id, nome=nome, slug=slug
                 )
-                with db.session.begin():
-                    db.session.add(form_gerado)
+                db.session.add(form_gerado)
 
                 flash(f'Formulário "{nome}" criado com sucesso!', "success")
                 return redirect(
@@ -1048,15 +1105,6 @@ def criar_formulario_dinamico(modelo_id):
 @peticionador_bp.route("/formularios/<slug>", methods=["GET", "POST"])
 @login_required
 def preencher_formulario_dinamico(slug):
-    import datetime
-    import re
-
-    from app.peticionador import (  # Garanta que a importação está correta
-        google_services,
-    )
-    from app.peticionador.models import PeticaoGerada, PeticaoModelo, PeticaoPlaceholder
-    from models import FormularioGerado
-
     form_gerado = FormularioGerado.query.filter_by(slug=slug).first_or_404()
     modelo = PeticaoModelo.query.get_or_404(form_gerado.modelo_id)
     placeholders = (
@@ -1071,9 +1119,6 @@ def preencher_formulario_dinamico(slug):
 
     # --- LÓGICA DE SUBMISSÃO (POST) CORRIGIDA ---
     if request.method == "POST":
-        current_app.logger.error(
-            "DEBUG: Entrou no POST de preencher_formulario_dinamico!"
-        )
         try:
             current_app.logger.info(
                 f"Recebida submissão POST para o formulário '{form_gerado.nome}'."
@@ -1113,8 +1158,7 @@ def preencher_formulario_dinamico(slug):
                 pet = PeticaoGerada(
                     cliente_id=None, modelo=modelo.nome, google_id=novo_id, link=link
                 )
-                with db.session.begin():
-                    db.session.add(pet)
+                db.session.add(pet)
                 # Retorna a resposta JSON que o JavaScript espera
                 return jsonify({"success": True, "link": link})
             else:
@@ -1151,11 +1195,8 @@ def preencher_formulario_dinamico(slug):
 @peticionador_bp.route("/formularios/<slug>/excluir", methods=["POST"])
 @login_required
 def excluir_formulario_dinamico(slug):
-    from models import FormularioGerado
-
     form_gerado = FormularioGerado.query.filter_by(slug=slug).first_or_404()
-    with db.session.begin():
-        db.session.delete(form_gerado)
+    db.session.delete(form_gerado)
     flash("Formulário excluído com sucesso.", "success")
     return redirect(url_for("peticionador.listar_modelos"))
 
@@ -1224,8 +1265,7 @@ def adicionar_cliente():
                 )
                 novo_cliente.representante_cargo = form.representante_cargo.data or None
 
-            with db.session.begin():
-                db.session.add(novo_cliente)
+            db.session.add(novo_cliente)
             flash("Cliente adicionado com sucesso!", "success")
             return redirect(url_for("peticionador.listar_clientes"))
         except Exception as e:
@@ -1428,8 +1468,7 @@ def gerar_documento_suspensao(cliente_id):
                         google_id=new_document_id,
                         link=new_document_url,
                     )
-                    with db.session.begin():
-                        db.session.add(nova_peticao)
+                    db.session.add(nova_peticao)
                 except Exception as e:
                     current_app.logger.error(f"Erro ao registrar PeticaoGerada: {e}")
                 flash(
@@ -1533,8 +1572,7 @@ def editar_cliente(cliente_id):
                 cliente.cnh_numero = None
                 cliente.data_nascimento = None
 
-            with db.session.begin():
-                pass
+            db.session.commit()
             flash("Cliente atualizado com sucesso!", "success")
             return redirect(url_for("peticionador.listar_clientes"))
         except Exception as e:
@@ -1579,8 +1617,7 @@ def excluir_cliente(cliente_id):
             if cliente.tipo_pessoa == TipoPessoaEnum.FISICA
             else cliente.razao_social
         )
-        with db.session.begin():
-            db.session.delete(cliente)
+        db.session.delete(cliente)
         flash(f'Cliente "{nome_cliente}" excluído com sucesso!', "success")
     except Exception as e:
         flash(f"Erro ao excluir cliente: {str(e)}", "danger")
@@ -1674,8 +1711,7 @@ def api_cadastrar_autoridade():
         cep=cep,
         estado=estado,
     )
-    with db.session.begin():
-        db.session.add(autoridade)
+    db.session.add(autoridade)
     return (
         jsonify(
             {

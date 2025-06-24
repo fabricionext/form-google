@@ -13,7 +13,7 @@ from app.peticionador.models import (
 from extensions import db  # Importa a instância compartilhada
 
 # Importar todos os modelos para que o Alembic os reconheça
-from models import FormularioGerado, RespostaForm
+from app.peticionador.models import FormularioGerado, RespostaForm
 
 # Carregar a URI do banco de dados a partir das variáveis de ambiente
 DATABASE_URL = os.getenv("DATABASE_URL")

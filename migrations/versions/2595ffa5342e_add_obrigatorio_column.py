@@ -18,13 +18,7 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table("peticao_placeholders", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("obrigatorio", sa.Boolean(), nullable=True))
-        batch_op.execute(
-            sa.text(
-                "UPDATE peticao_placeholders SET obrigatorio = true WHERE obrigatorio IS NULL"
-            )
-        )
-        batch_op.alter_column("obrigatorio", nullable=False)
+        batch_op.add_column(sa.Column("obrigatorio", sa.Boolean(), nullable=False, server_default='true'))
 
 
 def downgrade():
