@@ -1,0 +1,396 @@
+{% extends "_base_peticionador.html" %} {% block title %}Formulário Dinâmico -
+Nova Arquitetura{% endblock %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('peticionador.static', filename='css/dynamic_forms.css') }}"
+/>
+<style>
+  .architecture-info {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+  }
+
+  .architecture-info h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+  }
+
+  .architecture-info p {
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  .feature-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+  }
+
+  .feature-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .template-selector {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+  }
+
+  .btn-load-template {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-load-template:hover {
+    background: #218838;
+  }
+
+  .debug-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #343a40;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 300px;
+    font-size: 0.8rem;
+    z-index: 9999;
+    display: none;
+  }
+
+  .debug-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    z-index: 10000;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <!-- Informações da Nova Arquitetura -->
+  <div class="architecture-info">
+    <h2>🚀 Formulários Dinâmicos - Fase 3</h2>
+    <p>
+      Esta página demonstra a nova arquitetura de formulários dinâmicos com
+      integração completa entre Services, Controllers e Frontend. Todas as
+      funcionalidades são alimentadas pelas novas APIs REST implementadas na
+      Fase 2.
+    </p>
+    <div class="feature-badges">
+      <span class="feature-badge">✨ Validação em Tempo Real</span>
+      <span class="feature-badge">🔄 Preenchimento Automático</span>
+      <span class="feature-badge">🎯 Drag & Drop</span>
+      <span class="feature-badge">📱 Responsivo</span>
+      <span class="feature-badge">⚡ Cache Inteligente</span>
+      <span class="feature-badge">🛡️ Validação Jurídica</span>
+    </div>
+  </div>
+
+  <!-- Seletor de Template -->
+  <div class="template-selector">
+    <h3>🎯 Selecionar Template</h3>
+    <p>Escolha um template para gerar o formulário dinâmico correspondente:</p>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label for="template-select" class="form-label">Template:</label>
+        <select id="template-select" class="form-control">
+          <option value="">Selecione um template...</option>
+          <option value="defesa-previa" data-template-id="1">
+            Defesa Prévia/Recurso JARI
+          </option>
+          <option value="ficha-cadastral-pf" data-template-id="2">
+            Ficha Cadastral PF
+          </option>
+          <option value="ficha-cadastral-pj" data-template-id="3">
+            Ficha Cadastral PJ
+          </option>
+          <option value="termo-acordo-transferencia" data-template-id="4">
+            Termo de Acordo de Transferência
+          </option>
+          <option value="acao-anulatoria" data-template-id="5">
+            Ação Anulatória
+          </option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">&nbsp;</label>
+        <div>
+          <button id="btn-load-template" class="btn-load-template" disabled>
+            🔄 Carregar Formulário Dinâmico
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <small class="text-muted">
+        💡 <strong>Dica:</strong> Após selecionar um template, o formulário será
+        carregado dinamicamente usando as APIs da nova arquitetura. Você verá
+        validação em tempo real, preenchimento automático por CPF, e todas as
+        funcionalidades avançadas.
+      </small>
+    </div>
+  </div>
+
+  <!-- Container do Formulário Dinâmico -->
+  <div id="dynamic-form-container">
+    <div class="text-center py-5">
+      <div class="mb-3" style="font-size: 3rem; opacity: 0.3">📋</div>
+      <h4 class="text-muted">Selecione um template acima para começar</h4>
+      <p class="text-muted">
+        O formulário será gerado dinamicamente com base no template selecionado.
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div
+    id="loading-overlay"
+    class="hidden"
+    style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+    "
+  >
+    <div
+      style="
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        text-align: center;
+      "
+    >
+      <div style="font-size: 2rem; margin-bottom: 15px">⟳</div>
+      <div>Carregando formulário dinâmico...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Debug Panel -->
+<div id="debug-panel" class="debug-panel">
+  <h6>🔧 Debug Info</h6>
+  <div id="debug-content">
+    Nova Arquitetura ativa<br />
+    APIs: /api/forms, /api/clients<br />
+    Status: Aguardando template...
+  </div>
+</div>
+
+<!-- Debug Toggle -->
+<button id="debug-toggle" class="debug-toggle" title="Toggle Debug Panel">
+  🔧
+</button>
+
+{% endblock %} {% block extra_js %}
+<!-- Carregar APIs da nova arquitetura -->
+<script src="{{ url_for('peticionador.static', filename='js/dynamic_forms_api.js') }}"></script>
+
+<script>
+  /**
+   * Inicialização da aplicação de formulários dinâmicos
+   */
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 Inicializando Nova Arquitetura - Fase 3');
+
+    // Configurar APIs
+    const apiClient = new DynamicFormsAPI({
+      baseUrl: '/api',
+      debug: true,
+      timeout: 30000,
+    });
+
+    const formRenderer = new DynamicFormRenderer(apiClient, {
+      showValidationIcons: true,
+      autoSave: false,
+      enableDragDrop: true,
+      debug: true,
+    });
+
+    // Elementos DOM
+    const templateSelect = document.getElementById('template-select');
+    const btnLoadTemplate = document.getElementById('btn-load-template');
+    const formContainer = document.getElementById('dynamic-form-container');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const debugPanel = document.getElementById('debug-panel');
+    const debugToggle = document.getElementById('debug-toggle');
+    const debugContent = document.getElementById('debug-content');
+
+    // Estado atual
+    let currentTemplate = null;
+    let formLoaded = false;
+
+    /**
+     * Atualiza informações de debug
+     */
+    function updateDebugInfo(info) {
+      if (debugContent) {
+        debugContent.innerHTML = `
+                        Nova Arquitetura ativa<br>
+                        APIs: /api/forms, /api/clients<br>
+                        Template: ${currentTemplate || 'Nenhum'}<br>
+                        Form loaded: ${formLoaded}<br>
+                        ${info || ''}
+                    `;
+      }
+    }
+
+    /**
+     * Mostra/esconde loading
+     */
+    function showLoading(show = true) {
+      if (loadingOverlay) {
+        loadingOverlay.classList.toggle('hidden', !show);
+      }
+    }
+
+    /**
+     * Mostra erro
+     */
+    function showError(message) {
+      formContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>❌ Erro ao carregar formulário</h5>
+                        <p>${message}</p>
+                        <button class="btn btn-secondary btn-sm" onclick="location.reload()">
+                            🔄 Tentar novamente
+                        </button>
+                    </div>
+                `;
+    }
+
+    // Event listeners
+    templateSelect.addEventListener('change', function () {
+      const selectedOption = this.options[this.selectedIndex];
+      currentTemplate = this.value;
+
+      if (currentTemplate) {
+        btnLoadTemplate.disabled = false;
+        btnLoadTemplate.textContent = `🔄 Carregar: ${selectedOption.textContent}`;
+      } else {
+        btnLoadTemplate.disabled = true;
+        btnLoadTemplate.textContent = '🔄 Carregar Formulário Dinâmico';
+      }
+
+      updateDebugInfo(`Template selecionado: ${currentTemplate}`);
+    });
+
+    btnLoadTemplate.addEventListener('click', async function () {
+      if (!currentTemplate) return;
+
+      try {
+        showLoading(true);
+        updateDebugInfo('Carregando formulário...');
+
+        // Obter dados do template selecionado
+        const selectedOption =
+          templateSelect.options[templateSelect.selectedIndex];
+        const templateId = selectedOption.getAttribute('data-template-id');
+
+        console.log(
+          `📋 Carregando template: ${currentTemplate} (ID: ${templateId})`
+        );
+
+        // Método 1: Tentar carregar por slug
+        let formData;
+        try {
+          formData = await apiClient.loadFormByTemplateSlug(currentTemplate);
+          console.log('✅ Formulário carregado por slug:', formData);
+        } catch (error) {
+          console.log(
+            '⚠️ Erro ao carregar por slug, tentando gerar dinamicamente...'
+          );
+
+          // Método 2: Gerar dinamicamente
+          formData = await apiClient.generateDynamicForm(parseInt(templateId), {
+            includeEntities: true,
+            includeValidation: true,
+          });
+          console.log('✅ Formulário gerado dinamicamente:', formData);
+        }
+
+        // Renderizar formulário
+        await formRenderer.renderForm(formData, 'dynamic-form-container');
+
+        formLoaded = true;
+        updateDebugInfo('Formulário carregado com sucesso!');
+
+        // Configurar máscaras se disponível
+        if (window.setupInputMasks) {
+          window.setupInputMasks();
+        }
+
+        console.log('🎉 Formulário dinâmico carregado com sucesso!');
+      } catch (error) {
+        console.error('❌ Erro ao carregar formulário:', error);
+        showError(error.message || 'Erro desconhecido');
+        updateDebugInfo(`Erro: ${error.message}`);
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Debug panel toggle
+    debugToggle.addEventListener('click', function () {
+      const isVisible =
+        !debugPanel.style.display || debugPanel.style.display === 'none';
+      debugPanel.style.display = isVisible ? 'block' : 'none';
+    });
+
+    // Verificar status da nova arquitetura
+    fetch('/api/architecture-status')
+      .then(response => response.json())
+      .then(data => {
+        console.log('🏗️ Status da Nova Arquitetura:', data);
+        if (data.success) {
+          updateDebugInfo(
+            `APIs ativas: ${data.data.feature_flags ? Object.keys(data.data.feature_flags).filter(k => data.data.feature_flags[k]).length : '?'}`
+          );
+        }
+      })
+      .catch(error => {
+        console.warn(
+          '⚠️ Não foi possível verificar status da arquitetura:',
+          error
+        );
+      });
+
+    // Inicialização completa
+    updateDebugInfo('Sistema inicializado');
+    console.log('✅ Nova Arquitetura inicializada com sucesso!');
+  });
+</script>
+{% endblock %}

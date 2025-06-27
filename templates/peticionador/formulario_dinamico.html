@@ -1,238 +1,1237 @@
 {% extends "_base_peticionador.html" %} {% from "peticionador/_form_macros.html"
 import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
-}}{% endblock %} {% block content %}
-<div class="container-fluid mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>{{ form_gerado.nome }}</h2>
-    <span class="text-muted">Baseado no modelo: {{ modelo.nome }}</span>
+}}{% endblock %} {% block head_extra %}
+<!-- Interact.js para drag & drop moderno -->
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<!-- Alpine.js para reatividade declarativa -->
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<!-- HTMX para carregamento dinâmico -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<!-- Fuse.js para busca fuzzy -->
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<!-- Máscaras de input específicas do formulário dinâmico -->
+<script src="{{ url_for('peticionador.static', filename='js/formulario_dinamico_masks.js') }}"></script>
+<!-- Sistema de validações em tempo real -->
+<!-- Scripts com cache buster para forçar reload -->
+<script src="{{ url_for('peticionador.static', filename='js/form_validators.js') }}?v=20250126004"></script>
+<!-- Aplicação refatorada e modular -->
+<script src="{{ url_for('peticionador.static', filename='js/formulario_app_refatorado.js') }}?v=20250626004"></script>
+<!-- SortableJS para drag-and-drop avançado -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<!-- Sistema de preenchimento automático por CPF e Nome -->
+<script src="{{ url_for('peticionador.static', filename='js/auto_fill_cliente.js') }}?v=20250626001"></script>
+
+<!-- Sistema de detecção de erros e reload forçado -->
+<script>
+  window.addEventListener('error', function (e) {
+    if (
+      e.message.includes('Cannot set properties of undefined') &&
+      e.filename.includes('formulario_app_refatorado.js')
+    ) {
+      console.warn(
+        '🔄 Detectado erro de cache - forçando reload dos scripts...'
+      );
+
+      // Recarregar script principal com novo timestamp
+      const oldScript = document.querySelector(
+        'script[src*="formulario_app_refatorado.js"]'
+      );
+      if (oldScript) {
+        oldScript.remove();
+
+        const newScript = document.createElement('script');
+        newScript.src =
+          "{{ url_for('peticionador.static', filename='js/formulario_app_refatorado.js') }}?v=" +
+          Date.now();
+        newScript.onload = function () {
+          console.log('✅ Script recarregado com sucesso');
+          // Reinicializar Alpine.js se necessário
+          if (window.Alpine && window.FormularioAppClass) {
+            location.reload(); // Reload completo para garantir estado limpo
+          }
+        };
+        document.head.appendChild(newScript);
+      }
+    }
+  });
+
+  // Debug adicional: verificar formulário após carregamento
+  document.addEventListener('DOMContentLoaded', function () {
+    // Função global para limpar rascunhos manualmente
+    window.clearAllDrafts = function () {
+      let removed = 0;
+      const keysToRemove = [];
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('draft_')) {
+          keysToRemove.push(key);
+        }
+      }
+
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        removed++;
+      });
+
+      console.log(`🧹 ${removed} rascunhos removidos do localStorage`);
+      alert(`${removed} rascunhos removidos com sucesso!`);
+    };
+
+    setTimeout(function () {
+      const form = document.getElementById('peticao_form');
+      if (form) {
+        const allFields = form.querySelectorAll('[name]');
+        console.log('🔍 TOTAL DE CAMPOS NO FORMULÁRIO:', allFields.length);
+        console.log(
+          '🔍 AMOSTRA DE CAMPOS:',
+          Array.from(allFields)
+            .slice(0, 10)
+            .map(f => ({
+              name: f.name,
+              type: f.type,
+              value: f.value,
+              id: f.id,
+            }))
+        );
+
+        // Testar preenchimento manual
+        const testField = form.querySelector('[name="autor_1_nome"]');
+        if (testField) {
+          console.log('✅ Campo autor_1_nome encontrado:', testField);
+          testField.value = 'TESTE MANUAL';
+          console.log('✅ Valor definido:', testField.value);
+        } else {
+          console.warn('⚠️ Campo autor_1_nome NÃO encontrado');
+          const autorFields = Array.from(allFields).filter(f =>
+            f.name.includes('autor_1')
+          );
+          console.log(
+            '🔍 Campos de autor_1 disponíveis:',
+            autorFields.map(f => f.name)
+          );
+        }
+
+        // Informar sobre função de limpeza
+        console.log(
+          '💡 Para limpar todos os rascunhos, execute: clearAllDrafts()'
+        );
+      } else {
+        console.error('❌ Formulário #peticao_form não encontrado!');
+      }
+    }, 2000);
+  });
+</script>
+
+<style>
+  :root {
+    --color-primary: #4e73df;
+    --color-secondary: #6c757d;
+    --color-success: #28a745;
+    --color-info: #17a2b8;
+    --color-warning: #ffc107;
+    --color-danger: #dc3545;
+    --border-radius: 0.375rem;
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+  }
+
+  .form-grid {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .form-section {
+    background: #fff;
+    border: 1px solid #e3e6f0;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+  }
+
+  .form-section:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .section-header {
+    background: linear-gradient(45deg, var(--color-primary), #224abe);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .section-header h6 {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .section-content {
+    padding: 1.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .card-search {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
+
+  /* Interact.js Drag and Drop Styles */
+  .drag-zone {
+    border: 2px dashed #d1ecf1;
+    border-radius: var(--border-radius);
+    background: rgba(209, 236, 241, 0.3);
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .drag-zone.drop-active {
+    border-color: var(--color-info);
+    background: rgba(23, 162, 184, 0.1);
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.3);
+  }
+
+  .drag-zone.drop-target {
+    border-color: var(--color-success);
+    background: rgba(40, 167, 69, 0.1);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+  }
+
+  /* Cards draggáveis com Interact.js */
+  .draggable-card {
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius);
+    background: white;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: grab;
+    position: relative;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .draggable-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .draggable-card.dragging {
+    opacity: 0.7;
+    transform: rotate(3deg) scale(1.05);
+    cursor: grabbing;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .client-card {
+    border: 1px solid var(--color-success);
+    background: linear-gradient(45deg, var(--color-success), #20c997);
+    color: white;
+  }
+
+  .authority-card {
+    border: 1px solid var(--color-info);
+    background: white;
+  }
+
+  /* Drop zones para autoridades */
+  .authority-drop-zone {
+    border: 2px dashed #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+    position: relative;
+    min-height: 80px;
+  }
+
+  .authority-drop-zone.drop-active {
+    border-color: var(--color-primary);
+    background-color: rgba(78, 115, 223, 0.05);
+  }
+
+  .authority-drop-zone.drop-target {
+    border-color: var(--color-success);
+    background-color: rgba(40, 167, 69, 0.1);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+  }
+
+  .authority-drop-zone.filled {
+    border-color: var(--color-success);
+    background: linear-gradient(
+      45deg,
+      rgba(40, 167, 69, 0.1),
+      rgba(32, 201, 151, 0.1)
+    );
+  }
+
+  /* Status indicators */
+  .status-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ccc;
+    transition: all 0.3s ease;
+  }
+
+  .status-indicator.filled {
+    background: var(--color-success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Alpine.js transitions */
+  [x-cloak] {
+    display: none !important;
+  }
+
+  .slide-fade-enter {
+    transition: all 0.3s ease-out;
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* === Alpine Transition – Novo esquema === */
+  .transition-enter {
+    transition: all 0.3s ease-out;
+  }
+  .transition-enter-start {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  .transition-enter-end {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Estilos de validação em tempo real */
+  .form-control.is-valid {
+    border-color: var(--color-success);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+  }
+
+  .form-control.is-invalid {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+
+  .invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: var(--color-danger);
+  }
+
+  .valid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: var(--color-success);
+  }
+
+  /* Indicador de alterações não salvas */
+  #unsaved-indicator {
+    animation: fadeInUp 0.3s ease;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  /* Melhorias na UX dos campos */
+  .form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+  }
+
+  .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .required-field::after {
+    content: ' *';
+    color: var(--color-danger);
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    .drag-zone {
+      padding: 2rem 1rem;
+    }
+    .section-header {
+      padding: 0.75rem 1rem;
+    }
+    .section-content {
+      padding: 1rem;
+    }
+  }
+
+  /* Drop zones para seções de autor - Unificadas */
+  .autor-drop-zone-wrapper {
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: grid;
+    gap: 2rem;
+    border: 2px dashed transparent;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .autor-drop-zone-wrapper.drop-active {
+    border: 2px dashed var(--color-success) !important;
+    background-color: rgba(40, 167, 69, 0.05);
+    transform: scale(1.02);
+  }
+
+  .autor-drop-zone-wrapper.drop-target {
+    border: 2px solid var(--color-success) !important;
+    background-color: rgba(40, 167, 69, 0.1);
+    box-shadow:
+      0 0 0 3px rgba(40, 167, 69, 0.2),
+      0 8px 25px rgba(40, 167, 69, 0.3);
+  }
+
+  .autor-drop-zone-wrapper::before {
+    content: '📁 Arraste um cliente aqui para preencher';
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    background: var(--color-info);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .autor-drop-zone-wrapper.drop-active::before,
+  .autor-drop-zone-wrapper.drop-target::before {
+    opacity: 1;
+    background: var(--color-success);
+    content: '✨ Solte aqui para preencher este autor';
+  }
+
+  /* === SISTEMA DE ORGANIZAÇÃO DE CAMPOS === */
+  .field-organizer {
+    position: fixed;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    z-index: 1200;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    padding: 1rem;
+    width: 280px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .field-organizer.hidden {
+    display: none;
+  }
+
+  .field-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    cursor: grab;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+
+  .field-item:hover {
+    background: #e9ecef;
+    border-color: var(--color-primary);
+  }
+
+  .field-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+
+  .field-item.placeholder {
+    background: rgba(78, 115, 223, 0.1);
+    border: 2px dashed var(--color-primary);
+    height: 40px;
+  }
+
+  .organize-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1300;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+  }
+
+  .organize-toggle:hover {
+    background: var(--color-secondary);
+    transform: scale(1.1);
+  }
+
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+  }
+</style>
+{% endblock %} {% block content %}
+<div
+  class="container-fluid mt-4"
+  x-data="formularioApp({{ modelo|safe_json|tojson }}, {{ documento_gerado|tojson }}, {{ link_documento|tojson }})"
+  x-cloak
+>
+  <!-- Botão para alternar organizador -->
+  <button
+    type="button"
+    class="organize-toggle"
+    @click="toggleOrganizer()"
+    :title="organizerVisible ? 'Fechar Organizador' : 'Organizar Campos'"
+  >
+    <i class="fas" :class="organizerVisible ? 'fa-times' : 'fa-cog'"></i>
+  </button>
+
+  <!-- Painel Organizador de Campos -->
+  <div
+    class="field-organizer"
+    :class="{ 'hidden': !organizerVisible }"
+    x-show="organizerVisible"
+    x-transition
+  >
+    <h6 class="mb-3"><i class="fas fa-sort me-2"></i>Organizar Campos</h6>
+    <p class="small text-muted mb-3">
+      Arraste para reordenar os campos do formulário
+    </p>
+
+    <div id="field-organizer-list">
+      <template x-for="section in fieldSections" :key="section.id">
+        <div class="mb-3">
+          <h6 class="text-primary mb-2" x-text="section.title"></h6>
+          <div :data-section="section.id" class="sortable-section">
+            <template x-for="field in section.fields" :key="field.name">
+              <div
+                class="field-item"
+                :data-field="field.name"
+                x-text="field.label"
+              ></div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div class="mt-3 pt-3 border-top">
+      <button
+        type="button"
+        @click="resetFieldOrder()"
+        class="btn btn-sm btn-outline-secondary w-100"
+      >
+        <i class="fas fa-undo me-1"></i>Restaurar Ordem Original
+      </button>
+    </div>
   </div>
-  <p class="text-muted mb-4">
-    Comece digitando o CPF do cliente. O sistema buscará automaticamente e você
-    poderá arrastá-lo para a área do formulário.
-  </p>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="text-primary mb-1">{{ form_gerado.nome }}</h2>
+      <p class="text-muted mb-0">
+        Baseado no modelo: <strong>{{ modelo_nome }}</strong>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button
+        type="button"
+        @click="togglePreview()"
+        class="btn btn-outline-info"
+      >
+        <i class="fas fa-eye me-1"></i>Preview
+      </button>
+      <button
+        type="button"
+        @click="saveDraft()"
+        class="btn btn-outline-secondary"
+        :disabled="saving"
+      >
+        <i class="fas fa-save me-1" :class="{ 'fa-spin': saving }"></i>
+        <span x-text="saving ? 'Salvando...' : 'Salvar Rascunho'"></span>
+      </button>
+    </div>
+  </div>
 
   <div class="row g-4">
-    <div class="col-lg-4">
-      <div class="card shadow-sm sticky-top" style="top: 20px">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">
-            <i class="fas fa-search me-2"></i> Buscar Cliente
-          </h5>
+    <!-- Sidebar com Buscas -->
+    <div class="col-lg-3">
+      <!-- Busca de Cliente -->
+      <div class="card card-search shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">
+            <i class="fas fa-user-search me-2"></i>Buscar Cliente
+          </h6>
         </div>
         <div class="card-body">
           <div class="input-group">
             <span class="input-group-text"><i class="fas fa-id-card"></i></span>
             <input
               type="text"
-              id="cpf_busca"
+              x-model="cpfBusca"
+              @input.debounce.500ms="searchCliente()"
               class="form-control"
-              placeholder="Digite o CPF para buscar..."
+              placeholder="Digite o CPF..."
               autocomplete="off"
             />
           </div>
+          <div class="mt-2">
+            <small class="text-muted"
+              >Digite o CPF para buscar cliente existente</small
+            >
+          </div>
         </div>
+        <div class="card-footer p-0">
+          <div x-show="clienteLoading" class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
+            <p class="mb-0">Buscando cliente...</p>
+          </div>
 
-        <div class="card-footer" id="cliente_card_container">
-          <div class="text-center text-muted py-3" id="dados_cliente_area">
-            <i class="fas fa-keyboard fa-2x mb-2"></i>
-            <p class="mb-0">Aguardando digitação do CPF...</p>
+          <div x-show="clienteEncontrado && !clienteLoading" x-transition>
+            <div
+              class="draggable-card client-card p-3"
+              data-type="cliente"
+              :data-cliente="JSON.stringify(cliente)"
+              role="button"
+              tabindex="0"
+            >
+              <div class="d-flex align-items-center">
+                <i class="fas fa-grip-vertical me-2" aria-hidden="true"></i>
+                <i class="fas fa-user-circle fa-2x me-3" aria-hidden="true"></i>
+                <div class="flex-grow-1">
+                  <h6 class="mb-1" x-text="clienteNomeCompleto"></h6>
+                  <small
+                    class="opacity-75"
+                    x-text="'CPF: ' + (cliente && cliente.cpf || 'Não informado')"
+                  ></small>
+                </div>
+                <div class="status-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            x-show="!clienteLoading && !clienteEncontrado && !clienteErro"
+            class="text-center py-4 text-muted"
+          >
+            <i class="fas fa-search fa-2x mb-2"></i>
+            <p class="mb-0">Digite um CPF para buscar</p>
+          </div>
+
+          <div
+            x-show="clienteErro"
+            x-transition
+            class="text-center py-4 text-warning"
+          >
+            <i class="fas fa-user-times fa-2x mb-2"></i>
+            <p class="mb-0">Cliente não encontrado</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Busca de Autoridades -->
+      <div class="card card-search shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0">
+            <i class="fas fa-building-shield me-2"></i>Autoridades de Trânsito
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="position-relative">
+            <div class="input-group">
+              <span class="input-group-text"
+                ><i class="fas fa-search"></i
+              ></span>
+              <input
+                type="text"
+                x-model="autoridadeBusca"
+                @input.debounce.300ms="searchAutoridades()"
+                class="form-control"
+                placeholder="Digite o nome da autoridade..."
+                autocomplete="off"
+              />
+            </div>
+
+            <div
+              x-show="autoridadeSugestoes.length > 0"
+              x-transition
+              class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm"
+              style="
+                top: 100%;
+                z-index: 1000;
+                max-height: 200px;
+                overflow-y: auto;
+              "
+            >
+              <template
+                x-for="autoridade in autoridadeSugestoes"
+                :key="autoridade.id"
+              >
+                <div
+                  @click="selectAutoridade(autoridade)"
+                  class="p-2 border-bottom cursor-pointer hover:bg-light"
+                >
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-building me-2 text-primary"></i>
+                    <div>
+                      <div class="fw-bold" x-text="autoridade.nome"></div>
+                      <small
+                        class="text-muted"
+                        x-text="(autoridade.cidade || '') + ' - ' + (autoridade.estado || '')"
+                      ></small>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="mt-2">
+            <small class="text-muted"
+              >Digite para buscar autoridades cadastradas</small
+            >
+          </div>
+        </div>
+        <div class="card-footer p-0">
+          <div x-show="autoridadeLoading" class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
+            <p class="mb-0">Buscando autoridades...</p>
+          </div>
+
+          <div
+            x-show="autoridadeSelecionada && !autoridadeLoading"
+            x-transition
+          >
+            <div
+              class="draggable-card authority-card p-3"
+              data-type="autoridade"
+              :data-autoridade="JSON.stringify(autoridadeSelecionada)"
+              role="button"
+              tabindex="0"
+            >
+              <div class="d-flex align-items-center">
+                <i
+                  class="fas fa-grip-vertical me-2 text-muted"
+                  aria-hidden="true"
+                ></i>
+                <i
+                  class="fas fa-building fa-2x me-3 text-primary"
+                  aria-hidden="true"
+                ></i>
+                <div class="flex-grow-1">
+                  <h6
+                    class="mb-1"
+                    x-text="autoridadeSelecionada && autoridadeSelecionada.nome || 'Nome não informado'"
+                  ></h6>
+                  <small
+                    class="text-muted"
+                    x-text="(autoridadeSelecionada && autoridadeSelecionada.cidade || 'Cidade não informada') + ' - ' + (autoridadeSelecionada && autoridadeSelecionada.estado || 'UF')"
+                  ></small>
+                  <br /><small
+                    class="text-muted"
+                    x-text="'CNPJ: ' + (autoridadeSelecionada && autoridadeSelecionada.cnpj || 'Não informado')"
+                  ></small>
+                </div>
+                <div class="status-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            x-show="!autoridadeLoading && !autoridadeSelecionada"
+            class="text-center py-4 text-muted"
+          >
+            <i class="fas fa-building fa-2x mb-2"></i>
+            <p class="mb-0">Digite para buscar autoridades</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-lg-8">
-      <div id="drop_zone" class="card shadow-sm">
-        <div class="card-header">
+    <!-- Formulário Principal -->
+    <div class="col-lg-9">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
           <h5 class="mb-0">
-            <i class="fas fa-file-alt me-2"></i> Preencher Formulário
+            <i class="fas fa-file-alt me-2"></i>Formulário de Dados
           </h5>
         </div>
         <div class="card-body">
-          <form method="POST" id="peticao_form" action="" novalidate>
+          <form
+            method="POST"
+            id="peticao_form"
+            @submit.prevent="submitForm()"
+            novalidate
+          >
             {{ form.hidden_tag() }}
-            <input
-              type="hidden"
-              name="modelo_id"
-              value="{{ modelo.id or 'default' }}"
-            />
-            <input type="hidden" name="cliente_id" value="" />
+            <input type="hidden" name="modelo_id" value="{{ modelo.id }}" />
+            <input type="hidden" name="cliente_id" x-model="clienteId" />
 
-            <div id="formulario_content">
-              <div class="text-center text-muted py-5" id="drop_placeholder">
-                <i class="fas fa-hand-pointer fa-4x mb-3"></i>
-                <h5>Arraste o card do cliente aqui</h5>
-                <p>para preencher os dados automaticamente.</p>
+            <!-- Zona de Drop Inicial -->
+            <div
+              x-show="!clienteCarregado"
+              x-transition.duration.300ms
+              class="drag-zone"
+              id="drop_placeholder"
+            >
+              <i class="fas fa-mouse-pointer fa-4x mb-3 text-info"></i>
+              <h5 class="text-info">Arraste o card do cliente aqui</h5>
+              <p class="text-muted mb-0">
+                para preencher os dados automaticamente
+              </p>
+            </div>
+
+            <!-- Campos do Formulário -->
+            <div x-show="clienteCarregado" x-transition.duration.500ms>
+              <!-- Alert do Cliente Carregado -->
+              <div
+                class="alert alert-success d-flex justify-content-between align-items-center mb-4"
+              >
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-user-check fa-2x me-3"></i>
+                  <div>
+                    <h6
+                      class="alert-heading mb-0"
+                      x-text="'Cliente: ' + clienteNomeCompleto"
+                    ></h6>
+                    <small
+                      x-text="'CPF: ' + (cliente && cliente.cpf || 'Não informado')"
+                    ></small>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click="resetCliente()"
+                  class="btn-close"
+                  title="Trocar Cliente"
+                ></button>
               </div>
 
-              <div class="d-none" id="peticao_fields">
+              <!-- Grid de Campos Organizados -->
+              <div class="form-grid">
+                <!-- SEÇÃO DE AUTORES EM CARROSSEL -->
+                {% if campo_grupos.autores %}
                 <div
-                  class="alert alert-success d-flex justify-content-between align-items-center"
-                  role="alert"
+                  id="autoresCarousel"
+                  class="carousel slide"
+                  data-bs-interval="false"
                 >
-                  <div class="d-flex align-items-center">
-                    <i class="fas fa-user-check fa-2x me-3"></i>
-                    <div>
-                      <h6 class="alert-heading mb-0" id="cliente_nome_form">
-                        Cliente Carregado!
-                      </h6>
-                      <span class="small" id="cliente_cpf_form"></span>
+                  <div class="carousel-inner">
+                    {% for autor_num, autor_campos in
+                    campo_grupos.autores.items()|sort %}
+                    <div
+                      class="carousel-item {% if loop.first %}active{% endif %}"
+                    >
+                      <div class="autor-drop-zone-wrapper">
+                        <!-- Dados do Autor -->
+                        {% if autor_campos.dados %}
+                        <div class="form-section">
+                          <div class="section-header">
+                            <h6>
+                              <i class="fas fa-user me-2"></i>
+                              A{{ autor_num }}. Dados do Autor {{ autor_num }}
+                            </h6>
+                          </div>
+                          <div class="section-content">
+                            <div class="form-row">
+                              {% for field in form if field.name in
+                              autor_campos.dados %}
+                              <div class="form-col">
+                                {{ render_field(field) }}
+                              </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Endereço do Autor -->
+                        {% if autor_campos.endereco %}
+                        <div class="form-section mt-3">
+                          <div class="section-header">
+                            <h6>
+                              <i class="fas fa-map-marker-alt me-2"></i>
+                              A{{ autor_num }}E. Endereço do Autor {{ autor_num
+                              }}
+                            </h6>
+                          </div>
+                          <div class="section-content">
+                            <div class="form-row">
+                              {% for field in form if field.name in
+                              autor_campos.endereco %}
+                              <div class="form-col">
+                                {{ render_field(field) }}
+                              </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        </div>
+                        {% endif %}
+                      </div>
                     </div>
+                    {% endfor %}
                   </div>
                   <button
+                    class="carousel-control-prev"
                     type="button"
-                    id="btn_reset_cliente"
-                    class="btn-close"
-                    title="Trocar Cliente"
-                  ></button>
-                </div>
-
-                <div class="accordion" id="accordionPeticao">
-                  <div class="accordion-item">
-                    <h2 class="accordion-header">
-                      <button
-                        class="accordion-button"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapseCliente"
-                      >
-                        <strong
-                          ><i class="fas fa-user-circle me-2"></i>A. Dados do
-                          Cliente (Preenchido Automaticamente)</strong
-                        >
-                      </button>
-                    </h2>
-                    <div
-                      id="collapseCliente"
-                      class="accordion-collapse collapse show"
-                      data-bs-parent="#accordionPeticao"
-                    >
-                      <div class="accordion-body">
-                        <p class="text-muted small">
-                          Estes campos são preenchidos automaticamente ao
-                          arrastar o cliente. Verifique se estão corretos.
-                        </p>
-                        <div class="row g-3">
-                          {% set campos_cliente = [ 'primeiro_nome',
-                          'sobrenome', 'nacionalidade', 'estado_civil',
-                          'profissao', 'cpf', 'rg', 'estado_emissor_rg', 'cnh',
-                          'endereco_logradouro', 'endereco_numero',
-                          'endereco_complemento', 'endereco_bairro',
-                          'endereco_cep', 'endereco_cidade', 'endereco_estado' ]
-                          %} {% for field in form if field.name in
-                          campos_cliente %}
-                          <div class="col-md-6">{{ render_field(field) }}</div>
-                          {% endfor %}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="accordion-item">
-                    <h2 class="accordion-header">
-                      <button
-                        class="accordion-button collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapseInfracao"
-                      >
-                        <strong
-                          ><i class="fas fa-file-invoice me-2"></i>B. Dados da
-                          Infração e Processo</strong
-                        >
-                      </button>
-                    </h2>
-                    <div
-                      id="collapseInfracao"
-                      class="accordion-collapse collapse"
-                      data-bs-parent="#accordionPeticao"
-                    >
-                      <div class="accordion-body">
-                        <div class="row g-3">
-                          {% set campos_infracao = ['processo_numero',
-                          'artigo_infringido', 'data_infracao', 'hora_infracao',
-                          'local_infracao'] %} {% for field in form if
-                          field.name in campos_infracao %}
-                          <div class="col-md-6">{{ render_field(field) }}</div>
-                          {% endfor %}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="accordion-item">
-                    <h2 class="accordion-header">
-                      <button
-                        class="accordion-button collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapsePenalidade"
-                      >
-                        <strong
-                          ><i class="fas fa-gavel me-2"></i>C. Detalhes da
-                          Penalidade</strong
-                        >
-                      </button>
-                    </h2>
-                    <div
-                      id="collapsePenalidade"
-                      class="accordion-collapse collapse"
-                      data-bs-parent="#accordionPeticao"
-                    >
-                      <div class="accordion-body">
-                        <div class="row g-3">
-                          {% set campos_penalidade = ['velocidade_limite',
-                          'velocidade_medida', 'total_pontos',
-                          'pontos_penalidade', 'valor_multa'] %} {% for field in
-                          form if field.name in campos_penalidade %}
-                          <div class="col-md-6">{{ render_field(field) }}</div>
-                          {% endfor %}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="accordion-item">
-                    <h2 class="accordion-header">
-                      <button
-                        class="accordion-button collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapseOutros"
-                      >
-                        <strong
-                          ><i class="fas fa-plus-circle me-2"></i>D. Outros
-                          Campos</strong
-                        >
-                      </button>
-                    </h2>
-                    <div
-                      id="collapseOutros"
-                      class="accordion-collapse collapse"
-                      data-bs-parent="#accordionPeticao"
-                    >
-                      <div class="accordion-body">
-                        <div class="row g-3">
-                          {% set campos_ja_usados = campos_cliente +
-                          campos_infracao + campos_penalidade + ['cliente_id',
-                          'modelo_id', 'csrf_token'] %} {% for field in form if
-                          field.name not in campos_ja_usados %}
-                          <div class="col-md-6">{{ render_field(field) }}</div>
-                          {% endfor %}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mt-4 border-top pt-3">
-                  <button type="submit" class="btn btn-success btn-lg px-4">
-                    <i class="fas fa-save me-2"></i> Salvar e Gerar Documento
-                  </button>
-                  <a
-                    href="#"
-                    id="btn_cancelar_peticao"
-                    class="btn btn-secondary btn-lg ms-2"
+                    data-bs-target="#autoresCarousel"
+                    data-bs-slide="prev"
                   >
-                    <i class="fas fa-times me-2"></i> Cancelar
-                  </a>
+                    <span
+                      class="carousel-control-prev-icon"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="visually-hidden">Anterior</span>
+                  </button>
+                  <button
+                    class="carousel-control-next"
+                    type="button"
+                    data-bs-target="#autoresCarousel"
+                    data-bs-slide="next"
+                  >
+                    <span
+                      class="carousel-control-next-icon"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="visually-hidden">Próximo</span>
+                  </button>
+                </div>
+                {% endif %}
+
+                <!-- Dados do Cliente (fallback para campos sem numeração) -->
+                {% if campo_grupos.cliente %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6>
+                      <i class="fas fa-user-circle me-2"></i>B. Dados do Cliente
+                    </h6>
+                    <span class="badge bg-success text-white"
+                      >Auto-preenchido</span
+                    >
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in campo_grupos.cliente
+                      %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Endereço Genérico -->
+                {% if campo_grupos.endereco %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6>
+                      <i class="fas fa-map-marker-alt me-2"></i>C. Endereço
+                    </h6>
+                    <span class="badge bg-success text-white"
+                      >Auto-preenchido</span
+                    >
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in
+                      campo_grupos.endereco %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Dados do Processo -->
+                {% if campo_grupos.processo %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6>
+                      <i class="fas fa-file-invoice me-2"></i>D. Dados do
+                      Processo
+                    </h6>
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in
+                      campo_grupos.processo %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- SEÇÃO DE AUTORIDADES EM CARROSSEL -->
+                {% if campo_grupos.autoridades %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6>
+                      <i class="fas fa-building-shield me-2"></i>E. Autoridades
+                      de Trânsito
+                    </h6>
+                    <span class="badge bg-info text-white">Carrossel</span>
+                  </div>
+                  <div class="section-content">
+                    <div
+                      id="autoridadesCarousel"
+                      class="carousel slide"
+                      data-bs-interval="false"
+                    >
+                      <div class="carousel-inner">
+                        <!-- Organizar autoridades por índice -->
+                        {% set autoridades_grupos = {} %} {% for field_name in
+                        campo_grupos.autoridades %} {% if
+                        field_name.startswith('orgao_transito_') %} {% set parts
+                        = field_name.split('_') %} {% if parts|length >= 3 and
+                        parts[2].isdigit() %} {% set auth_index = parts[2]|int
+                        %} {% if auth_index not in autoridades_grupos %} {% set
+                        _ = autoridades_grupos.update({auth_index: []}) %} {%
+                        endif %} {% set _ =
+                        autoridades_grupos[auth_index].append(field_name) %} {%
+                        endif %} {% endif %} {% endfor %} {% for auth_index,
+                        auth_fields in autoridades_grupos.items()|sort %}
+                        <div
+                          class="carousel-item {% if loop.first %}active{% endif %}"
+                        >
+                          <div
+                            class="authority-drop-zone mb-3"
+                            data-authority-index="{{ auth_index }}"
+                          >
+                            <h6 class="text-muted mb-3">
+                              <i class="fas fa-building me-2"></i>Autoridade {{
+                              auth_index }}
+                            </h6>
+                            <div class="form-row">
+                              {% for field in form if field.name in auth_fields
+                              %}
+                              <div class="form-col">
+                                {{ render_field(field) }}
+                              </div>
+                              {% endfor %}
+                            </div>
+                            <div class="status-indicator"></div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                      </div>
+                      <button
+                        class="carousel-control-prev"
+                        type="button"
+                        data-bs-target="#autoridadesCarousel"
+                        data-bs-slide="prev"
+                      >
+                        <span
+                          class="carousel-control-prev-icon"
+                          aria-hidden="true"
+                        ></span>
+                        <span class="visually-hidden">Anterior</span>
+                      </button>
+                      <button
+                        class="carousel-control-next"
+                        type="button"
+                        data-bs-target="#autoridadesCarousel"
+                        data-bs-slide="next"
+                      >
+                        <span
+                          class="carousel-control-next-icon"
+                          aria-hidden="true"
+                        ></span>
+                        <span class="visually-hidden">Próximo</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Polo Ativo -->
+                {% if campo_grupos.polo_ativo %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6><i class="fas fa-user-plus me-2"></i>F. Polo Ativo</h6>
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in
+                      campo_grupos.polo_ativo %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Polo Passivo -->
+                {% if campo_grupos.polo_passivo %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6>
+                      <i class="fas fa-user-minus me-2"></i>G. Polo Passivo
+                    </h6>
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in
+                      campo_grupos.polo_passivo %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Terceiros -->
+                {% if campo_grupos.terceiros %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6><i class="fas fa-users me-2"></i>H. Terceiros</h6>
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in
+                      campo_grupos.terceiros %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Outros Campos -->
+                {% if campo_grupos.outros %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6>
+                      <i class="fas fa-ellipsis-h me-2"></i>I. Outros Dados
+                    </h6>
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.name in campo_grupos.outros
+                      %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Fallback: Formulário simples se não houver campo_grupos -->
+                {% if not campo_grupos or not (campo_grupos.dados_pessoais or
+                campo_grupos.documentos or campo_grupos.endereco or
+                campo_grupos.autores or campo_grupos.reus or
+                campo_grupos.autoridades or campo_grupos.polo_ativo or
+                campo_grupos.polo_passivo or campo_grupos.terceiros or
+                campo_grupos.outros) %}
+                <div class="form-section">
+                  <div class="section-header">
+                    <h6><i class="fas fa-file-alt me-2"></i>Formulário</h6>
+                  </div>
+                  <div class="section-content">
+                    <div class="form-row">
+                      {% for field in form if field.type != 'CSRFTokenField' %}
+                      <div class="form-col">{{ render_field(field) }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Botões de Ação -->
+              <div
+                class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top"
+              >
+                <button
+                  type="button"
+                  @click="generatePreview()"
+                  class="btn btn-outline-secondary"
+                  :disabled="submitting"
+                >
+                  <i class="fas fa-eye me-2"></i>Visualizar Preview
+                </button>
+                <div class="d-flex gap-2">
+                  <button
+                    type="button"
+                    @click="resetForm()"
+                    class="btn btn-secondary"
+                    :disabled="submitting"
+                  >
+                    <i class="fas fa-undo me-2"></i>Limpar Formulário
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-lg"
+                    :disabled="submitting || !clienteCarregado"
+                  >
+                    <i
+                      class="fas"
+                      :class="submitting ? 'fa-spinner fa-spin' : 'fa-file-export'"
+                      class="me-2"
+                    ></i>
+                    <span
+                      x-text="submitting ? 'Gerando...' : 'Gerar Documento'"
+                    ></span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -241,472 +1240,43 @@ import render_field %} {% block title %}{{ form_gerado.nome }} - {{ modelo.nome
       </div>
     </div>
   </div>
-</div>
 
-<div
-  class="modal fade"
-  id="clienteDetailModal"
-  tabindex="-1"
-  aria-hidden="true"
->
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-user-tag me-2"></i> Detalhes do Cliente
-        </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body" id="clienteModalBody"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Fechar
-        </button>
+  <!-- Modal de Preview -->
+  <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-eye me-2"></i>Preview do Documento
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="preview-panel p-3">
+            <div class="text-center py-5 text-muted" x-show="previewLoading">
+              <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+              <p>Gerando preview...</p>
+            </div>
+            <div x-show="!previewLoading" x-html="previewContent"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-  <div
-    id="appToast"
-    class="toast"
-    role="alert"
-    aria-live="assertive"
-    aria-atomic="true"
-  >
-    <div class="toast-header">
-      <i class="fas fa-bell me-2"></i>
-      <strong class="me-auto" id="toastTitle">Notificação</strong>
-      <button
-        type="button"
-        class="btn-close"
-        data-bs-dismiss="toast"
-        aria-label="Close"
-      ></button>
-    </div>
-    <div class="toast-body" id="toastBody">Mensagem.</div>
-  </div>
-</div>
-
-{% endblock %} {% block scripts %} {{ super() }}
-<script src="https://unpkg.com/imask"></script>
-
-<style>
-  .skeleton {
-    animation: skeleton-loading 1s linear infinite alternate;
-  }
-  @keyframes skeleton-loading {
-    0% {
-      background-color: hsl(200, 20%, 85%);
-    }
-    100% {
-      background-color: hsl(200, 20%, 95%);
-    }
-  }
-  .skeleton-text {
-    width: 100%;
-    height: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0.25rem;
-  }
-  .skeleton-text:last-child {
-    width: 80%;
-  }
-  .fade-in {
-    animation: fadeIn 0.5s ease-in-out forwards;
-  }
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  .fade-in-slide-up {
-    animation: fadeInSlideUp 0.5s ease-out forwards;
-    opacity: 0;
-  }
-  @keyframes fadeInSlideUp {
-    from {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  #draggable_cliente {
-    cursor: grab;
-  }
-  #draggable_cliente.dragging {
-    opacity: 0.6;
-    cursor: grabbing;
-    border: 2px dashed #0d6efd;
-  }
-  #drop_zone {
-    transition: all 0.2s ease-in-out;
-    border: 2px dashed transparent;
-  }
-  #drop_zone.drag-over-active {
-    border-color: #0d6efd;
-    background-color: #f0f8ff;
-  }
-  #drop_zone.drag-over-target {
-    transform: scale(1.01);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  }
-</style>
-
-<script nonce="{{ csp_nonce() }}">
-  document.addEventListener('DOMContentLoaded', function () {
-    // --- ELEMENTOS DO DOM ---
-    const cpfInput = document.getElementById('cpf_busca');
-    const dadosClienteArea = document.getElementById('dados_cliente_area');
-    const dropZone = document.getElementById('drop_zone');
-    const dropPlaceholder = document.getElementById('drop_placeholder');
-    const peticaoFields = document.getElementById('peticao_fields');
-    const peticaoForm = document.getElementById('peticao_form');
-    const toastElement = document.getElementById('appToast');
-    const toast = new bootstrap.Toast(toastElement);
-
-    // --- VARIÁVEIS DE ESTADO ---
-    let clienteData = null;
-    const formId = `form-progress-${peticaoForm.querySelector('[name=modelo_id]').value || 'default'}`;
-
-    // --- INICIALIZAÇÃO DA MÁSCARA DO CPF ---
-    const cpfMask = IMask(cpfInput, {
-      mask: '000.000.000-00',
-    });
-
-    // --- FUNÇÕES HELPER ---
-    const debounce = (func, delay) => {
-      let timeout;
-      return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-      };
-    };
-
-    const showToast = (title, message, type = 'success') => {
-      const toastHeader = toastElement.querySelector('.toast-header');
-      toastHeader.classList.remove(
-        'bg-success',
-        'bg-danger',
-        'bg-warning',
-        'bg-info',
-        'text-white'
-      );
-      toastHeader.classList.add(`bg-${type}`, 'text-white');
-      document.getElementById('toastTitle').innerText = title;
-      document.getElementById('toastBody').innerText = message;
-      toast.show();
-    };
-
-    const showSkeleton = () => {
-      dadosClienteArea.innerHTML = `<div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div>`;
-    };
-
-    // --- NOVA FUNÇÃO DE PREENCHIMENTO INTELIGENTE ---
-    const preencherFormularioComCliente = (cliente, form) => {
-      if (!cliente || !form) return;
-
-      // Helper para definir valor de forma segura
-      const setFieldValue = (fieldName, value) => {
-        const field = form.querySelector(`[name="${fieldName}"]`);
-        if (field) {
-          field.value = value || '';
-        }
-      };
-
-      // --- PREENCHIMENTO DOS DADOS ---
-      // DADOS DE IDENTIFICAÇÃO
-      setFieldValue('cliente_id', cliente.id);
-      setFieldValue('primeiro_nome', cliente.primeiro_nome);
-      setFieldValue('sobrenome', cliente.sobrenome);
-      setFieldValue('nacionalidade', cliente.nacionalidade);
-      setFieldValue('estado_civil', cliente.estado_civil);
-      setFieldValue('profissao', cliente.profissao);
-      // DOCUMENTOS
-      setFieldValue('cpf', cliente.cpf);
-      setFieldValue('rg', cliente.rg_numero || cliente.rg);
-      setFieldValue('estado_emissor_rg', cliente.estado_emissor_rg);
-      setFieldValue('cnh', cliente.cnh_numero || cliente.cnh);
-      // ENDEREÇO
-      setFieldValue('endereco_logradouro', cliente.endereco_logradouro);
-      setFieldValue('endereco_numero', cliente.endereco_numero);
-      setFieldValue('endereco_complemento', cliente.endereco_complemento);
-      setFieldValue('endereco_bairro', cliente.endereco_bairro);
-      setFieldValue('endereco_cep', cliente.endereco_cep);
-      setFieldValue('endereco_cidade', cliente.endereco_cidade);
-      setFieldValue('endereco_estado', cliente.endereco_estado);
-      // CAMPOS ADICIONAIS
-      // Exemplo: setFieldValue('processo_numero', cliente.ultimo_processo);
-      // DATA ATUAL
-      const hoje = new Date();
-      const dataFormatada = hoje.toLocaleDateString('pt-BR');
-      setFieldValue('data_atual', dataFormatada);
-      console.log('Formulário preenchido com os dados do cliente.');
-    };
-
-    // --- LÓGICA PRINCIPAL (AJUSTADA) ---
-    const buscarCliente = () => {
-      // A máscara já está no campo, mas a limpeza garante o envio correto para a API
-      const cpf = cpfMask.unmaskedValue;
-      if (cpf.length < 3) {
-        limparDadosCliente(false);
-        return;
-      }
-      if (cpf.length !== 11) return;
-
-      showSkeleton();
-      fetch(`/peticionador/api/clientes/busca_cpf?cpf=${cpf}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success && data.cliente) {
-            clienteData = data.cliente;
-            exibirDadosCliente(clienteData);
-            showToast(
-              'Sucesso',
-              'Cliente encontrado! Arraste para o formulário.'
-            );
-          } else {
-            limparDadosCliente();
-          }
-        })
-        .catch(error => {
-          console.error('Erro na busca:', error);
-          limparDadosCliente();
-          showToast('Erro', 'Não foi possível conectar ao servidor.', 'danger');
-        });
-    };
-
-    const exibirDadosCliente = cliente => {
-      const nomeCompleto =
-        `${cliente.primeiro_nome || ''} ${cliente.sobrenome || ''}`.trim();
-
-      const container = document.createElement('div');
-      container.id = 'draggable_cliente';
-      container.draggable = true;
-      container.className = 'cliente-info-drag p-2 rounded text-start fade-in';
-
-      const header = document.createElement('div');
-      header.className = 'd-flex justify-content-between align-items-center';
-
-      const title = document.createElement('h6');
-      title.className = 'mb-0 text-primary';
-      const icon = document.createElement('i');
-      icon.className = 'fas fa-user-check';
-      title.appendChild(icon);
-      title.appendChild(document.createTextNode(' ' + nomeCompleto));
-
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-sm btn-outline-secondary py-0 px-1';
-      btn.type = 'button';
-      btn.id = 'btn_quick_view';
-      btn.title = 'Visualizar Detalhes';
-      const eyeIcon = document.createElement('i');
-      eyeIcon.className = 'fas fa-eye';
-      btn.appendChild(eyeIcon);
-
-      header.appendChild(title);
-      header.appendChild(btn);
-
-      const cpfSmall = document.createElement('small');
-      cpfSmall.className = 'd-block';
-      const cpfStrong = document.createElement('strong');
-      cpfStrong.textContent = 'CPF:';
-      cpfSmall.appendChild(cpfStrong);
-      cpfSmall.appendChild(
-        document.createTextNode(' ' + (cliente.cpf || 'N/A'))
-      );
-
-      container.appendChild(header);
-      container.appendChild(cpfSmall);
-
-      dadosClienteArea.innerHTML = '';
-      dadosClienteArea.appendChild(container);
-    };
-
-    const limparDadosCliente = (showInitialMsg = true) => {
-      clienteData = null;
-      if (showInitialMsg) {
-        dadosClienteArea.innerHTML = `
-                <div class="text-center text-muted py-3 fade-in">
-                    <i class="fas fa-keyboard fa-2x mb-2"></i>
-                    <p class="mb-0">Aguardando digitação do CPF...</p>
-                </div>`;
-      }
-    };
-
-    const resetarFormulario = () => {
-      peticaoForm.reset();
-      peticaoForm.querySelector('[name=cliente_id]').value = '';
-      peticaoFields.classList.add('d-none');
-      dropPlaceholder.classList.remove('d-none');
-      limparDadosCliente();
-      localStorage.removeItem(formId);
-      showToast('Aviso', 'Formulário resetado.', 'info');
-    };
-
-    // --- EVENTOS (DRAG & DROP ATUALIZADO) ---
-    document.addEventListener('dragstart', e => {
-      if (e.target.id === 'draggable_cliente') {
-        e.dataTransfer.setData('application/json', JSON.stringify(clienteData));
-        e.dataTransfer.effectAllowed = 'move';
-        setTimeout(() => e.target.classList.add('dragging'), 0);
-        dropZone.classList.add('drag-over-active');
-      }
-    });
-    document.addEventListener('dragend', e => {
-      if (e.target.id === 'draggable_cliente') {
-        e.target.classList.remove('dragging');
-        dropZone.classList.remove('drag-over-active', 'drag-over-target');
-      }
-    });
-    dropZone.addEventListener('dragover', e => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      dropZone.classList.add('drag-over-target');
-    });
-    dropZone.addEventListener('dragleave', () =>
-      dropZone.classList.remove('drag-over-target')
-    );
-
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over-active', 'drag-over-target');
-      const data = e.dataTransfer.getData('application/json');
-
-      if (data) {
-        const cliente = JSON.parse(data);
-        preencherFormularioComCliente(cliente, peticaoForm);
-        const nomeCompleto =
-          `${cliente.primeiro_nome || ''} ${cliente.sobrenome || ''}`.trim();
-        document.getElementById('cliente_nome_form').textContent = nomeCompleto;
-        document.getElementById('cliente_cpf_form').textContent =
-          `CPF: ${cliente.cpf}`;
-        dropPlaceholder.classList.add('d-none');
-        peticaoFields.classList.remove('d-none');
-        peticaoFields.classList.add('fade-in-slide-up');
-        peticaoForm.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    });
-
-    document.addEventListener('click', e => {
-      if (e.target.closest('#btn_quick_view')) {
-        const modalBody = document.getElementById('clienteModalBody');
-        modalBody.innerHTML = '';
-
-        const dl = document.createElement('dl');
-        dl.className = 'row';
-
-        const addDetail = (label, value) => {
-          const dt = document.createElement('dt');
-          dt.className = 'col-sm-3';
-          dt.textContent = label;
-          const dd = document.createElement('dd');
-          dd.className = 'col-sm-9';
-          dd.textContent = value;
-          dl.appendChild(dt);
-          dl.appendChild(dd);
-        };
-
-        addDetail(
-          'Nome Completo',
-          `${clienteData.primeiro_nome} ${clienteData.sobrenome}`.trim()
-        );
-        addDetail('CPF', clienteData.cpf);
-        addDetail('Email', clienteData.email || 'N/A');
-        addDetail('Celular', clienteData.telefone_celular || 'N/A');
-        addDetail(
-          'Endereço',
-          `${clienteData.endereco_logradouro || ''}, ${
-            clienteData.endereco_numero || ''
-          }`
-        );
-
-        modalBody.appendChild(dl);
-
-        new bootstrap.Modal(
-          document.getElementById('clienteDetailModal')
-        ).show();
-      }
-      if (e.target.id === 'btn_reset_cliente') {
-        resetarFormulario();
-      }
-      if (e.target.id === 'btn_cancelar_peticao') {
-        if (confirm('Tem certeza que deseja cancelar e limpar o formulário?')) {
-          resetarFormulario();
-        }
-      }
-    });
-
-    peticaoForm.addEventListener(
-      'input',
-      debounce(() => {
-        const formData = new FormData(peticaoForm);
-        const data = Object.fromEntries(formData.entries());
-        localStorage.setItem(formId, JSON.stringify(data));
-        showToast('Automático', 'Progresso salvo localmente.', 'info');
-      }, 2500)
-    );
-
-    window.addEventListener('load', () => {
-      const savedData = localStorage.getItem(formId);
-      if (savedData) {
-        let data;
-        try {
-          data = JSON.parse(savedData);
-        } catch (e) {
-          localStorage.removeItem(formId);
-          return;
-        }
-        if (
-          data.cpf &&
-          data.cliente_id &&
-          confirm('Encontramos um progresso salvo. Deseja restaurá-lo?')
-        ) {
-          cpfInput.value = data.cpf;
-          buscarCliente();
-          for (const key in data) {
-            if (peticaoForm.elements[key]) {
-              peticaoForm.elements[key].value = data[key];
-            }
-          }
-          const fakeDropEvent = new DragEvent('drop', {
-            dataTransfer: new DataTransfer(),
-          });
-          fakeDropEvent.dataTransfer.setData(
-            'application/json',
-            JSON.stringify({
-              id: data.cliente_id,
-              cpf: data.cpf,
-              primeiro_nome: 'Cliente',
-              sobrenome: 'Restaurado',
-            })
-          );
-          dropZone.dispatchEvent(fakeDropEvent);
-          showToast('Restaurado', 'Seu progresso anterior foi carregado.');
-        } else {
-          localStorage.removeItem(formId);
-        }
-      }
-    });
-
-    cpfInput.addEventListener('input', debounce(buscarCliente, 400));
-
-    // Limpa o progresso salvo somente quando o envio é realizado com sucesso
-    peticaoForm.addEventListener('submit', () => {
-      localStorage.removeItem(formId);
-    });
-  });
-</script>
+<!-- O script foi movido para arquivos separados para melhor organização -->
 {% endblock %}

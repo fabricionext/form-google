@@ -234,31 +234,40 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(payload),
       })
         .then(async resp => {
-          setLoading(false);
-          if (!resp.ok)
-            throw new Error('Erro ao processar. Tente novamente mais tarde.');
+          if (!resp.ok) {
+            const errorData = await resp.json();
+            if (errorData.erros && Array.isArray(errorData.erros)) {
+              throw new Error(`Dados inválidos: ${errorData.erros.join(', ')}`);
+            }
+            throw new Error(
+              errorData.mensagem ||
+                'Erro ao processar. Tente novamente mais tarde.'
+            );
+          }
           return resp.json();
         })
         .then(result => {
-          showToast('Documento gerado com sucesso!', 'success');
-          if (result && result.link) {
-            const link = document.createElement('a');
-            link.href = result.link;
-            link.textContent = 'Acessar documento gerado';
-            link.target = '_blank';
-            link.className = 'btn btn-primary mt-xl';
-            document.querySelector('.app-container').appendChild(link);
+          if (result.status === 'sucesso_enfileirado' && result.task_id) {
+            showToast(
+              'Processamento iniciado! Acompanhando progresso...',
+              'info'
+            );
+            // Inicia o polling do status da tarefa
+            pollTaskStatus(result.task_id, form);
+          } else {
+            // Fallback para comportamento antigo
+            setLoading(false);
+            showToast('Documento gerado com sucesso!', 'success');
+            if (result && result.link) {
+              createDownloadLink(result.link);
+            }
+            form.reset();
+            updateProgress();
           }
-          form.reset();
-          updateProgress();
         })
-        .catch(() => {
+        .catch(error => {
           setLoading(false);
-          showToast(
-            'Erro ao cadastrar/generar documento. Tente novamente.',
-            'error',
-            6000
-          );
+          showToast(error.message, 'error', 8000);
         });
     });
 });
@@ -518,4 +527,122 @@ function updateProgress() {
   progressBar.style.width = percent + '%';
   progressBar.setAttribute('data-progress', percent + '%');
   progressBar.setAttribute('aria-valuenow', percent);
+}
+
+// Função para polling do status da tarefa
+function pollTaskStatus(taskId, form) {
+  let pollCount = 0;
+  const maxPolls = 60; // Máximo 5 minutos (60 * 5s)
+
+  function checkStatus() {
+    pollCount++;
+
+    fetch(`/api/task-status/${taskId}`)
+      .then(resp => resp.json())
+      .then(data => {
+        console.log('Status da tarefa:', data);
+
+        // Atualiza barra de progresso se disponível
+        if (data.progress !== undefined) {
+          const progressBar = document.getElementById('progressBar');
+          if (progressBar) {
+            progressBar.style.width = `${data.progress}%`;
+            progressBar.setAttribute('aria-valuenow', data.progress);
+          }
+        }
+
+        // Atualiza mensagem de status
+        if (data.status_message) {
+          showToast(data.status_message, 'info', 3000);
+        }
+
+        if (data.status === 'SUCCESS') {
+          setLoading(false);
+          showToast('Documentos gerados com sucesso!', 'success');
+
+          // Exibe links de documentos gerados
+          if (data.link_pasta_cliente) {
+            createDownloadLink(
+              data.link_pasta_cliente,
+              'Acessar pasta do cliente'
+            );
+          }
+
+          if (data.documentos_gerados && data.documentos_gerados.length > 0) {
+            data.documentos_gerados.forEach((link, index) => {
+              createDownloadLink(link, `Documento ${index + 1}`);
+            });
+          }
+
+          form.reset();
+          updateProgress();
+        } else if (data.status === 'FAILURE' || data.status === 'ERROR') {
+          setLoading(false);
+          showToast(
+            `Erro no processamento: ${data.error_message || 'Erro desconhecido'}`,
+            'error',
+            8000
+          );
+        } else if (
+          pollCount < maxPolls &&
+          (data.status === 'PENDING' || data.status === 'PROGRESS')
+        ) {
+          // Continua polling
+          setTimeout(checkStatus, 5000); // 5 segundos
+        } else {
+          // Timeout ou estado desconhecido
+          setLoading(false);
+          showToast(
+            'Tempo limite excedido. Verifique o resultado posteriormente.',
+            'warning',
+            6000
+          );
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao verificar status:', error);
+        if (pollCount < maxPolls) {
+          setTimeout(checkStatus, 10000); // Retry em 10s se der erro
+        } else {
+          setLoading(false);
+          showToast(
+            'Erro ao acompanhar progresso. Verifique o resultado posteriormente.',
+            'error',
+            6000
+          );
+        }
+      });
+  }
+
+  // Inicia verificação
+  setTimeout(checkStatus, 2000); // Primeira verificação em 2s
+}
+
+// Função para criar links de download
+function createDownloadLink(url, text = 'Acessar documento gerado') {
+  const linkContainer = document.createElement('div');
+  linkContainer.className = 'download-link-container mt-3';
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.textContent = text;
+  link.target = '_blank';
+  link.className = 'btn btn-primary me-2 mb-2';
+  link.innerHTML = `<i class="fas fa-external-link-alt me-2"></i>${text}`;
+
+  linkContainer.appendChild(link);
+
+  // Adiciona ao container
+  const appContainer = document.querySelector('.app-container');
+  let existingContainer = appContainer.querySelector('.generated-documents');
+
+  if (!existingContainer) {
+    existingContainer = document.createElement('div');
+    existingContainer.className = 'generated-documents mt-4';
+    existingContainer.innerHTML =
+      '<h4><i class="fas fa-file-alt me-2"></i>Documentos Gerados:</h4>';
+    appContainer.appendChild(existingContainer);
+  }
+
+  existingContainer.appendChild(linkContainer);
 }

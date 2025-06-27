@@ -49,10 +49,63 @@ def peticionador_not_found(error):
 @peticionador_bp.errorhandler(500)
 def peticionador_error(error):
     current_app.logger.error(f"Erro 500 no peticionador: {error}")
-    return (
-        jsonify({"status": "erro", "message": "Erro interno no módulo peticionador"}),
-        500,
-    )
+    # Para requests de API, retorna JSON
+    if request.path.startswith("/peticionador/api/") or request.is_json:
+        return (
+            jsonify({"status": "erro", "message": "Erro interno no módulo peticionador"}),
+            500,
+        )
+    # Para requests web, retorna template HTML se disponível
+    try:
+        return render_template("peticionador/login.html", 
+                             form=None, 
+                             error_message="Sistema temporariamente indisponível. Tente novamente."), 500
+    except:
+        return "Sistema temporariamente indisponível. Tente novamente.", 500
+
+
+@peticionador_bp.errorhandler(502)
+def peticionador_bad_gateway(error):
+    current_app.logger.critical(f"Erro 502 (Bad Gateway) no peticionador: {error}")
+    # Para requests de API, retorna JSON
+    if request.path.startswith("/peticionador/api/") or request.is_json:
+        return (
+            jsonify({"status": "erro", "message": "Serviço temporariamente indisponível"}),
+            502,
+        )
+    # Para requests web, retorna template HTML se disponível
+    try:
+        return render_template("peticionador/login.html", 
+                             form=None, 
+                             error_message="Serviço temporariamente indisponível. Tente novamente em alguns minutos."), 502
+    except:
+        return "Serviço temporariamente indisponível. Tente novamente em alguns minutos.", 502
+
+
+# Middleware para monitoramento de erros específicos
+@peticionador_bp.before_request
+def monitor_requests():
+    """Monitora requests para detectar problemas potenciais."""
+    try:
+        # Log básico de entrada
+        current_app.logger.debug(f"Peticionador request: {request.method} {request.path}")
+        
+        # Removed database health check to prevent deadlocks
+        # Database connectivity will be checked by the application health endpoint instead
+                
+    except Exception as monitor_error:
+        # Não deve falhar o request por erro de monitoramento
+        current_app.logger.warning(f"Erro no monitoramento de request: {monitor_error}")
 
 
 from . import forms, models, routes
+
+# Legacy API endpoints disabled to prevent blueprint conflicts
+# try:
+#     from .api.legacy_endpoints import legacy_api_bp
+#     peticionador_bp.register_blueprint(legacy_api_bp)
+# except ImportError as e:
+#     print(f"Warning: Could not import legacy_api_bp: {e}")
+# except Exception as e:
+#     print(f"Warning: Error registering legacy_api_bp: {e}")
+

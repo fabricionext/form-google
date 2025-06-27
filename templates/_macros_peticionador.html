@@ -1,0 +1,290 @@
+{#
+Sistema de Macros Reutilizáveis para o Peticionador
+===================================================
+Macros para componentes comuns e reutilizáveis
+#}
+
+{# Macro para exibir mensagens flash #}
+{% macro render_flash_messages() %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert-container mb-3">
+                {% for category, message in messages %}
+                    {% set alert_class = {
+                        'error': 'alert-danger',
+                        'warning': 'alert-warning', 
+                        'info': 'alert-info',
+                        'success': 'alert-success'
+                    }.get(category, 'alert-info') %}
+                    <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ {'error': 'exclamation-triangle', 'warning': 'exclamation-circle', 'info': 'info-circle', 'success': 'check-circle'}.get(category, 'info-circle') }}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endmacro %}
+
+{# Macro para renderizar cartão de cliente #}
+{% macro render_client_card(cliente, show_actions=true) %}
+    <div class="card client-card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h5 class="card-title">{{ cliente.nome|title_case }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            {% if cliente.tipo_pessoa == 'fisica' %}
+                                <i class="fas fa-user"></i> Pessoa Física
+                                {% if cliente.cpf %}
+                                    | CPF: {{ cliente.cpf|format_cpf }}
+                                {% endif %}
+                            {% else %}
+                                <i class="fas fa-building"></i> Pessoa Jurídica
+                                {% if cliente.cnpj %}
+                                    | CNPJ: {{ cliente.cnpj|format_cnpj }}
+                                {% endif %}
+                            {% endif %}
+                        </small>
+                    </p>
+                    {% if cliente.email %}
+                        <p class="card-text">
+                            <i class="fas fa-envelope"></i> {{ cliente.email }}
+                        </p>
+                    {% endif %}
+                    {% if cliente.telefone %}
+                        <p class="card-text">
+                            <i class="fas fa-phone"></i> {{ cliente.telefone|format_phone }}
+                        </p>
+                    {% endif %}
+                </div>
+                {% if show_actions %}
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('peticionador.cliente_detalhes', id=cliente.id) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                            <a href="{{ url_for('peticionador.cliente_editar', id=cliente.id) }}" 
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{# Macro para tabela responsiva genérica #}
+{% macro render_responsive_table(items, headers, fields, actions=[], table_class="table-striped") %}
+    <div class="table-responsive">
+        <table class="table {{ table_class }}">
+            <thead class="table-dark">
+                <tr>
+                    {% for header in headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                    {% if actions %}
+                        <th class="text-center">Ações</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        {% for field in fields %}
+                            <td>
+                                {% if item is mapping %}
+                                    {% set value = item.get(field, '') %}
+                                {% else %}
+                                    {% set value = attribute(item, field, '') if hasattr(item, field) else '' %}
+                                {% endif %}
+                                
+                                {% if field == 'documento' and value %}
+                                    {% if value|length == 11 %}
+                                        {{ value|format_cpf }}
+                                    {% elif value|length == 14 %}
+                                        {{ value|format_cnpj }}
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                {% elif field.endswith('telefone') and value %}
+                                    {{ value|format_phone }}
+                                {% elif field.endswith('_em') and value %}
+                                    {% if value is string %}
+                                        {{ value }}
+                                    {% else %}
+                                        {{ value.strftime('%d/%m/%Y') if value else '' }}
+                                    {% endif %}
+                                {% elif field == 'nome' and value %}
+                                    {{ value|title_case }}
+                                {% else %}
+                                    {{ value if value else '' }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        {% if actions %}
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% for action in actions %}
+                                        {% if item is mapping %}
+                                            {% set item_id = item.get('id', '') %}
+                                        {% else %}
+                                            {% set item_id = item.id if hasattr(item, 'id') else '' %}
+                                        {% endif %}
+                                        <a href="{{ action.url.replace('{id}', item_id|string) }}" 
+                                           class="btn btn-{{ action.style|default('outline-primary') }}"
+                                           {% if action.title %}title="{{ action.title }}"{% endif %}>
+                                            {% if action.icon %}<i class="{{ action.icon }}"></i>{% endif %}
+                                            {{ action.label }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="{{ headers|length + (1 if actions else 0) }}" class="text-center text-muted">
+                            <i class="fas fa-info-circle"></i> Nenhum registro encontrado
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
+{# Macro para paginação #}
+{% macro render_pagination(pagination, endpoint) %}
+    {% if pagination.pages > 1 %}
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination justify-content-center">
+                {# Primeira página #}
+                {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(endpoint, page=1, **kwargs) }}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(endpoint, page=pagination.prev_num, **kwargs) }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {# Páginas numeradas #}
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for(endpoint, page=page_num, **kwargs) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {# Última página #}
+                {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(endpoint, page=pagination.next_num, **kwargs) }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(endpoint, page=pagination.pages, **kwargs) }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <div class="text-center text-muted small">
+            Mostrando {{ pagination.per_page * (pagination.page - 1) + 1 }} a 
+            {{ pagination.per_page * pagination.page if pagination.page < pagination.pages else pagination.total }} 
+            de {{ pagination.total }} registros
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{# Macro para status badge #}
+{% macro render_status_badge(status, status_map=none) %}
+    {% set default_map = {
+        'ativo': 'success',
+        'inativo': 'secondary', 
+        'pendente': 'warning',
+        'processando': 'info',
+        'erro': 'danger',
+        'concluido': 'success',
+        'cancelado': 'dark'
+    } %}
+    
+    {% set map = status_map or default_map %}
+    {% set badge_class = map.get(status|lower, 'secondary') %}
+    
+    <span class="badge bg-{{ badge_class }}">
+        {{ status|title_case }}
+    </span>
+{% endmacro %}
+
+{# Macro para loading spinner #}
+{% macro render_loading_spinner(text="Carregando...", size="md") %}
+    {% set spinner_class = {
+        'sm': 'spinner-border-sm',
+        'md': '',
+        'lg': 'spinner-grow'
+    }.get(size, '') %}
+    
+    <div class="d-flex justify-content-center align-items-center p-3">
+        <div class="spinner-border {{ spinner_class }} text-primary me-2" role="status">
+            <span class="visually-hidden">{{ text }}</span>
+        </div>
+        <span class="text-muted">{{ text }}</span>
+    </div>
+{% endmacro %}
+
+{# Macro para confirmação de exclusão #}
+{% macro render_delete_confirmation(item_name, form_id, message=none) %}
+    {% set default_message = "Tem certeza que deseja excluir \"" + item_name + "\"? Esta ação não pode ser desfeita." %}
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        Confirmar Exclusão
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{{ message or default_message }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="{{ form_id }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}

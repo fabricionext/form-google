@@ -48,15 +48,53 @@
         background-color: #0056b3;
       }
       .errors {
-        color: red;
+        color: #dc3545;
         font-size: 0.9em;
         margin-top: 5px;
+        padding: 0;
+        list-style: none;
+      }
+      .alert {
+        padding: 10px 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+      }
+      .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+      }
+      .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
       }
     </style>
   </head>
   <body>
     <div class="login-container">
       <h2>Login do Operador</h2>
+      
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
       <form
         method="POST"
         action="{{ url_for('peticionador.login') }}"
@@ -65,7 +103,7 @@
         {{ form.hidden_tag() }}
         <div class="form-group">
           {{ form.email.label }}<br />
-          {{ form.email(size=32, class='form-control') }}<br />
+          {{ form.email(class='form-control', id='email', autocomplete='username') }}<br />
           {% if form.email.errors %}
           <ul class="errors">
             {% for error in form.email.errors %}
@@ -76,7 +114,7 @@
         </div>
         <div class="form-group">
           {{ form.password.label }}<br />
-          {{ form.password(size=32, class='form-control') }}<br />
+          {{ form.password(class='form-control', id='password', autocomplete='current-password') }}<br />
           {% if form.password.errors %}
           <ul class="errors">
             {% for error in form.password.errors %}
@@ -90,11 +128,7 @@
         </div>
         <div class="form-group">{{ form.submit(class='btn') }}</div>
       </form>
-      <p>
-        <a href="{{ url_for('peticionador.setup_admin_dev') }}"
-          >Configurar usuário admin de desenvolvimento</a
-        >
-      </p>
+      <!-- Link de setup admin removido por segurança -->
     </div>
   </body>
 </html>

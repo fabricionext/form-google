@@ -8,12 +8,29 @@
       <p class="text-muted mb-0">Gerencie a ordem dos placeholders do modelo</p>
     </div>
     <div class="d-flex gap-2">
+      <button
+        type="button"
+        class="btn btn-outline-info d-flex align-items-center gap-2"
+        onclick="analisarPersonas()"
+      >
+        <i class="fas fa-users"></i>
+        Analisar Personas
+      </button>
       <a
         href="{{ url_for('peticionador.sincronizar_placeholders', modelo_id=modelo.id) }}"
         class="btn btn-outline-primary d-flex align-items-center gap-2"
       >
         <i class="fas fa-sync-alt"></i>
         Sincronizar Template
+      </a>
+      <a
+        href="{{ url_for('peticionador.limpar_e_sincronizar_placeholders', modelo_id=modelo.id) }}"
+        class="btn btn-outline-warning d-flex align-items-center gap-2"
+        onclick="return confirm('Esta ação irá REMOVER TODOS os placeholders e recriar apenas os que existem no documento. Deseja continuar?')"
+        title="Remove todos os placeholders e recria conforme o documento"
+      >
+        <i class="fas fa-broom"></i>
+        Limpeza Completa
       </a>
       <a
         href="{{ url_for('peticionador.listar_modelos') }}"
@@ -185,6 +202,108 @@
     </div>
   </div>
 </div>
+
+<!-- Modal de Análise de Personas -->
+<div
+  class="modal fade"
+  id="personasModal"
+  tabindex="-1"
+  aria-labelledby="personasModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="personasModalLabel">
+          <i class="fas fa-users me-2"></i>
+          Análise de Personas Processuais
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="personasLoading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Analisando...</span>
+          </div>
+          <p class="mt-2 text-muted">Analisando personas no documento...</p>
+        </div>
+
+        <div id="personasContent" class="d-none">
+          <!-- Resumo da Análise -->
+          <div class="alert alert-info mb-4">
+            <h6 class="alert-heading">
+              <i class="fas fa-info-circle me-2"></i>Resumo da Análise
+            </h6>
+            <div id="resumoAnalise"></div>
+          </div>
+
+          <!-- Personas Detectadas -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-search me-2"></i>Personas Detectadas
+              </h6>
+            </div>
+            <div class="card-body">
+              <div id="personasDetectadas"></div>
+            </div>
+          </div>
+
+          <!-- Sugestões -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-lightbulb me-2"></i>Sugestões do Sistema
+              </h6>
+            </div>
+            <div class="card-body">
+              <div id="sugestoesPersonas"></div>
+            </div>
+          </div>
+
+          <!-- Gerador de Campos Dinâmicos -->
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-magic me-2"></i>Gerar Campos Dinâmicos
+              </h6>
+            </div>
+            <div class="card-body">
+              <div id="geradorCampos"></div>
+              <button
+                type="button"
+                class="btn btn-success mt-3"
+                onclick="gerarCamposDinamicos()"
+              >
+                <i class="fas fa-plus me-2"></i>Gerar Campos
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="personasError" class="d-none">
+          <div class="alert alert-danger">
+            <h6 class="alert-heading">
+              <i class="fas fa-exclamation-triangle me-2"></i>Erro na Análise
+            </h6>
+            <div id="errorMessage"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %} {% block scripts_extra %} {{ super() }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
@@ -308,9 +427,45 @@
     tbody.addEventListener('change', function (e) {
       const checkbox = e.target.closest('.required-toggle');
       if (!checkbox) return;
+
       const placeholderId = checkbox.getAttribute('data-id');
+      const isChecked = checkbox.checked;
       const url = `/peticionador/modelos/{{ modelo.id }}/placeholders/${placeholderId}/toggle_obrigatorio`;
-      makeRequest(url, { obrigatorio: checkbox.checked });
+
+      console.log(`Alterando placeholder ${placeholderId} para obrigatório: ${isChecked}`);
+
+      // Fazer requisição customizada para este caso específico
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}',
+        },
+        body: JSON.stringify({ obrigatorio: isChecked }),
+      })
+      .then(response => {
+        console.log(`Response status: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+          // Confirmar que o checkbox está no estado correto
+          checkbox.checked = data.obrigatorio;
+          console.log(`Campo atualizado com sucesso. Obrigatório: ${data.obrigatorio}`);
+        } else {
+          // Reverter o checkbox se houve erro
+          checkbox.checked = !isChecked;
+          console.error('Erro no servidor:', data.error);
+          alert('Erro ao alterar campo obrigatório: ' + (data.error || 'Erro desconhecido'));
+        }
+      })
+      .catch(error => {
+        // Reverter o checkbox se houve erro de conexão
+        checkbox.checked = !isChecked;
+        console.error('Erro de conexão:', error);
+        alert('Erro de conexão ao alterar campo obrigatório: ' + error.message);
+      });
     });
 
     // Verificar se FontAwesome está carregado
@@ -324,6 +479,222 @@
       }
     }, 100);
   });
+
+  // Funções para Análise de Personas
+  let personasData = null;
+
+  function analisarPersonas() {
+    const modal = new bootstrap.Modal(document.getElementById('personasModal'));
+    modal.show();
+
+    // Reset modal state
+    document.getElementById('personasLoading').classList.remove('d-none');
+    document.getElementById('personasContent').classList.add('d-none');
+    document.getElementById('personasError').classList.add('d-none');
+
+    // Fazer requisição de análise
+    fetch(`/peticionador/api/analisar-personas/{{ modelo.id }}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('personasLoading').classList.add('d-none');
+
+      if (data.success) {
+        personasData = data;
+        exibirAnalisePersonas(data);
+        document.getElementById('personasContent').classList.remove('d-none');
+      } else {
+        document.getElementById('errorMessage').textContent = data.error || 'Erro desconhecido';
+        document.getElementById('personasError').classList.remove('d-none');
+      }
+    })
+    .catch(error => {
+      document.getElementById('personasLoading').classList.add('d-none');
+      document.getElementById('errorMessage').textContent = 'Erro de conexão: ' + error.message;
+      document.getElementById('personasError').classList.remove('d-none');
+    });
+  }
+
+  function exibirAnalisePersonas(data) {
+    // Resumo da análise
+    const resumo = document.getElementById('resumoAnalise');
+    resumo.innerHTML = `
+      <div class="row">
+        <div class="col-md-4">
+          <div class="text-center">
+            <h4 class="text-primary mb-1">${data.placeholders_total}</h4>
+            <small class="text-muted">Total de Placeholders</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-center">
+            <h4 class="text-success mb-1">${data.total_personas}</h4>
+            <small class="text-muted">Personas Detectadas</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-center">
+            <h4 class="text-info mb-1">${Object.keys(data.personas_detectadas).length}</h4>
+            <small class="text-muted">Tipos de Personas</small>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Personas detectadas
+    const personasDiv = document.getElementById('personasDetectadas');
+    if (Object.keys(data.personas_detectadas).length > 0) {
+      let personasHtml = '<div class="row">';
+
+      for (const [tipo, count] of Object.entries(data.personas_detectadas)) {
+        const bgClass = count > 1 ? 'bg-warning' : 'bg-primary';
+        const icon = getPersonaIcon(tipo);
+
+        personasHtml += `
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+              <div class="card-body text-center">
+                <i class="${icon} fa-2x text-${count > 1 ? 'warning' : 'primary'} mb-2"></i>
+                <h6 class="card-title text-capitalize">${tipo.replace('_', ' ')}</h6>
+                <span class="badge ${bgClass} rounded-pill">${count} ${count > 1 ? 'instâncias' : 'instância'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      personasHtml += '</div>';
+      personasDiv.innerHTML = personasHtml;
+    } else {
+      personasDiv.innerHTML = '<p class="text-muted">Nenhuma persona detectada nos placeholders.</p>';
+    }
+
+    // Sugestões
+    const sugestoesDiv = document.getElementById('sugestoesPersonas');
+    if (data.sugestoes && data.sugestoes.length > 0) {
+      let sugestoesHtml = '';
+
+      data.sugestoes.forEach(sugestao => {
+        const alertClass = sugestao.type === 'multiple_personas' ? 'alert-warning' : 'alert-info';
+        const icon = sugestao.type === 'multiple_personas' ? 'fa-exclamation-triangle' : 'fa-lightbulb';
+
+        sugestoesHtml += `
+          <div class="alert ${alertClass}">
+            <i class="fas ${icon} me-2"></i>
+            ${sugestao.message}
+          </div>
+        `;
+      });
+
+      sugestoesDiv.innerHTML = sugestoesHtml;
+    } else {
+      sugestoesDiv.innerHTML = '<p class="text-muted">Nenhuma sugestão disponível.</p>';
+    }
+
+    // Gerador de campos dinâmicos
+    const geradorDiv = document.getElementById('geradorCampos');
+    let geradorHtml = '<p class="text-muted mb-3">Configure quantas instâncias de cada tipo de persona deseja criar:</p>';
+
+    const tiposComuns = ['autor', 'reu', 'autoridade', 'requerente', 'requerido', 'impetrante', 'impetrado'];
+
+    geradorHtml += '<div class="row">';
+    tiposComuns.forEach(tipo => {
+      const currentCount = data.personas_detectadas[tipo] || 0;
+      geradorHtml += `
+        <div class="col-md-6 col-lg-4 mb-3">
+          <label class="form-label text-capitalize">${tipo.replace('_', ' ')}</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="${getPersonaIcon(tipo)}"></i></span>
+            <input type="number" class="form-control persona-count" data-tipo="${tipo}"
+                   value="${currentCount}" min="0" max="10">
+          </div>
+        </div>
+      `;
+    });
+    geradorHtml += '</div>';
+
+    geradorDiv.innerHTML = geradorHtml;
+  }
+
+  function getPersonaIcon(tipo) {
+    const icons = {
+      'autor': 'fas fa-user-tie',
+      'reu': 'fas fa-user-minus',
+      'autoridade': 'fas fa-gavel',
+      'requerente': 'fas fa-user-plus',
+      'requerido': 'fas fa-user-clock',
+      'impetrante': 'fas fa-user-shield',
+      'impetrado': 'fas fa-user-times',
+      'exequente': 'fas fa-user-check',
+      'executado': 'fas fa-user-slash'
+    };
+    return icons[tipo] || 'fas fa-user';
+  }
+
+  function gerarCamposDinamicos() {
+    console.log('Função gerarCamposDinamicos() chamada');
+
+    const personaInputs = document.querySelectorAll('.persona-count');
+    console.log('Inputs encontrados:', personaInputs.length);
+
+    const personaConfig = {};
+
+    personaInputs.forEach(input => {
+      const tipo = input.dataset.tipo;
+      const quantidade = parseInt(input.value) || 0;
+      console.log(`Tipo: ${tipo}, Quantidade: ${quantidade}`);
+
+      if (quantidade > 0) {
+        personaConfig[tipo] = {
+          quantidade: quantidade,
+          campos: ['nome', 'cpf', 'endereco', 'telefone'] // Campos padrão
+        };
+      }
+    });
+
+    console.log('PersonaConfig:', personaConfig);
+
+    if (Object.keys(personaConfig).length === 0) {
+      alert('Configure pelo menos uma persona para gerar campos.');
+      return;
+    }
+
+    console.log('Enviando requisição para gerar campos...');
+
+    fetch('/peticionador/api/gerar-campos-dinamicos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({
+        modelo_id: {{ modelo.id }},
+        persona_config: personaConfig
+      })
+    })
+    .then(response => {
+      console.log('Response status:', response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log('Response data:', data);
+      if (data.success) {
+        alert(`${data.total_criados} novos campos foram criados com sucesso!`);
+        location.reload(); // Recarregar para mostrar os novos campos
+      } else {
+        alert('Erro ao criar campos: ' + (data.error || 'Erro desconhecido'));
+      }
+    })
+    .catch(error => {
+      console.error('Erro na requisição:', error);
+      alert('Erro de conexão: ' + error.message);
+    });
+  }
 </script>
 
 <style>

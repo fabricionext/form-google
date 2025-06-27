@@ -5,7 +5,8 @@ Validador para dados do cliente com sanitização e validação robusta.
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +226,129 @@ class ClienteValidator:
                 self.erros.append(
                     "Data de nascimento deve estar no formato DD/MM/AAAA, AAAA-MM-DD ou DD-MM-AAAA"
                 )
+
+    @staticmethod
+    def validar_cpf(cpf: str) -> Tuple[bool, Optional[str], Optional[str]]:
+        """
+        Valida CPF com verificações de segurança.
+        
+        Args:
+            cpf: String com CPF em qualquer formato
+            
+        Returns:
+            Tuple[bool, Optional[str], Optional[str]]: 
+            (válido, cpf_limpo, mensagem_erro)
+        """
+        if not cpf:
+            return False, None, "CPF não informado"
+        
+        # Remove caracteres não numéricos
+        cpf_digits = re.sub(r"\D", "", cpf.strip())
+        
+        # Validação de tamanho
+        if len(cpf_digits) > 11:
+            current_app.logger.warning(f"CPF com tamanho inválido: {len(cpf_digits)} dígitos")
+            return False, None, "CPF deve ter no máximo 11 dígitos"
+        
+        if len(cpf_digits) < 11:
+            # Se for menor que 11, aceitar mas com warning
+            current_app.logger.info(f"CPF parcial recebido: {cpf_digits}")
+            
+        # Validação de caracteres maliciosos
+        if re.search(r'[<>"\';%\\]', cpf):
+            current_app.logger.warning(f"CPF com caracteres suspeitos: {cpf}")
+            return False, None, "Formato de CPF inválido"
+        
+        # Se chegou aqui, está válido para busca
+        return True, cpf_digits, None
+    
+    @staticmethod
+    def validar_cnpj(cnpj: str) -> Tuple[bool, Optional[str], Optional[str]]:
+        """
+        Valida CNPJ com verificações de segurança.
+        
+        Args:
+            cnpj: String com CNPJ em qualquer formato
+            
+        Returns:
+            Tuple[bool, Optional[str], Optional[str]]: 
+            (válido, cnpj_limpo, mensagem_erro)
+        """
+        if not cnpj:
+            return False, None, "CNPJ não informado"
+        
+        # Remove caracteres não numéricos
+        cnpj_digits = re.sub(r"\D", "", cnpj.strip())
+        
+        # Validação de tamanho
+        if len(cnpj_digits) > 14:
+            current_app.logger.warning(f"CNPJ com tamanho inválido: {len(cnpj_digits)} dígitos")
+            return False, None, "CNPJ deve ter no máximo 14 dígitos"
+        
+        # Validação de caracteres maliciosos
+        if re.search(r'[<>"\';%\\]', cnpj):
+            current_app.logger.warning(f"CNPJ com caracteres suspeitos: {cnpj}")
+            return False, None, "Formato de CNPJ inválido"
+        
+        return True, cnpj_digits, None
+    
+    @staticmethod
+    def validar_email(email: str) -> Tuple[bool, Optional[str], Optional[str]]:
+        """
+        Valida email com verificações de segurança.
+        
+        Args:
+            email: String com email
+            
+        Returns:
+            Tuple[bool, Optional[str], Optional[str]]: 
+            (válido, email_limpo, mensagem_erro)
+        """
+        if not email:
+            return False, None, "Email não informado"
+        
+        email = email.strip().lower()
+        
+        # Validação de tamanho
+        if len(email) > 320:  # RFC 5321
+            return False, None, "Email muito longo"
+        
+        # Validação básica de formato
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return False, None, "Formato de email inválido"
+        
+        # Validação de caracteres maliciosos
+        if re.search(r'[<>"\';%\\]', email):
+            current_app.logger.warning(f"Email com caracteres suspeitos: {email}")
+            return False, None, "Formato de email inválido"
+        
+        return True, email, None
+    
+    @staticmethod
+    def sanitizar_string(texto: str, max_length: int = 255) -> str:
+        """
+        Sanitiza string removendo caracteres perigosos.
+        
+        Args:
+            texto: String a ser sanitizada
+            max_length: Tamanho máximo permitido
+            
+        Returns:
+            String sanitizada
+        """
+        if not texto:
+            return ""
+        
+        # Remove caracteres perigosos
+        texto_limpo = re.sub(r'[<>"\';%\\]', '', texto.strip())
+        
+        # Trunca se necessário
+        if len(texto_limpo) > max_length:
+            texto_limpo = texto_limpo[:max_length]
+            current_app.logger.warning(f"String truncada para {max_length} caracteres")
+        
+        return texto_limpo
 
 
 def validar_dados_cliente(data: Dict[str, Any]) -> ClienteData:

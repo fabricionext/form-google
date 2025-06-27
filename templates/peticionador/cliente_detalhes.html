@@ -57,18 +57,8 @@ content_peticionador %}
             <td>{{ cliente.telefone_outro or 'N/A' }}</td>
           </tr>
           <tr>
-            <th scope="row">Data de Cadastro</th>
-            <td>
-              {{ cliente.data_criacao.strftime('%d/%m/%Y %H:%M:%S') if
-              cliente.data_criacao else 'N/A' }}
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Última Atualização</th>
-            <td>
-              {{ cliente.data_atualizacao.strftime('%d/%m/%Y %H:%M:%S') if
-              cliente.data_atualizacao else 'N/A' }}
-            </td>
+            <th scope="row">ID Cliente</th>
+            <td>{{ cliente.id }}</td>
           </tr>
         </tbody>
       </table>
@@ -102,7 +92,7 @@ content_peticionador %}
           </tr>
           <tr>
             <th scope="row">CEP</th>
-            <td>{{ cliente.endereco_cep or 'N/A' }}</td>
+            <td>{{ cliente.endereco_cep|format_cep if cliente.endereco_cep else 'N/A' }}</td>
           </tr>
         </tbody>
       </table>
@@ -113,11 +103,11 @@ content_peticionador %}
         <tbody>
           <tr>
             <th scope="row" style="width: 25%">Nome Completo</th>
-            <td>{{ cliente.primeiro_nome }} {{ cliente.sobrenome or '' }}</td>
+            <td>{{ (cliente.primeiro_nome + ' ' + (cliente.sobrenome or ''))|title_case }}</td>
           </tr>
           <tr>
             <th scope="row">CPF</th>
-            <td>{{ cliente.cpf or 'N/A' }}</td>
+            <td>{{ cliente.cpf|format_cpf if cliente.cpf else 'N/A' }}</td>
           </tr>
           <tr>
             <th scope="row">RG</th>

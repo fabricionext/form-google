@@ -6,24 +6,21 @@
 
   {% if modelos %}
   <div class="list-group">
-    {% for modelo in modelos %} {% if modelo.id == 'suspensao_direito_dirigir'
-    %}
+    {% for modelo in modelos %}
     <a
-      href="{{ url_for('peticionador.gerar_suspensao_peticao_dados_form') }}"
+      href="{{ url_for('peticionador.gerar_peticao_dinamica', modelo_id=modelo.id) }}"
       class="list-group-item list-group-item-action"
     >
-      <i class="fas fa-file-alt"></i> {{ modelo.nome }}
+      <div class="d-flex w-100 justify-content-between">
+        <h5 class="mb-1">
+          <i class="fas fa-file-alt me-2"></i>{{ modelo.nome }}
+        </h5>
+      </div>
+      {% if modelo.descricao %}
+      <p class="mb-1 text-muted">{{ modelo.descricao }}</p>
+      {% endif %}
     </a>
-    {% else %}
-    <a
-      href="#"
-      class="list-group-item list-group-item-action disabled"
-      tabindex="-1"
-      aria-disabled="true"
-    >
-      <i class="fas fa-file-alt"></i> {{ modelo.nome }} (Em breve)
-    </a>
-    {% endif %} {% endfor %}
+    {% endfor %}
   </div>
   {% else %}
   <div class="alert alert-warning" role="alert">

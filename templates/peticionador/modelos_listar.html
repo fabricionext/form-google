@@ -18,12 +18,17 @@ endblock %} {% block content %}
     </tr>
   </thead>
   <tbody>
-    {% for m in modelos %}
+    {% if modelos|length == 0 %}
+  <tr>
+    <td colspan="7" class="text-center text-muted">Nenhum modelo cadastrado.</td>
+  </tr>
+{% else %}
+{% for m in modelos %}
     <tr>
       <td>{{ m.id }}</td>
-      <td>{{ m.nome }}</td>
+      <td>{{ m.nome or 'Sem nome' }}</td>
       <td>{{ 'Sim' if m.ativo else 'Não' }}</td>
-      <td>{{ m.criado_em.strftime('%d/%m/%Y') }}</td>
+      <td>{{ m.criado_em.strftime('%d/%m/%Y') if m.criado_em else '-' }}</td>
       <td>
         <a
           href="{{ url_for('peticionador.editar_modelo', modelo_id=m.id) }}"
@@ -40,35 +45,54 @@ endblock %} {% block content %}
           class="btn btn-sm btn-success"
           >Gerar</a
         >
+        {% if m.ativo %}
+        <form
+          method="post"
+          action="{{ url_for('peticionador.excluir_modelo', modelo_id=m.id) }}"
+          style="display: inline"
+        >
+          <button
+            type="submit"
+            class="btn btn-sm btn-outline-danger"
+            onclick="return confirm('Tem certeza que deseja desativar este modelo? Ele não aparecerá mais na seleção de modelos.')"
+          >
+            Desativar
+          </button>
+        </form>
+        {% endif %}
       </td>
       <td>
-        {% for f in m.formularios_gerados %}
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <a
-            href="{{ url_for('peticionador.preencher_formulario_dinamico', slug=f.slug) }}"
-            class="link-primary"
-            >{{ f.nome }}</a
-          >
-          <form
-            method="post"
-            action="{{ url_for('peticionador.excluir_formulario_dinamico', slug=f.slug) }}"
-            style="display: inline"
-          >
-            <button
-              type="submit"
-              class="btn btn-sm btn-outline-danger"
-              onclick="return confirm('Tem certeza que deseja excluir este formulário?')"
-            >
-              Excluir
-            </button>
-          </form>
-        </div>
+        {% if m.formularios_gerados|default([])|length > 0 %}
+          {% for f in m.formularios_gerados %}
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <a
+                href="{{ url_for('peticionador.preencher_formulario_dinamico', formulario_slug=f.slug) }}"
+                class="link-primary"
+              >
+                {{ f.nome or 'Sem nome' }}
+              </a>
+              <form
+                method="post"
+                action="{{ url_for('peticionador.excluir_formulario_dinamico', slug=f.slug) }}"
+                style="display: inline"
+              >
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Tem certeza que deseja excluir este formulário?')"
+                >
+                  Excluir
+                </button>
+              </form>
+            </div>
+          {% endfor %}
         {% else %}
-        <span class="text-muted">Nenhum formulário criado</span>
-        {% endfor %}
+          <span class="text-muted">Nenhum formulário criado</span>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
+{% endif %}
   </tbody>
 </table>
 {% endblock %}

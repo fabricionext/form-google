@@ -2,6 +2,7 @@
 # Em um cenário real, isso viria de um local apropriado ou seria mais complexo.
 import functools
 import json
+import re
 
 # Importações do sistema
 # Importações para integração Google Docs (se ainda forem usadas diretamente aqui, caso contrário, podem ser removidas se document_generator lida com tudo)
@@ -27,7 +28,11 @@ from flask_wtf.csrf import (  # Manter generate_csrf se usado, remover CSRFProte
 )
 from werkzeug.utils import secure_filename
 
-from app.tasks.document_generation import process_document_request_task
+from models import RespostaForm
+
+# A task 'process_document_request_task' foi removida.
+# A importação dela aqui deve ser removida para evitar ImportError.
+# from app.tasks.document_generation import process_document_request_task
 
 # Importar funções de geração de documentos e modelos
 from document_generator import (
@@ -131,9 +136,9 @@ def cep_lookup(cep):
 @csrf.exempt  # Manter isenção de CSRF para este teste
 def gerar_documento_api():
     """
-    Recebe a solicitação, valida o básico e enfileira a tarefa de processamento.
+    Recebe a solicitação, valida completamente e enfileira a tarefa de processamento.
     """
-    current_app.logger.info("Requisição recebida em /api/gerar-documento")
+    current_app.logger.info(f"Requisição recebida em /api/gerar-documento de IP: {request.remote_addr}")
 
     if not request.is_json:
         return (
@@ -147,6 +152,8 @@ def gerar_documento_api():
         )
 
     payload = request.get_json()
+    current_app.logger.debug(f"Payload recebido: {payload}")
+    
     if not payload.get("dadosCliente"):
         return (
             jsonify(
@@ -158,14 +165,82 @@ def gerar_documento_api():
             400,
         )
 
-    try:
-        # Passa o payload completo como uma string JSON para a tarefa
-        payload_json_str = json.dumps(payload)
-        task = process_document_request_task.delay(payload_json_str)
-
-        current_app.logger.info(
-            f"Tarefa de processamento de documentos enfileirada com ID: {task.id}"
+    # Validação completa dos dados usando FormValidator
+    from app.validators.form_validator import FormValidator
+    
+    validator = FormValidator()
+    is_valid, errors = validator.validate_form_data(payload)
+    
+    if not is_valid:
+        current_app.logger.warning(f"Dados inválidos recebidos: {errors}")
+        return (
+            jsonify(
+                {
+                    "status": "erro_validacao",
+                    "mensagem": "Dados inválidos",
+                    "erros": errors
+                }
+            ),
+            400,
         )
+
+    try:
+        # --- NOVA ESTRATÉGIA DE SALVAMENTO ---
+        # 1. Salvar o cliente completo no banco de dados primeiro.
+        dados_cliente = payload.get("dadosCliente", {})
+        
+        # Normalizar CPF
+        cpf_normalizado = re.sub(r'\\D', '', dados_cliente.get("cpf", ""))
+
+        novo_cliente = RespostaForm(
+            tipo_pessoa=payload.get("tipoPessoa"),
+            cpf=cpf_normalizado,
+            email=dados_cliente.get("email"),
+            primeiro_nome=dados_cliente.get("primeiroNome"),
+            sobrenome=dados_cliente.get("sobrenome"),
+            nacionalidade=dados_cliente.get("nacionalidade"),
+            estado_civil=dados_cliente.get("estadoCivil"),
+            profissao=dados_cliente.get("profissao"),
+            data_nascimento=dados_cliente.get("dataNascimento"),
+            rg=dados_cliente.get("rg"),
+            estado_emissor_rg=dados_cliente.get("estadoEmissorRg"),
+            cnh=dados_cliente.get("cnh"),
+            cep=dados_cliente.get("cep"),
+            logradouro=dados_cliente.get("endereco") or dados_cliente.get("logradouro"),
+            numero=dados_cliente.get("numero"),
+            complemento=dados_cliente.get("complemento"),
+            bairro=dados_cliente.get("bairro"),
+            cidade=dados_cliente.get("cidade"),
+            uf_endereco=dados_cliente.get("estado") or dados_cliente.get("uf"),
+            telefone_celular=dados_cliente.get("telefoneCelular"),
+            outro_telefone=dados_cliente.get("telefoneAdicional"),
+            status_processamento="Recebido",
+            submission_id=f"api-{datetime.now().isoformat()}"
+        )
+        
+        db.session.add(novo_cliente)
+        db.session.commit()
+        
+        current_app.logger.info(f"Cliente salvo no banco com ID: {novo_cliente.id}")
+
+        # 2. Enfileirar a tarefa de geração de documentos passando apenas o ID.
+        from app.tasks.document_generation import gerar_documentos_task
+        from kombu.exceptions import KombuError
+
+        try:
+            task = gerar_documentos_task.delay(
+                resposta_id=novo_cliente.id,
+                documentos_requeridos=payload.get("documentosRequeridos")
+            )
+            current_app.logger.info(
+                f"Tarefa de geração de documentos enfileirada para o cliente ID {novo_cliente.id} com a Task ID: {task.id}"
+            )
+        except KombuError as e:
+            current_app.logger.error(f"ERRO DE SERIALIZAÇÃO/KOMBU AO ENFILEIRAR: {e}", exc_info=True)
+            return jsonify({"status": "erro_fila_serializacao", "mensagem": "Erro interno ao processar a solicitação."}), 500
+        except Exception as e:
+             current_app.logger.error(f"Erro inesperado ao enfileirar tarefa: {e}", exc_info=True)
+             return jsonify({"status": "erro_fila_inesperado", "mensagem": "Não foi possível iniciar o processamento."}), 500
 
         # Responde imediatamente com HTTP 202 Accepted
         return (
@@ -198,29 +273,72 @@ from app.celery_app import make_celery
 
 
 @main_bp.route("/api/task-status/<task_id>", methods=["GET"])
+@limiter.limit("60 per minute")  # Limite para polling
 def task_status(task_id):
-    """Consulta o status de uma tarefa Celery pelo seu ID."""
-    # Cria uma instância do Celery no contexto da requisição atual
-    celery_app = make_celery(current_app._get_current_object())
-    task = celery_app.AsyncResult(task_id)
+    """
+    Consulta o status de uma tarefa Celery pelo seu ID.
+    Inclui progresso detalhado e links de documentos gerados.
+    """
+    try:
+        # Cria uma instância do Celery no contexto da requisição atual
+        celery_app = make_celery(current_app._get_current_object())
+        task = celery_app.AsyncResult(task_id)
 
-    response_data = {
-        "task_id": task_id,
-        "status": task.state,
-    }
+        response_data = {
+            "task_id": task_id,
+            "status": task.state,
+            "timestamp": datetime.now().isoformat()
+        }
 
-    if task.state == "PENDING":
-        response_data["status_message"] = "Tarefa pendente ou não encontrada."
-    elif task.state == "PROGRESS":
-        response_data.update(task.info)
-    elif task.state == "SUCCESS":
-        response_data["result"] = task.result
-        response_data["status_message"] = "Tarefa concluída com sucesso."
-    elif task.state == "FAILURE":
-        response_data["error_message"] = str(task.info)
-        response_data["traceback"] = task.traceback
-        return jsonify(response_data), 500
-    else:
-        response_data["status_message"] = f"A tarefa está no estado: {task.state}"
+        if task.state == "PENDING":
+            response_data["status_message"] = "Tarefa pendente ou não encontrada."
+            response_data["progress"] = 0
+        elif task.state == "PROGRESS":
+            # Inclui informações de progresso se disponíveis
+            info = task.info or {}
+            response_data.update(info)
+            response_data["progress"] = info.get("progress", 25)  # Default 25%
+            response_data["status_message"] = info.get("message", "Processando...")
+        elif task.state == "SUCCESS":
+            result = task.result or {}
+            response_data["result"] = result
+            response_data["progress"] = 100
+            response_data["status_message"] = "Tarefa concluída com sucesso."
+            
+            # Se houver resposta_id, buscar informações adicionais do banco
+            if isinstance(result, dict) and result.get("resposta_id"):
+                from models import RespostaForm
+                resposta = RespostaForm.query.get(result["resposta_id"])
+                if resposta:
+                    response_data["cliente_nome"] = f"{resposta.primeiro_nome or ''} {resposta.sobrenome or ''}".strip()
+                    response_data["link_pasta_cliente"] = resposta.link_pasta_cliente
+                    if resposta.observacoes_processamento:
+                        try:
+                            import json
+                            obs = json.loads(resposta.observacoes_processamento)
+                            response_data["documentos_gerados"] = obs.get("links", [])
+                        except:
+                            pass
+                            
+        elif task.state == "FAILURE":
+            response_data["error_message"] = str(task.info)
+            response_data["traceback"] = task.traceback
+            response_data["progress"] = 0
+            response_data["status_message"] = "Erro no processamento"
+            current_app.logger.error(f"Falha na tarefa {task_id}: {task.info}")
+            return jsonify(response_data), 500
+        else:
+            response_data["status_message"] = f"A tarefa está no estado: {task.state}"
+            response_data["progress"] = 50  # Estado intermediário
 
-    return jsonify(response_data)
+        current_app.logger.debug(f"Status da tarefa {task_id}: {task.state}")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro ao consultar status da tarefa {task_id}: {e}")
+        return jsonify({
+            "task_id": task_id,
+            "status": "ERROR",
+            "error_message": "Erro interno ao consultar status",
+            "timestamp": datetime.now().isoformat()
+        }), 500

@@ -4,17 +4,23 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask, g, redirect, request
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 
 from app.peticionador.models import AutoridadeTransito
 from app.peticionador.models import User as PeticionadorUser
-from config import CONFIG
-from extensions import csrf, db, limiter, login_manager, talisman
-from models import RespostaForm
+
+db = SQLAlchemy()
+login_manager = LoginManager()
+csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address)
+talisman = Talisman()
 
 logging.basicConfig(level=logging.DEBUG)  # Ensure basicConfig is called if not already
-
-db = db
-login_manager = login_manager
 
 
 def create_app(config_object=None):
@@ -35,7 +41,7 @@ def create_app(config_object=None):
         # Prioriza FLASK_CONFIG; se ausente, usa FLASK_ENV para manter compatibilidade
         env_name = os.getenv("FLASK_CONFIG") or os.getenv("FLASK_ENV", "development")
         env_name = env_name.lower()
-        from config import config_by_name
+        from app.config.settings import config_by_name
 
         config_object = config_by_name.get(env_name, config_by_name["default"])
         logging.debug(
@@ -82,6 +88,18 @@ def create_app(config_object=None):
         return db.session.get(PeticionadorUser, int(user_id))
 
     from app.peticionador import peticionador_bp
+    
+    # Temporarily disable problematic API and schemas
+    try:
+        from app.peticionador.api import api_bp
+        from app.peticionador.schemas import ma
+        # Inicializar Marshmallow
+        if ma:
+            ma.init_app(app)
+        # Registro da API refatorada
+        app.register_blueprint(api_bp)
+    except Exception as e:
+        app.logger.warning(f"Could not register API/schemas: {e}")
 
     # Registro do blueprint Peticionador
     # O próprio blueprint já define url_prefix='/peticionador', portanto não passamos novamente
@@ -89,6 +107,10 @@ def create_app(config_object=None):
 
     # Isentar o blueprint do peticionador da proteção CSRF temporariamente
     csrf.exempt(peticionador_bp)
+    try:
+        csrf.exempt(api_bp)
+    except:
+        pass
 
     from app.main import main_bp
 
@@ -127,10 +149,11 @@ def create_app(config_object=None):
     @app.before_request
     def ensure_https_behind_proxy():
         forwarded_proto = request.headers.get("X-Forwarded-Proto", "").lower()
-        if not app.debug and forwarded_proto == "http":
-            url = request.url.replace("http://", "https://", 1)
-            app.logger.info(f"Redirecionando para HTTPS (proxy): {url}")
-            return redirect(url, code=301)
+        # Temporariamente desativado para testes - removemos o redirect HTTP->HTTPS
+        # if not app.debug and forwarded_proto == "http":
+        #     url = request.url.replace("http://", "https://", 1)
+        #     app.logger.info(f"Redirecionando para HTTPS (proxy): {url}")
+        #     return redirect(url, code=301)
         if forwarded_proto == "https":
             request.environ["wsgi.url_scheme"] = "https"
 

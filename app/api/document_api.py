@@ -220,19 +220,19 @@ def gerar_documento_api_refatorada():
 
 
 # Função para registrar a rota (será chamada pelo blueprint)
-def register_document_api_routes(app, limiter, require_api_key):
-    """Registra as rotas da API de documentos"""
+def register_document_api_routes(blueprint, limiter, require_api_key):
+    """Registra as rotas da API de documentos no blueprint fornecido"""
 
-    @app.route("/api/gerar-documento-v2", methods=["POST"])
+    @blueprint.route("/gerar-documento-v2", methods=["POST"])
     @limiter.limit("5 per minute", key_func=get_user_identifier)
     @require_api_key
     def gerar_documento_v2():
         """Nova versão da API para geração de documentos"""
         return gerar_documento_api_refatorada()
 
-    @app.route("/api/health", methods=["GET"])
-    def health_check():
-        """Endpoint de health check"""
+    @blueprint.route("/health", methods=["GET"])
+    def api_health_check():
+        """Endpoint de health check da API"""
         return (
             jsonify(
                 {

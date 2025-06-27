@@ -1,0 +1,5 @@
+{% import 'peticionador/_form_macros.html' as petmacros %} {# Alias que
+encaminha para os macros reais localizados em
+templates/peticionador/_form_macros.html #} {% macro render_field(field,
+label_visible=true) %} {{ petmacros.render_field(field,
+label_visible=label_visible) }} {% endmacro %}

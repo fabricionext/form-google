@@ -119,6 +119,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     });
+
+    // Máscara para RG (mais flexível)
+    const rgInputsIMask = document.querySelectorAll(
+      'input[id*="rg_numero"], input[name*="rg_numero"]'
+    );
+    rgInputsIMask.forEach(input => {
+      if (!input.hasAttribute('data-mask')) {
+        IMask(input, {
+          mask: '00.000.000-0',
+        });
+      }
+    });
   }
 });
 
@@ -134,6 +146,10 @@ function aplicarMascarasElementos() {
       if (id.includes('cpf') || name.includes('cpf')) {
         if (!elemento._imask) {
           IMask(elemento, { mask: '000.000.000-00' });
+        }
+      } else if (id.includes('rg_numero') || name.includes('rg_numero')) {
+        if (!elemento._imask) {
+          IMask(elemento, { mask: '00.000.000-0' });
         }
       } else if (id.includes('cep') || name.includes('cep')) {
         if (!elemento._imask) {

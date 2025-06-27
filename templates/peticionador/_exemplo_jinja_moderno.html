@@ -1,0 +1,332 @@
+{#
+Template de Exemplo: Uso Moderno do Jinja2 3.1.6
+================================================
+Este template demonstra o uso avançado dos recursos do Jinja2 no peticionador.
+#}
+
+{% extends '_base_peticionador.html' %}
+{% from '_macros_peticionador.html' import 
+    render_flash_messages, 
+    render_client_card, 
+    render_responsive_table,
+    render_status_badge,
+    render_loading_spinner,
+    render_pagination
+%}
+
+{% block title %}Exemplo: Jinja2 Moderno{% endblock %}
+
+{% block head_extra %}
+<style>
+.demo-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.demo-title {
+    color: #495057;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.code-preview {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Demonstração: Jinja2 3.1.6 Moderno</h1>
+  
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    <strong>Template de Demonstração:</strong> Este template mostra os recursos avançados 
+    do Jinja2 3.1.6 aplicados ao sistema peticionador.
+  </div>
+
+  <!-- Seção 1: Filtros Personalizados Brasileiros -->
+  <div class="demo-section">
+    <h3 class="demo-title">🇧🇷 Filtros Brasileiros</h3>
+    
+    {% set exemplo_dados = {
+      'cpf': '12345678901',
+      'cnpj': '12345678000195',
+      'telefone': '11987654321',
+      'cep': '01234567',
+      'valor': 1234.56,
+      'nome': 'maria da silva santos'
+    } %}
+    
+    <div class="row">
+      <div class="col-md-6">
+        <h5>Dados Brutos:</h5>
+        <ul>
+          <li>CPF: {{ exemplo_dados.cpf }}</li>
+          <li>CNPJ: {{ exemplo_dados.cnpj }}</li>
+          <li>Telefone: {{ exemplo_dados.telefone }}</li>
+          <li>CEP: {{ exemplo_dados.cep }}</li>
+          <li>Valor: {{ exemplo_dados.valor }}</li>
+          <li>Nome: {{ exemplo_dados.nome }}</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h5>Com Filtros Aplicados:</h5>
+        <ul>
+          <li>CPF: {{ exemplo_dados.cpf|format_cpf }}</li>
+          <li>CNPJ: {{ exemplo_dados.cnpj|format_cnpj }}</li>
+          <li>Telefone: {{ exemplo_dados.telefone|format_phone }}</li>
+          <li>CEP: {{ exemplo_dados.cep|format_cep }}</li>
+          <li>Valor: {{ exemplo_dados.valor|currency }}</li>
+          <li>Nome: {{ exemplo_dados.nome|title_case }}</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="code-preview">
+{{ "{{ cpf|format_cpf }}" }}
+{{ "{{ cnpj|format_cnpj }}" }}
+{{ "{{ telefone|format_phone }}" }}
+{{ "{{ nome|title_case }}" }}
+    </div>
+  </div>
+
+  <!-- Seção 2: Macros Reutilizáveis -->
+  <div class="demo-section">
+    <h3 class="demo-title">🔧 Macros Reutilizáveis</h3>
+    
+    <h5>Flash Messages:</h5>
+    {{ render_flash_messages() }}
+    
+    <h5>Status Badges:</h5>
+    <div class="mb-3">
+      {{ render_status_badge('ativo') }}
+      {{ render_status_badge('pendente') }}
+      {{ render_status_badge('erro') }}
+      {{ render_status_badge('concluido') }}
+    </div>
+    
+    <h5>Loading Spinner:</h5>
+    {{ render_loading_spinner("Processando dados...", "sm") }}
+    
+    <div class="code-preview">
+{% raw %}{{ render_flash_messages() }}
+{{ render_status_badge('ativo') }}
+{{ render_loading_spinner("Carregando...", "md") }}{% endraw %}
+    </div>
+  </div>
+
+  <!-- Seção 3: Tabela Responsiva com Dados Mock -->
+  <div class="demo-section">
+    <h3 class="demo-title">📊 Tabela Responsiva Dinâmica</h3>
+    
+    {% set dados_exemplo = [
+      {
+        'id': 1,
+        'nome': 'joão da silva',
+        'cpf': '12345678901',
+        'email': 'joao@email.com',
+        'telefone': '11987654321',
+        'status': 'ativo',
+        'criado_em': '2024-01-15'
+      },
+      {
+        'id': 2,
+        'nome': 'empresa exemplo ltda',
+        'cnpj': '12345678000195',
+        'email': 'contato@empresa.com',
+        'telefone': '1133334444',
+        'status': 'pendente',
+        'criado_em': '2024-02-20'
+      }
+    ] %}
+    
+    {% set headers = ['Nome', 'Documento', 'Email', 'Telefone', 'Status', 'Data'] %}
+    {% set fields = ['nome', 'documento', 'email', 'telefone', 'status', 'criado_em'] %}
+    {% set actions = [
+      {
+        'label': 'Ver',
+        'icon': 'fas fa-eye',
+        'url': '/exemplo/ver/{id}',
+        'style': 'outline-primary'
+      },
+      {
+        'label': 'Editar',
+        'icon': 'fas fa-edit',
+        'url': '/exemplo/editar/{id}',
+        'style': 'outline-warning'
+      }
+    ] %}
+    
+    {# Processar dados com formatação automática #}
+    {% set dados_processados = [] %}
+    {% for item in dados_exemplo %}
+      {% set item_processado = {
+        'id': item.id,
+        'nome': item.nome,
+        'documento': item.cpf if item.cpf is defined else item.cnpj,
+        'email': item.email,
+        'telefone': item.telefone,
+        'status': item.status,
+        'criado_em': item.criado_em
+      } %}
+      {% set _ = dados_processados.append(item_processado) %}
+    {% endfor %}
+    
+    {{ render_responsive_table(dados_processados, headers, fields, actions) }}
+    
+    <div class="code-preview">
+{% raw %}{% set actions = [
+  {'label': 'Ver', 'icon': 'fas fa-eye', 'url': '/ver/{id}'}
+] %}
+{{ render_responsive_table(dados, headers, fields, actions) }}{% endraw %}
+    </div>
+  </div>
+
+  <!-- Seção 4: Estruturas de Controle Avançadas -->
+  <div class="demo-section">
+    <h3 class="demo-title">🎛️ Estruturas de Controle Avançadas</h3>
+    
+    <h5>Namespace e Variáveis:</h5>
+    {% namespace stats %}
+      {% set stats.total_clientes = 150 %}
+      {% set stats.ativos = 120 %}
+      {% set stats.inativos = stats.total_clientes - stats.ativos %}
+      {% set stats.percentual_ativo = (stats.ativos / stats.total_clientes * 100)|round(1) %}
+    {% endnamespace %}
+    
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title">{{ stats.total_clientes }}</h5>
+            <p class="card-text">Total de Clientes</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title text-success">{{ stats.ativos }}</h5>
+            <p class="card-text">Clientes Ativos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title text-warning">{{ stats.inativos }}</h5>
+            <p class="card-text">Clientes Inativos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title text-primary">{{ stats.percentual_ativo }}%</h5>
+            <p class="card-text">Taxa de Atividade</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="code-preview">
+{% raw %}{% namespace stats %}
+  {% set stats.total = 150 %}
+  {% set stats.ativos = 120 %}
+  {% set stats.percentual = (stats.ativos / stats.total * 100)|round(1) %}
+{% endnamespace %}{% endraw %}
+    </div>
+  </div>
+
+  <!-- Seção 5: Filtros Combinados e Truncamento -->
+  <div class="demo-section">
+    <h3 class="demo-title">✂️ Filtros Combinados</h3>
+    
+    {% set texto_longo = "Este é um texto muito longo que será truncado de forma inteligente pelo filtro personalizado para demonstrar o funcionamento do sistema." %}
+    
+    <div class="row">
+      <div class="col-md-6">
+        <h5>Texto Original:</h5>
+        <p class="border p-2">{{ texto_longo }}</p>
+        
+        <h5>Truncado (50 chars):</h5>
+        <p class="border p-2">{{ texto_longo|truncate_smart(50) }}</p>
+      </div>
+      <div class="col-md-6">
+        <h5>Combinação de Filtros:</h5>
+        <p class="border p-2">{{ "maria silva dos santos"|title_case|truncate_smart(15) }}</p>
+        
+        <h5>Formatação Condicional:</h5>
+        {% for status in ['ativo', 'pendente', 'erro', 'concluido'] %}
+          <p>Status: {{ render_status_badge(status) }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <div class="code-preview">
+{% raw %}{{ texto|truncate_smart(50) }}
+{{ "nome completo"|title_case|truncate_smart(15) }}
+{% for status in lista_status %}
+  {{ render_status_badge(status) }}
+{% endfor %}{% endraw %}
+    </div>
+  </div>
+
+  <!-- Seção 6: Validação de Segurança -->
+  <div class="demo-section">
+    <h3 class="demo-title">🔒 Segurança e Validação</h3>
+    
+    <div class="alert alert-success">
+      <h5><i class="fas fa-shield-alt"></i> Recursos de Segurança Implementados:</h5>
+      <ul class="mb-0">
+        <li><strong>Auto-escaping:</strong> Todos os outputs são automaticamente escapados</li>
+        <li><strong>Filtro |attr seguro:</strong> Jinja2 3.1.6 corrige vulnerabilidades do filtro attr</li>
+        <li><strong>Validação de tipos:</strong> Filtros customizados validam entrada antes de processar</li>
+        <li><strong>Fallbacks seguros:</strong> Valores padrão para dados inválidos</li>
+      </ul>
+    </div>
+    
+    <h5>Exemplo de Sanitização:</h5>
+    {% set entrada_potencialmente_perigosa = "<script>alert('xss')</script>João" %}
+    <p>Entrada: <code>{{ entrada_potencialmente_perigosa }}</code></p>
+    <p>Processada: {{ entrada_potencialmente_perigosa|title_case }}</p>
+    
+    <div class="code-preview">
+{% raw %}{{ entrada_usuario|title_case }}  {# Auto-escapado #}
+{{ valor|format_cpf }}  {# Validação built-in #}{% endraw %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar interatividade para demonstração
+    console.log('Template Jinja2 moderno carregado com sucesso!');
+    
+    // Highlight de código fictício
+    document.querySelectorAll('.code-preview').forEach(el => {
+        el.style.transition = 'all 0.3s ease';
+        el.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 4px 8px rgba(0,123,255,0.3)';
+        });
+        el.addEventListener('mouseleave', function() {
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+</script>
+{% endblock %}
