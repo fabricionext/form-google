@@ -74,7 +74,7 @@ function aplicarMascarasFormulario(scope = document) {
 
 function mascaraCPF(e) {
   // Verificar se as máscaras estão desabilitadas para este campo
-  if (e.target._maskDisabled) return;
+  if (e.target._maskDisabled) {return;}
 
   let valor = e.target.value.replace(/\D/g, '');
   valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
@@ -85,7 +85,7 @@ function mascaraCPF(e) {
 
 function mascaraCNPJ(e) {
   // Verificar se as máscaras estão desabilitadas para este campo
-  if (e.target._maskDisabled) return;
+  if (e.target._maskDisabled) {return;}
 
   let valor = e.target.value.replace(/\D/g, '');
   valor = valor.replace(/(\d{2})(\d)/, '$1.$2');
@@ -97,7 +97,7 @@ function mascaraCNPJ(e) {
 
 function mascaraCEP(e) {
   // Verificar se as máscaras estão desabilitadas para este campo
-  if (e.target._maskDisabled) return;
+  if (e.target._maskDisabled) {return;}
 
   let valor = e.target.value.replace(/\D/g, '');
   valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
@@ -106,7 +106,7 @@ function mascaraCEP(e) {
 
 function mascaraTelefone(e) {
   // Verificar se as máscaras estão desabilitadas para este campo
-  if (e.target._maskDisabled) return;
+  if (e.target._maskDisabled) {return;}
 
   let valor = e.target.value.replace(/\D/g, '');
   if (valor.length <= 10) {

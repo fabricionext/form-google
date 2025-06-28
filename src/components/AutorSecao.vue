@@ -8,7 +8,7 @@
           {{ camposPreenchidos }}/{{ totalCampos }}
         </span>
       </h6>
-      
+
       <!-- Drop Zone para Autor -->
       <div
         class="autor-drop-zone"
@@ -48,7 +48,10 @@
           >
             <i class="fas fa-map-marker-alt"></i>
             Endereço
-            <span v-if="autorData.endereco?.length > 0" class="badge bg-success ms-1">
+            <span
+              v-if="autorData.endereco?.length > 0"
+              class="badge bg-success ms-1"
+            >
               {{ autorData.endereco.length }}
             </span>
           </button>
@@ -58,10 +61,7 @@
       <!-- Conteúdo das Abas -->
       <div class="tab-content">
         <!-- Aba Dados Pessoais -->
-        <div
-          v-show="abaAtiva === 'dados'"
-          class="tab-pane fade show active"
-        >
+        <div v-show="abaAtiva === 'dados'" class="tab-pane fade show active">
           <div class="row">
             <div
               v-for="campo in autorData.dados || []"
@@ -75,11 +75,16 @@
               />
             </div>
           </div>
-          
+
           <!-- Estado vazio para dados -->
-          <div v-if="!autorData.dados || autorData.dados.length === 0" class="empty-state">
+          <div
+            v-if="!autorData.dados || autorData.dados.length === 0"
+            class="empty-state"
+          >
             <i class="fas fa-user-slash text-muted fa-2x"></i>
-            <p class="text-muted mt-2">Nenhum campo de dados pessoais encontrado para este autor</p>
+            <p class="text-muted mt-2">
+              Nenhum campo de dados pessoais encontrado para este autor
+            </p>
           </div>
         </div>
 
@@ -102,11 +107,16 @@
               />
             </div>
           </div>
-          
+
           <!-- Estado vazio para endereço -->
-          <div v-if="!autorData.endereco || autorData.endereco.length === 0" class="empty-state">
+          <div
+            v-if="!autorData.endereco || autorData.endereco.length === 0"
+            class="empty-state"
+          >
             <i class="fas fa-map-marker-slash text-muted fa-2x"></i>
-            <p class="text-muted mt-2">Nenhum campo de endereço encontrado para este autor</p>
+            <p class="text-muted mt-2">
+              Nenhum campo de endereço encontrado para este autor
+            </p>
           </div>
         </div>
       </div>
@@ -115,89 +125,96 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import CampoFormulario from './CampoFormulario.vue'
+import { ref, computed } from 'vue';
+import CampoFormulario from './CampoFormulario.vue';
 
 const props = defineProps({
   autorIndex: {
     type: [String, Number],
-    required: true
+    required: true,
   },
   autorData: {
     type: Object,
-    required: true
+    required: true,
   },
   formData: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['campo-atualizado', 'cliente-drop-autor'])
+const emit = defineEmits(['campo-atualizado', 'cliente-drop-autor']);
 
 // Estado local
-const abaAtiva = ref('dados')
-const dropActive = ref(false)
+const abaAtiva = ref('dados');
+const dropActive = ref(false);
 
 // Computed
 const totalCampos = computed(() => {
-  const dados = props.autorData.dados?.length || 0
-  const endereco = props.autorData.endereco?.length || 0
-  return dados + endereco
-})
+  const dados = props.autorData.dados?.length || 0;
+  const endereco = props.autorData.endereco?.length || 0;
+  return dados + endereco;
+});
 
 const camposPreenchidos = computed(() => {
-  let preenchidos = 0
-  
+  let preenchidos = 0;
+
   // Contar campos de dados preenchidos
   if (props.autorData.dados) {
-    preenchidos += props.autorData.dados.filter(campo => 
-      props.formData[campo.chave] && props.formData[campo.chave].toString().trim()
-    ).length
+    preenchidos += props.autorData.dados.filter(
+      campo =>
+        props.formData[campo.chave] &&
+        props.formData[campo.chave].toString().trim()
+    ).length;
   }
-  
+
   // Contar campos de endereço preenchidos
   if (props.autorData.endereco) {
-    preenchidos += props.autorData.endereco.filter(campo => 
-      props.formData[campo.chave] && props.formData[campo.chave].toString().trim()
-    ).length
+    preenchidos += props.autorData.endereco.filter(
+      campo =>
+        props.formData[campo.chave] &&
+        props.formData[campo.chave].toString().trim()
+    ).length;
   }
-  
-  return preenchidos
-})
+
+  return preenchidos;
+});
 
 // Métodos
-const handleDrop = (event) => {
-  event.preventDefault()
-  dropActive.value = false
-  
+const handleDrop = event => {
+  event.preventDefault();
+  dropActive.value = false;
+
   try {
-    const clienteData = JSON.parse(event.dataTransfer.getData('application/json'))
-    
+    const clienteData = JSON.parse(
+      event.dataTransfer.getData('application/json')
+    );
+
     // Emitir evento para o componente pai tratar o drop
     emit('cliente-drop-autor', {
       clienteData,
-      autorIndex: props.autorIndex
-    })
-    
+      autorIndex: props.autorIndex,
+    });
+
     // Feedback visual
-    mostrarFeedbackDrop()
-    
+    mostrarFeedbackDrop();
   } catch (error) {
-    console.error('Erro ao processar drop do cliente:', error)
+    console.error('Erro ao processar drop do cliente:', error);
   }
-}
+};
 
 const mostrarFeedbackDrop = () => {
   // Adicionar efeito visual de sucesso
-  const dropZone = document.querySelector(`[data-autor-index="${props.autorIndex}"]`)
+  const dropZone = document.querySelector(
+    `[data-autor-index="${props.autorIndex}"]`
+  );
   if (dropZone) {
-    dropZone.classList.add('drop-success')
+    dropZone.classList.add('drop-success');
     setTimeout(() => {
-      dropZone.classList.remove('drop-success')
-    }, 1000)
+      dropZone.classList.remove('drop-success');
+    }, 1000);
   }
-}
+};
 </script>
 
 <style scoped>
@@ -304,16 +321,16 @@ const mostrarFeedbackDrop = () => {
     gap: 0.75rem;
     text-align: center;
   }
-  
+
   .autor-drop-zone {
     min-width: auto;
     width: 100%;
   }
-  
+
   .drop-text {
     font-size: 0.8rem;
   }
-  
+
   .nav-tabs .nav-link {
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
@@ -322,9 +339,15 @@ const mostrarFeedbackDrop = () => {
 
 /* Animações */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .tab-pane {

@@ -1,10 +1,13 @@
 <template>
-  <div class="campo-formulario" :class="{ 'campo-obrigatorio': campo.obrigatorio }">
+  <div
+    class="campo-formulario"
+    :class="{ 'campo-obrigatorio': campo.obrigatorio }"
+  >
     <!-- Label -->
-    <label 
-      :for="campo.chave" 
+    <label
+      :for="campo.chave"
       class="form-label"
-      :class="{ 'required': campo.obrigatorio }"
+      :class="{ required: campo.obrigatorio }"
     >
       {{ campo.label }}
       <span v-if="campo.obrigatorio" class="text-danger">*</span>
@@ -30,7 +33,7 @@
     <div v-if="erro" class="invalid-feedback d-block">
       {{ erro }}
     </div>
-    
+
     <!-- Texto de ajuda -->
     <div v-if="textoAjuda" class="form-text">
       {{ textoAjuda }}
@@ -39,69 +42,75 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
   campo: {
     type: Object,
-    required: true
+    required: true,
   },
   valor: {
     type: [String, Number],
-    default: ''
-  }
-})
+    default: '',
+  },
+});
 
-const emit = defineEmits(['atualizado'])
+const emit = defineEmits(['atualizado']);
 
 // Estado local
-const valorInterno = ref(props.valor)
-const erro = ref('')
-const focado = ref(false)
+const valorInterno = ref(props.valor);
+const erro = ref('');
+const focado = ref(false);
 
 // Watchers
-watch(() => props.valor, (novoValor) => {
-  valorInterno.value = novoValor
-})
+watch(
+  () => props.valor,
+  novoValor => {
+    valorInterno.value = novoValor;
+  }
+);
 
 // Computed
 const componenteInput = computed(() => {
-  return props.campo.tipo === 'textarea' ? 'textarea' : 'input'
-})
+  return props.campo.tipo === 'textarea' ? 'textarea' : 'input';
+});
 
 const tipoInput = computed(() => {
   const tipos = {
-    'text': 'text',
-    'email': 'email',
-    'tel': 'tel',
-    'date': 'date',
-    'number': 'number',
-    'password': 'password',
-    'url': 'url'
-  }
-  return tipos[props.campo.tipo] || 'text'
-})
+    text: 'text',
+    email: 'email',
+    tel: 'tel',
+    date: 'date',
+    number: 'number',
+    password: 'password',
+    url: 'url',
+  };
+  return tipos[props.campo.tipo] || 'text';
+});
 
 const classesInput = computed(() => {
-  const classes = ['form-control']
-  
+  const classes = ['form-control'];
+
   if (erro.value) {
-    classes.push('is-invalid')
+    classes.push('is-invalid');
   } else if (valorInterno.value && !focado.value) {
-    classes.push('is-valid')
+    classes.push('is-valid');
   }
-  
+
   // Classes especiais baseadas no tipo de campo
   if (props.campo.chave.includes('cpf') || props.campo.chave.includes('cnpj')) {
-    classes.push('mask-documento')
-  } else if (props.campo.chave.includes('telefone') || props.campo.chave.includes('celular')) {
-    classes.push('mask-telefone')
+    classes.push('mask-documento');
+  } else if (
+    props.campo.chave.includes('telefone') ||
+    props.campo.chave.includes('celular')
+  ) {
+    classes.push('mask-telefone');
   } else if (props.campo.chave.includes('cep')) {
-    classes.push('mask-cep')
+    classes.push('mask-cep');
   }
-  
-  return classes
-})
+
+  return classes;
+});
 
 const textoAjuda = computed(() => {
   const ajudas = {
@@ -111,197 +120,198 @@ const textoAjuda = computed(() => {
     celular: 'Digite com DDD (ex: 11987654321)',
     cep: 'Digite apenas números (ex: 01234567)',
     email: 'Digite um email válido (ex: exemplo@email.com)',
-    data: 'Formato: DD/MM/AAAA'
-  }
-  
+    data: 'Formato: DD/MM/AAAA',
+  };
+
   for (const [tipo, texto] of Object.entries(ajudas)) {
     if (props.campo.chave.includes(tipo)) {
-      return texto
+      return texto;
     }
   }
-  
-  return null
-})
+
+  return null;
+});
 
 // Métodos
-const handleInput = (event) => {
-  let valor = event.target.value
-  
+const handleInput = event => {
+  let valor = event.target.value;
+
   // Aplicar máscaras
-  valor = aplicarMascara(valor)
-  
+  valor = aplicarMascara(valor);
+
   // Atualizar valor interno
-  valorInterno.value = valor
-  
+  valorInterno.value = valor;
+
   // Validar
-  validarCampo(valor)
-  
+  validarCampo(valor);
+
   // Emitir evento
-  emit('atualizado', { chave: props.campo.chave, valor })
-}
+  emit('atualizado', { chave: props.campo.chave, valor });
+};
 
 const handleBlur = () => {
-  focado.value = false
-  validarCampo(valorInterno.value)
-}
+  focado.value = false;
+  validarCampo(valorInterno.value);
+};
 
 const handleFocus = () => {
-  focado.value = true
-  erro.value = '' // Limpar erro ao focar
-}
+  focado.value = true;
+  erro.value = ''; // Limpar erro ao focar
+};
 
-const aplicarMascara = (valor) => {
-  if (!valor) return valor
-  
+const aplicarMascara = valor => {
+  if (!valor) return valor;
+
   // Remover caracteres não numéricos para máscaras
-  const apenasNumeros = valor.replace(/\D/g, '')
-  
-  if (props.campo.chave.includes('cpf')) {
-    return mascaraCPF(apenasNumeros)
-  } else if (props.campo.chave.includes('cnpj')) {
-    return mascaraCNPJ(apenasNumeros)
-  } else if (props.campo.chave.includes('telefone') || props.campo.chave.includes('celular')) {
-    return mascaraTelefone(apenasNumeros)
-  } else if (props.campo.chave.includes('cep')) {
-    return mascaraCEP(apenasNumeros)
-  }
-  
-  return valor
-}
+  const apenasNumeros = valor.replace(/\D/g, '');
 
-const mascaraCPF = (valor) => {
+  if (props.campo.chave.includes('cpf')) {
+    return mascaraCPF(apenasNumeros);
+  } else if (props.campo.chave.includes('cnpj')) {
+    return mascaraCNPJ(apenasNumeros);
+  } else if (
+    props.campo.chave.includes('telefone') ||
+    props.campo.chave.includes('celular')
+  ) {
+    return mascaraTelefone(apenasNumeros);
+  } else if (props.campo.chave.includes('cep')) {
+    return mascaraCEP(apenasNumeros);
+  }
+
+  return valor;
+};
+
+const mascaraCPF = valor => {
   return valor
     .slice(0, 11)
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-}
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+};
 
-const mascaraCNPJ = (valor) => {
+const mascaraCNPJ = valor => {
   return valor
     .slice(0, 14)
     .replace(/^(\d{2})(\d)/, '$1.$2')
     .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
     .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2')
-}
+    .replace(/(\d{4})(\d)/, '$1-$2');
+};
 
-const mascaraTelefone = (valor) => {
+const mascaraTelefone = valor => {
   if (valor.length <= 10) {
     return valor
       .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{4})(\d)/, '$1-$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
   } else {
     return valor
       .slice(0, 11)
       .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
+      .replace(/(\d{5})(\d)/, '$1-$2');
   }
-}
+};
 
-const mascaraCEP = (valor) => {
-  return valor
-    .slice(0, 8)
-    .replace(/(\d{5})(\d)/, '$1-$2')
-}
+const mascaraCEP = valor => {
+  return valor.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
+};
 
-const validarCampo = (valor) => {
-  erro.value = ''
-  
+const validarCampo = valor => {
+  erro.value = '';
+
   // Validação de campo obrigatório
   if (props.campo.obrigatorio && !valor.trim()) {
-    erro.value = `${props.campo.label} é obrigatório`
-    return false
+    erro.value = `${props.campo.label} é obrigatório`;
+    return false;
   }
-  
+
   // Validações específicas por tipo
   if (valor) {
     if (props.campo.tipo === 'email' && !validarEmail(valor)) {
-      erro.value = 'Email inválido'
-      return false
+      erro.value = 'Email inválido';
+      return false;
     }
-    
+
     if (props.campo.chave.includes('cpf') && !validarCPF(valor)) {
-      erro.value = 'CPF inválido'
-      return false
+      erro.value = 'CPF inválido';
+      return false;
     }
-    
+
     if (props.campo.chave.includes('cnpj') && !validarCNPJ(valor)) {
-      erro.value = 'CNPJ inválido'
-      return false
+      erro.value = 'CNPJ inválido';
+      return false;
     }
   }
-  
-  return true
-}
 
-const validarEmail = (email) => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return regex.test(email)
-}
+  return true;
+};
 
-const validarCPF = (cpf) => {
-  const numeros = cpf.replace(/\D/g, '')
-  if (numeros.length !== 11) return false
-  
+const validarEmail = email => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+const validarCPF = cpf => {
+  const numeros = cpf.replace(/\D/g, '');
+  if (numeros.length !== 11) return false;
+
   // Verificar se todos os dígitos são iguais
-  if (/^(\d)\1{10}$/.test(numeros)) return false
-  
+  if (/^(\d)\1{10}$/.test(numeros)) return false;
+
   // Validar dígitos verificadores
-  let soma = 0
+  let soma = 0;
   for (let i = 0; i < 9; i++) {
-    soma += parseInt(numeros[i]) * (10 - i)
+    soma += parseInt(numeros[i]) * (10 - i);
   }
-  
-  let resto = soma % 11
-  const digito1 = resto < 2 ? 0 : 11 - resto
-  
-  if (parseInt(numeros[9]) !== digito1) return false
-  
-  soma = 0
-  for (let i = 0; i < 10; i++) {
-    soma += parseInt(numeros[i]) * (11 - i)
-  }
-  
-  resto = soma % 11
-  const digito2 = resto < 2 ? 0 : 11 - resto
-  
-  return parseInt(numeros[10]) === digito2
-}
 
-const validarCNPJ = (cnpj) => {
-  const numeros = cnpj.replace(/\D/g, '')
-  if (numeros.length !== 14) return false
-  
+  let resto = soma % 11;
+  const digito1 = resto < 2 ? 0 : 11 - resto;
+
+  if (parseInt(numeros[9]) !== digito1) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i++) {
+    soma += parseInt(numeros[i]) * (11 - i);
+  }
+
+  resto = soma % 11;
+  const digito2 = resto < 2 ? 0 : 11 - resto;
+
+  return parseInt(numeros[10]) === digito2;
+};
+
+const validarCNPJ = cnpj => {
+  const numeros = cnpj.replace(/\D/g, '');
+  if (numeros.length !== 14) return false;
+
   // Verificar se todos os dígitos são iguais
-  if (/^(\d)\1{13}$/.test(numeros)) return false
-  
+  if (/^(\d)\1{13}$/.test(numeros)) return false;
+
   // Validar primeiro dígito verificador
-  const pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-  let soma = 0
-  
+  const pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  let soma = 0;
+
   for (let i = 0; i < 12; i++) {
-    soma += parseInt(numeros[i]) * pesos1[i]
+    soma += parseInt(numeros[i]) * pesos1[i];
   }
-  
-  let resto = soma % 11
-  const digito1 = resto < 2 ? 0 : 11 - resto
-  
-  if (parseInt(numeros[12]) !== digito1) return false
-  
+
+  let resto = soma % 11;
+  const digito1 = resto < 2 ? 0 : 11 - resto;
+
+  if (parseInt(numeros[12]) !== digito1) return false;
+
   // Validar segundo dígito verificador
-  const pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-  soma = 0
-  
+  const pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  soma = 0;
+
   for (let i = 0; i < 13; i++) {
-    soma += parseInt(numeros[i]) * pesos2[i]
+    soma += parseInt(numeros[i]) * pesos2[i];
   }
-  
-  resto = soma % 11
-  const digito2 = resto < 2 ? 0 : 11 - resto
-  
-  return parseInt(numeros[13]) === digito2
-}
+
+  resto = soma % 11;
+  const digito2 = resto < 2 ? 0 : 11 - resto;
+
+  return parseInt(numeros[13]) === digito2;
+};
 </script>
 
 <style scoped>
@@ -352,9 +362,16 @@ const validarCNPJ = (cnpj) => {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 /* Estilos responsivos */

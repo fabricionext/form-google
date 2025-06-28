@@ -33,7 +33,7 @@ class FormValidators {
    * Valida CPF
    */
   validaCPF(cpf) {
-    if (!cpf) return { valid: true, message: '' }; // Campo opcional
+    if (!cpf) {return { valid: true, message: '' };} // Campo opcional
 
     const cleanCPF = cpf.replace(/\D/g, '');
 
@@ -52,14 +52,14 @@ class FormValidators {
       sum += parseInt(cleanCPF.charAt(i)) * (10 - i);
     }
     let digit1 = 11 - (sum % 11);
-    if (digit1 > 9) digit1 = 0;
+    if (digit1 > 9) {digit1 = 0;}
 
     sum = 0;
     for (let i = 0; i < 10; i++) {
       sum += parseInt(cleanCPF.charAt(i)) * (11 - i);
     }
     let digit2 = 11 - (sum % 11);
-    if (digit2 > 9) digit2 = 0;
+    if (digit2 > 9) {digit2 = 0;}
 
     const valid =
       digit1 === parseInt(cleanCPF.charAt(9)) &&
@@ -75,7 +75,7 @@ class FormValidators {
    * Valida CNPJ
    */
   validaCNPJ(cnpj) {
-    if (!cnpj) return { valid: true, message: '' };
+    if (!cnpj) {return { valid: true, message: '' };}
 
     const cleanCNPJ = cnpj.replace(/\D/g, '');
 
@@ -114,7 +114,7 @@ class FormValidators {
    * Valida Email
    */
   validaEmail(email) {
-    if (!email) return { valid: true, message: '' };
+    if (!email) {return { valid: true, message: '' };}
 
     const valid = this.patterns.email.test(email);
     return {
@@ -127,7 +127,7 @@ class FormValidators {
    * Valida CEP
    */
   validaCEP(cep) {
-    if (!cep) return { valid: true, message: '' };
+    if (!cep) {return { valid: true, message: '' };}
 
     const valid = this.patterns.cep.test(cep);
     return {
@@ -140,7 +140,7 @@ class FormValidators {
    * Valida Telefone
    */
   validaTelefone(telefone) {
-    if (!telefone) return { valid: true, message: '' };
+    if (!telefone) {return { valid: true, message: '' };}
 
     const valid = this.patterns.telefone.test(telefone);
     return {
@@ -153,7 +153,7 @@ class FormValidators {
    * Valida CNH
    */
   validaCNH(cnh) {
-    if (!cnh) return { valid: true, message: '' };
+    if (!cnh) {return { valid: true, message: '' };}
 
     const cleanCNH = cnh.replace(/\D/g, '');
     const valid = cleanCNH.length === 11;
@@ -168,7 +168,7 @@ class FormValidators {
    * Valida RG
    */
   validaRG(rg) {
-    if (!rg) return { valid: true, message: '' };
+    if (!rg) {return { valid: true, message: '' };}
 
     const valid = this.patterns.rg.test(rg);
     return {
@@ -192,7 +192,7 @@ class FormValidators {
    * Valida comprimento mínimo
    */
   validaComprimentoMinimo(value, min) {
-    if (!value) return { valid: true, message: '' };
+    if (!value) {return { valid: true, message: '' };}
 
     const valid = value.length >= min;
     return {
@@ -205,7 +205,7 @@ class FormValidators {
    * Valida comprimento máximo
    */
   validaComprimentoMaximo(value, max) {
-    if (!value) return { valid: true, message: '' };
+    if (!value) {return { valid: true, message: '' };}
 
     const valid = value.length <= max;
     return {
@@ -256,7 +256,7 @@ class FormValidators {
    */
   setupFormValidation(formSelector) {
     const form = document.querySelector(formSelector);
-    if (!form) return;
+    if (!form) {return;}
 
     const inputs = form.querySelectorAll('input, select, textarea');
 
@@ -335,7 +335,7 @@ class FormValidators {
    */
   validateForm(formSelector) {
     const form = document.querySelector(formSelector);
-    if (!form) return { valid: false, errors: ['Formulário não encontrado'] };
+    if (!form) {return { valid: false, errors: ['Formulário não encontrado'] };}
 
     const inputs = form.querySelectorAll('input, select, textarea');
     const errors = [];

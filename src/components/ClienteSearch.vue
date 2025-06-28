@@ -36,13 +36,13 @@
             {{ resultados.length }} cliente(s) encontrado(s)
           </small>
         </div>
-        
+
         <div class="results-list">
           <div
             v-for="cliente in resultados"
             :key="cliente.id"
             class="cliente-item"
-            :class="{ 'dragging': cliente.isDragging }"
+            :class="{ dragging: cliente.isDragging }"
             draggable="true"
             :data-type="'cliente'"
             :data-cliente="JSON.stringify(cliente)"
@@ -52,7 +52,10 @@
           >
             <div class="cliente-info">
               <div class="cliente-nome">
-                <strong>{{ cliente.nome_completo || `${cliente.primeiro_nome} ${cliente.sobrenome}` }}</strong>
+                <strong>{{
+                  cliente.nome_completo ||
+                  `${cliente.primeiro_nome} ${cliente.sobrenome}`
+                }}</strong>
               </div>
               <div class="cliente-detalhes">
                 <small class="text-muted">
@@ -80,7 +83,10 @@
       </div>
 
       <!-- Estado vazio -->
-      <div v-else-if="searchQuery && !carregando" class="empty-state text-center py-3">
+      <div
+        v-else-if="searchQuery && !carregando"
+        class="empty-state text-center py-3"
+      >
         <i class="fas fa-search text-muted"></i>
         <p class="text-muted mb-0">Nenhum cliente encontrado</p>
       </div>
@@ -104,55 +110,55 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useFormularioStore } from '../stores/formulario.js'
+import { ref, computed } from 'vue';
+import { useFormularioStore } from '../stores/formulario.js';
 
-const emit = defineEmits(['cliente-selecionado', 'cliente-drop-autor'])
+const emit = defineEmits(['cliente-selecionado', 'cliente-drop-autor']);
 
-const formularioStore = useFormularioStore()
+const formularioStore = useFormularioStore();
 
 // Estado local
-const searchQuery = ref('')
-const carregando = ref(false)
+const searchQuery = ref('');
+const carregando = ref(false);
 
 // Computed
 const resultados = computed(() => {
-  if (!searchQuery.value.trim()) return []
-  return formularioStore.buscarClientes(searchQuery.value)
-})
+  if (!searchQuery.value.trim()) return [];
+  return formularioStore.buscarClientes(searchQuery.value);
+});
 
 // Métodos
 const handleSearch = () => {
   // A busca é reativa através do computed
   // Aqui podemos adicionar debounce se necessário
-}
+};
 
 const limparBusca = () => {
-  searchQuery.value = ''
-}
+  searchQuery.value = '';
+};
 
-const selecionarCliente = (cliente) => {
-  emit('cliente-selecionado', cliente)
-  searchQuery.value = '' // Limpar busca após seleção
-}
+const selecionarCliente = cliente => {
+  emit('cliente-selecionado', cliente);
+  searchQuery.value = ''; // Limpar busca após seleção
+};
 
 // Drag and Drop
 const handleDragStart = (cliente, event) => {
-  cliente.isDragging = true
-  
+  cliente.isDragging = true;
+
   // Configurar dados do drag
-  event.dataTransfer.setData('application/json', JSON.stringify(cliente))
-  event.dataTransfer.setData('text/plain', cliente.nome_completo)
-  event.dataTransfer.effectAllowed = 'copy'
-  
+  event.dataTransfer.setData('application/json', JSON.stringify(cliente));
+  event.dataTransfer.setData('text/plain', cliente.nome_completo);
+  event.dataTransfer.effectAllowed = 'copy';
+
   // Adicionar classe visual
-  event.target.classList.add('dragging')
-}
+  event.target.classList.add('dragging');
+};
 
 const handleDragEnd = (cliente, event) => {
-  cliente.isDragging = false
-  event.target.classList.remove('dragging')
-}
+  cliente.isDragging = false;
+  event.target.classList.remove('dragging');
+};
 </script>
 
 <style scoped>
@@ -241,7 +247,7 @@ const handleDragEnd = (cliente, event) => {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .cliente-actions {
     margin-left: 0;
     margin-top: 0.5rem;

@@ -36,13 +36,13 @@
             {{ resultados.length }} autoridade(s) encontrada(s)
           </small>
         </div>
-        
+
         <div class="results-list">
           <div
             v-for="autoridade in resultados"
             :key="autoridade.id"
             class="autoridade-item"
-            :class="{ 'dragging': autoridade.isDragging }"
+            :class="{ dragging: autoridade.isDragging }"
             draggable="true"
             :data-type="'autoridade'"
             :data-autoridade="JSON.stringify(autoridade)"
@@ -55,14 +55,13 @@
                 <strong>{{ autoridade.nome }}</strong>
               </div>
               <div v-if="autoridade.cnpj" class="autoridade-cnpj">
-                <small class="text-muted">
-                  CNPJ: {{ autoridade.cnpj }}
-                </small>
+                <small class="text-muted"> CNPJ: {{ autoridade.cnpj }} </small>
               </div>
               <div v-if="autoridade.cidade" class="autoridade-endereco">
                 <small class="text-muted">
                   <i class="fas fa-map-marker-alt"></i>
-                  {{ autoridade.cidade }}{{ autoridade.estado ? `/${autoridade.estado}` : '' }}
+                  {{ autoridade.cidade
+                  }}{{ autoridade.estado ? `/${autoridade.estado}` : '' }}
                 </small>
               </div>
             </div>
@@ -80,7 +79,10 @@
       </div>
 
       <!-- Estado vazio -->
-      <div v-else-if="searchQuery && !carregando" class="empty-state text-center py-3">
+      <div
+        v-else-if="searchQuery && !carregando"
+        class="empty-state text-center py-3"
+      >
         <i class="fas fa-search text-muted"></i>
         <p class="text-muted mb-0">Nenhuma autoridade encontrada</p>
       </div>
@@ -115,60 +117,60 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useFormularioStore } from '../stores/formulario.js'
+import { ref, computed } from 'vue';
+import { useFormularioStore } from '../stores/formulario.js';
 
-const emit = defineEmits(['autoridade-selecionada'])
+const emit = defineEmits(['autoridade-selecionada']);
 
-const formularioStore = useFormularioStore()
+const formularioStore = useFormularioStore();
 
 // Estado local
-const searchQuery = ref('')
-const carregando = ref(false)
+const searchQuery = ref('');
+const carregando = ref(false);
 
 // Computed
 const resultados = computed(() => {
-  if (!searchQuery.value.trim()) return []
-  return formularioStore.buscarAutoridades(searchQuery.value)
-})
+  if (!searchQuery.value.trim()) return [];
+  return formularioStore.buscarAutoridades(searchQuery.value);
+});
 
 // Métodos
 const handleSearch = () => {
   // A busca é reativa através do computed
-}
+};
 
 const limparBusca = () => {
-  searchQuery.value = ''
-}
+  searchQuery.value = '';
+};
 
-const selecionarAutoridade = (autoridade) => {
+const selecionarAutoridade = autoridade => {
   // Por padrão, usar índice 1 para a primeira autoridade
-  emit('autoridade-selecionada', { autoridadeData: autoridade, index: 1 })
-  searchQuery.value = '' // Limpar busca após seleção
-}
+  emit('autoridade-selecionada', { autoridadeData: autoridade, index: 1 });
+  searchQuery.value = ''; // Limpar busca após seleção
+};
 
 const abrirModalNovaAutoridade = () => {
   // TODO: Implementar modal para cadastrar nova autoridade
-  alert('Funcionalidade de cadastro de nova autoridade será implementada')
-}
+  alert('Funcionalidade de cadastro de nova autoridade será implementada');
+};
 
 // Drag and Drop
 const handleDragStart = (autoridade, event) => {
-  autoridade.isDragging = true
-  
+  autoridade.isDragging = true;
+
   // Configurar dados do drag
-  event.dataTransfer.setData('application/json', JSON.stringify(autoridade))
-  event.dataTransfer.setData('text/plain', autoridade.nome)
-  event.dataTransfer.effectAllowed = 'copy'
-  
+  event.dataTransfer.setData('application/json', JSON.stringify(autoridade));
+  event.dataTransfer.setData('text/plain', autoridade.nome);
+  event.dataTransfer.effectAllowed = 'copy';
+
   // Adicionar classe visual
-  event.target.classList.add('dragging')
-}
+  event.target.classList.add('dragging');
+};
 
 const handleDragEnd = (autoridade, event) => {
-  autoridade.isDragging = false
-  event.target.classList.remove('dragging')
-}
+  autoridade.isDragging = false;
+  event.target.classList.remove('dragging');
+};
 </script>
 
 <style scoped>
@@ -266,7 +268,7 @@ const handleDragEnd = (autoridade, event) => {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .autoridade-actions {
     margin-left: 0;
     margin-top: 0.5rem;

@@ -1,0 +1,55 @@
+{
+  "name": "form-google-vue-templates",
+  "version": "2.0.0",
+  "description": "Sistema de Templates com Vue.js + TypeScript - Fase 2 TDD/QDD",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:components": "vitest run src/tests/components/",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
+    "lint:fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "lint:check": "eslint src/ app/peticionador/static/js/",
+    "lint:report": "eslint src/ app/peticionador/static/js/ --format json --output-file lint-report.json",
+    "format": "prettier --write src/ app/peticionador/static/js/",
+    "format:check": "prettier --check src/ app/peticionador/static/js/",
+    "code:analyze": "npm run format:check && npm run lint:check",
+    "code:fix": "npm run format && npm run lint:fix"
+  },
+  "dependencies": {
+    "@headlessui/vue": "^1.7.17",
+    "@heroicons/vue": "^2.0.18",
+    "axios": "^1.6.5",
+    "fuse.js": "^7.0.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.15",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "@vitest/coverage-v8": "^1.2.0",
+    "@vitest/ui": "^1.2.0",
+    "@vue/test-utils": "^2.4.3",
+    "@vue/tsconfig": "^0.5.1",
+    "cypress": "^13.6.3",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.20.1",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.3.0",
+    "vite": "^5.0.11",
+    "vitest": "^1.2.0",
+    "vue-tsc": "^1.8.27"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

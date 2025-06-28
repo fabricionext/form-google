@@ -15,7 +15,11 @@
         class="btn btn-sm btn-outline-secondary"
         type="button"
       >
-        <i :class="[secaoExpandida ? 'fas fa-chevron-up' : 'fas fa-chevron-down']"></i>
+        <i
+          :class="[
+            secaoExpandida ? 'fas fa-chevron-up' : 'fas fa-chevron-down',
+          ]"
+        ></i>
       </button>
     </div>
 
@@ -78,37 +82,37 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import CampoFormulario from './CampoFormulario.vue'
-import AutorSecao from './AutorSecao.vue'
+import { ref, computed } from 'vue';
+import CampoFormulario from './CampoFormulario.vue';
+import AutorSecao from './AutorSecao.vue';
 
 const props = defineProps({
   secao: {
     type: String,
-    required: true
+    required: true,
   },
   campos: {
     type: [Array, Object],
-    required: true
+    required: true,
   },
   formData: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['campo-atualizado'])
+const emit = defineEmits(['campo-atualizado']);
 
 // Estado local
-const secaoExpandida = ref(true)
+const secaoExpandida = ref(true);
 
 // Computed
 const totalCampos = computed(() => {
   if (props.secao === 'autores') {
-    return Object.keys(props.campos).length
+    return Object.keys(props.campos).length;
   }
-  return Array.isArray(props.campos) ? props.campos.length : 0
-})
+  return Array.isArray(props.campos) ? props.campos.length : 0;
+});
 
 const secaoTitulo = computed(() => {
   const titulos = {
@@ -120,10 +124,10 @@ const secaoTitulo = computed(() => {
     polo_ativo: 'Polo Ativo',
     polo_passivo: 'Polo Passivo',
     terceiros: 'Terceiros',
-    outros: 'Outros Campos'
-  }
-  return titulos[props.secao] || props.secao
-})
+    outros: 'Outros Campos',
+  };
+  return titulos[props.secao] || props.secao;
+});
 
 const secaoIcon = computed(() => {
   const icones = {
@@ -135,10 +139,10 @@ const secaoIcon = computed(() => {
     polo_ativo: 'fas fa-arrow-right',
     polo_passivo: 'fas fa-arrow-left',
     terceiros: 'fas fa-users',
-    outros: 'fas fa-ellipsis-h'
-  }
-  return icones[props.secao] || 'fas fa-folder'
-})
+    outros: 'fas fa-ellipsis-h',
+  };
+  return icones[props.secao] || 'fas fa-folder';
+});
 
 const secaoClasses = computed(() => {
   const classes = {
@@ -150,47 +154,49 @@ const secaoClasses = computed(() => {
     polo_ativo: 'text-primary',
     polo_passivo: 'text-secondary',
     terceiros: 'text-info',
-    outros: 'text-muted'
-  }
-  return classes[props.secao] || 'text-dark'
-})
+    outros: 'text-muted',
+  };
+  return classes[props.secao] || 'text-dark';
+});
 
 // Métodos
 const toggleSecao = () => {
-  secaoExpandida.value = !secaoExpandida.value
-}
+  secaoExpandida.value = !secaoExpandida.value;
+};
 
 const handleCampoUpdate = ({ chave, valor }) => {
-  emit('campo-atualizado', { chave, valor })
-}
+  emit('campo-atualizado', { chave, valor });
+};
 
-const getFieldContainerClass = (campo) => {
+const getFieldContainerClass = campo => {
   // Determinar classes baseadas no tipo de campo
-  const classes = ['col-md-6']
-  
-  if (campo.tipo === 'textarea') {
-    classes.push('col-md-12')
-  }
-  
-  if (campo.chave.includes('endereco')) {
-    classes.push('endereco-field')
-  }
-  
-  return classes.join(' ')
-}
+  const classes = ['col-md-6'];
 
-const handleAuthorityDrop = (event) => {
-  event.preventDefault()
-  
-  try {
-    const autoridadeData = JSON.parse(event.dataTransfer.getData('application/json'))
-    const authorityIndex = event.currentTarget.dataset.authorityIndex
-    
-    emit('autoridade-selecionada', { autoridadeData, index: authorityIndex })
-  } catch (error) {
-    console.error('Erro ao processar drop de autoridade:', error)
+  if (campo.tipo === 'textarea') {
+    classes.push('col-md-12');
   }
-}
+
+  if (campo.chave.includes('endereco')) {
+    classes.push('endereco-field');
+  }
+
+  return classes.join(' ');
+};
+
+const handleAuthorityDrop = event => {
+  event.preventDefault();
+
+  try {
+    const autoridadeData = JSON.parse(
+      event.dataTransfer.getData('application/json')
+    );
+    const authorityIndex = event.currentTarget.dataset.authorityIndex;
+
+    emit('autoridade-selecionada', { autoridadeData, index: authorityIndex });
+  } catch (error) {
+    console.error('Erro ao processar drop de autoridade:', error);
+  }
+};
 </script>
 
 <style scoped>
@@ -267,11 +273,11 @@ const handleAuthorityDrop = (event) => {
   .campos-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .secao-header {
     padding: 0.75rem 1rem;
   }
-  
+
   .secao-titulo {
     font-size: 1rem;
   }

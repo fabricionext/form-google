@@ -1,19 +1,19 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import FormularioDinamicoApp from './components/FormularioDinamicoApp.vue'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import FormularioDinamicoApp from './components/FormularioDinamicoApp.vue';
 
 // Aguardar DOM estar pronto
 document.addEventListener('DOMContentLoaded', () => {
-  const app = createApp(FormularioDinamicoApp)
-  const pinia = createPinia()
-  
-  app.use(pinia)
-  
+  const app = createApp(FormularioDinamicoApp);
+  const pinia = createPinia();
+
+  app.use(pinia);
+
   // Montar aplicação no container existente
-  const container = document.getElementById('formulario-dinamico-vue')
+  const container = document.getElementById('formulario-dinamico-vue');
   if (container) {
-    app.mount(container)
+    app.mount(container);
   } else {
-    console.error('Container #formulario-dinamico-vue não encontrado')
+    console.error('Container #formulario-dinamico-vue não encontrado');
   }
-})
+});

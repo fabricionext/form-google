@@ -1,266 +1,272 @@
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 /**
  * Composable para gerenciar drag and drop
  * Substitui o uso do Interact.js com funcionalidade nativa
  */
 export function useDragAndDrop() {
-  const isDragging = ref(false)
-  const dragData = ref(null)
-  
-  // Estados de drop zones
-  const dropZones = ref(new Map())
-  
+  const isDragging = ref(false);
+  const dragData = ref(null);
+
+  // Estados de drop zones - removido pois não está sendo utilizado
+  // const dropZones = ref(new Map());
+
   const initializeDragAndDrop = () => {
     // Configurar elementos draggáveis
-    setupDraggableElements()
-    
+    setupDraggableElements();
+
     // Configurar drop zones
-    setupDropZones()
-  }
-  
+    setupDropZones();
+  };
+
   const setupDraggableElements = () => {
     // Clientes draggáveis
-    document.addEventListener('dragstart', (event) => {
-      const element = event.target.closest('[data-type="cliente"]')
+    document.addEventListener('dragstart', event => {
+      const element = event.target.closest('[data-type="cliente"]');
       if (element) {
-        handleClientDragStart(event, element)
+        handleClientDragStart(event, element);
       }
-      
-      const autoridade = event.target.closest('[data-type="autoridade"]')
+
+      const autoridade = event.target.closest('[data-type="autoridade"]');
       if (autoridade) {
-        handleAuthorityDragStart(event, autoridade)
+        handleAuthorityDragStart(event, autoridade);
       }
-    })
-    
-    document.addEventListener('dragend', (event) => {
-      isDragging.value = false
-      dragData.value = null
-      
+    });
+
+    document.addEventListener('dragend', () => {
+      isDragging.value = false;
+      dragData.value = null;
+
       // Limpar classes de drag de todos os elementos
       document.querySelectorAll('.dragging').forEach(el => {
-        el.classList.remove('dragging')
-      })
-    })
-  }
-  
+        el.classList.remove('dragging');
+      });
+    });
+  };
+
   const setupDropZones = () => {
     // Drop zone para cliente principal
-    setupClientDropZone()
-    
+    setupClientDropZone();
+
     // Drop zones para autores
-    setupAuthorDropZones()
-    
+    setupAuthorDropZones();
+
     // Drop zones para autoridades
-    setupAuthorityDropZones()
-  }
-  
+    setupAuthorityDropZones();
+  };
+
   const handleClientDragStart = (event, element) => {
-    isDragging.value = true
-    
+    isDragging.value = true;
+
     try {
-      const clienteData = JSON.parse(element.dataset.cliente)
-      dragData.value = { type: 'cliente', data: clienteData }
-      
+      const clienteData = JSON.parse(element.dataset.cliente);
+      dragData.value = { type: 'cliente', data: clienteData };
+
       // Configurar dados do drag
-      event.dataTransfer.setData('application/json', JSON.stringify(clienteData))
-      event.dataTransfer.setData('text/plain', clienteData.nome_completo)
-      event.dataTransfer.effectAllowed = 'copy'
-      
+      event.dataTransfer.setData(
+        'application/json',
+        JSON.stringify(clienteData)
+      );
+      event.dataTransfer.setData('text/plain', clienteData.nome_completo);
+      event.dataTransfer.effectAllowed = 'copy';
+
       // Adicionar classe visual
-      element.classList.add('dragging')
-      
+      element.classList.add('dragging');
     } catch (error) {
-      console.error('Erro ao iniciar drag de cliente:', error)
+      console.error('Erro ao iniciar drag de cliente:', error);
     }
-  }
-  
+  };
+
   const handleAuthorityDragStart = (event, element) => {
-    isDragging.value = true
-    
+    isDragging.value = true;
+
     try {
-      const autoridadeData = JSON.parse(element.dataset.autoridade)
-      dragData.value = { type: 'autoridade', data: autoridadeData }
-      
+      const autoridadeData = JSON.parse(element.dataset.autoridade);
+      dragData.value = { type: 'autoridade', data: autoridadeData };
+
       // Configurar dados do drag
-      event.dataTransfer.setData('application/json', JSON.stringify(autoridadeData))
-      event.dataTransfer.setData('text/plain', autoridadeData.nome)
-      event.dataTransfer.effectAllowed = 'copy'
-      
+      event.dataTransfer.setData(
+        'application/json',
+        JSON.stringify(autoridadeData)
+      );
+      event.dataTransfer.setData('text/plain', autoridadeData.nome);
+      event.dataTransfer.effectAllowed = 'copy';
+
       // Adicionar classe visual
-      element.classList.add('dragging')
-      
+      element.classList.add('dragging');
     } catch (error) {
-      console.error('Erro ao iniciar drag de autoridade:', error)
+      console.error('Erro ao iniciar drag de autoridade:', error);
     }
-  }
-  
+  };
+
   const setupClientDropZone = () => {
-    const dropZone = document.getElementById('drop_placeholder')
-    if (!dropZone) return
-    
-    dropZone.addEventListener('dragover', (event) => {
-      event.preventDefault()
+    const dropZone = document.getElementById('drop_placeholder');
+    if (!dropZone) {
+      return;
+    }
+
+    dropZone.addEventListener('dragover', event => {
+      event.preventDefault();
       if (dragData.value?.type === 'cliente') {
-        dropZone.classList.add('drop-active')
+        dropZone.classList.add('drop-active');
       }
-    })
-    
-    dropZone.addEventListener('dragleave', (event) => {
+    });
+
+    dropZone.addEventListener('dragleave', event => {
       // Verificar se realmente saiu da área (não foi para um filho)
       if (!dropZone.contains(event.relatedTarget)) {
-        dropZone.classList.remove('drop-active')
+        dropZone.classList.remove('drop-active');
       }
-    })
-    
-    dropZone.addEventListener('drop', (event) => {
-      event.preventDefault()
-      dropZone.classList.remove('drop-active')
-      
+    });
+
+    dropZone.addEventListener('drop', event => {
+      event.preventDefault();
+      dropZone.classList.remove('drop-active');
+
       if (dragData.value?.type === 'cliente') {
-        emitClientDrop(dragData.value.data)
+        emitClientDrop(dragData.value.data);
       }
-    })
-  }
-  
+    });
+  };
+
   const setupAuthorDropZones = () => {
     // Usar delegação de eventos para drop zones dinâmicos
-    document.addEventListener('dragover', (event) => {
-      const dropZone = event.target.closest('.autor-drop-zone')
+    document.addEventListener('dragover', event => {
+      const dropZone = event.target.closest('.autor-drop-zone');
       if (dropZone && dragData.value?.type === 'cliente') {
-        event.preventDefault()
-        dropZone.classList.add('drop-active')
+        event.preventDefault();
+        dropZone.classList.add('drop-active');
       }
-    })
-    
-    document.addEventListener('dragleave', (event) => {
-      const dropZone = event.target.closest('.autor-drop-zone')
+    });
+
+    document.addEventListener('dragleave', event => {
+      const dropZone = event.target.closest('.autor-drop-zone');
       if (dropZone && !dropZone.contains(event.relatedTarget)) {
-        dropZone.classList.remove('drop-active')
+        dropZone.classList.remove('drop-active');
       }
-    })
-    
-    document.addEventListener('drop', (event) => {
-      const dropZone = event.target.closest('.autor-drop-zone')
+    });
+
+    document.addEventListener('drop', event => {
+      const dropZone = event.target.closest('.autor-drop-zone');
       if (dropZone && dragData.value?.type === 'cliente') {
-        event.preventDefault()
-        dropZone.classList.remove('drop-active')
-        
-        const autorIndex = dropZone.dataset.autorIndex
-        emitAuthorDrop(dragData.value.data, autorIndex)
+        event.preventDefault();
+        dropZone.classList.remove('drop-active');
+
+        const autorIndex = dropZone.dataset.autorIndex;
+        emitAuthorDrop(dragData.value.data, autorIndex);
       }
-    })
-  }
-  
+    });
+  };
+
   const setupAuthorityDropZones = () => {
-    document.addEventListener('dragover', (event) => {
-      const dropZone = event.target.closest('.authority-drop-zone')
+    document.addEventListener('dragover', event => {
+      const dropZone = event.target.closest('.authority-drop-zone');
       if (dropZone && dragData.value?.type === 'autoridade') {
-        event.preventDefault()
-        dropZone.classList.add('drop-target')
+        event.preventDefault();
+        dropZone.classList.add('drop-target');
       }
-    })
-    
-    document.addEventListener('dragleave', (event) => {
-      const dropZone = event.target.closest('.authority-drop-zone')
+    });
+
+    document.addEventListener('dragleave', event => {
+      const dropZone = event.target.closest('.authority-drop-zone');
       if (dropZone && !dropZone.contains(event.relatedTarget)) {
-        dropZone.classList.remove('drop-target')
+        dropZone.classList.remove('drop-target');
       }
-    })
-    
-    document.addEventListener('drop', (event) => {
-      const dropZone = event.target.closest('.authority-drop-zone')
+    });
+
+    document.addEventListener('drop', event => {
+      const dropZone = event.target.closest('.authority-drop-zone');
       if (dropZone && dragData.value?.type === 'autoridade') {
-        event.preventDefault()
-        dropZone.classList.remove('drop-target')
-        
-        const authorityIndex = dropZone.dataset.authorityIndex || 1
-        emitAuthorityDrop(dragData.value.data, authorityIndex)
+        event.preventDefault();
+        dropZone.classList.remove('drop-target');
+
+        const authorityIndex = dropZone.dataset.authorityIndex || 1;
+        emitAuthorityDrop(dragData.value.data, authorityIndex);
       }
-    })
-  }
-  
+    });
+  };
+
   // Event emitters - integração com Vue
   const eventCallbacks = ref({
     clientDrop: null,
     authorDrop: null,
-    authorityDrop: null
-  })
-  
-  const onClientDrop = (callback) => {
-    eventCallbacks.value.clientDrop = callback
-  }
-  
-  const onAuthorDrop = (callback) => {
-    eventCallbacks.value.authorDrop = callback
-  }
-  
-  const onAuthorityDrop = (callback) => {
-    eventCallbacks.value.authorityDrop = callback
-  }
-  
-  const emitClientDrop = (clienteData) => {
+    authorityDrop: null,
+  });
+
+  const onClientDrop = callback => {
+    eventCallbacks.value.clientDrop = callback;
+  };
+
+  const onAuthorDrop = callback => {
+    eventCallbacks.value.authorDrop = callback;
+  };
+
+  const onAuthorityDrop = callback => {
+    eventCallbacks.value.authorityDrop = callback;
+  };
+
+  const emitClientDrop = clienteData => {
     if (eventCallbacks.value.clientDrop) {
-      eventCallbacks.value.clientDrop(clienteData)
+      eventCallbacks.value.clientDrop(clienteData);
     }
-  }
-  
+  };
+
   const emitAuthorDrop = (clienteData, autorIndex) => {
     if (eventCallbacks.value.authorDrop) {
-      eventCallbacks.value.authorDrop({ clienteData, autorIndex })
+      eventCallbacks.value.authorDrop({ clienteData, autorIndex });
     }
-  }
-  
+  };
+
   const emitAuthorityDrop = (autoridadeData, index) => {
     if (eventCallbacks.value.authorityDrop) {
-      eventCallbacks.value.authorityDrop({ autoridadeData, index })
+      eventCallbacks.value.authorityDrop({ autoridadeData, index });
     }
-  }
-  
+  };
+
   // Utilitários para elementos específicos
   const makeDraggable = (element, type, data) => {
-    element.draggable = true
-    element.dataset.type = type
-    
+    element.draggable = true;
+    element.dataset.type = type;
+
     if (type === 'cliente') {
-      element.dataset.cliente = JSON.stringify(data)
+      element.dataset.cliente = JSON.stringify(data);
     } else if (type === 'autoridade') {
-      element.dataset.autoridade = JSON.stringify(data)
+      element.dataset.autoridade = JSON.stringify(data);
     }
-    
+
     // Adicionar classes CSS
-    element.classList.add('draggable-item')
-  }
-  
+    element.classList.add('draggable-item');
+  };
+
   const makeDropZone = (element, acceptTypes = []) => {
-    element.classList.add('drop-zone')
-    element.dataset.acceptTypes = acceptTypes.join(',')
-  }
-  
+    element.classList.add('drop-zone');
+    element.dataset.acceptTypes = acceptTypes.join(',');
+  };
+
   // Limpeza
   const cleanup = () => {
     // Remover event listeners se necessário
     // (não necessário para delegação de eventos no document)
-  }
-  
+  };
+
   return {
     // Estado
     isDragging,
     dragData,
-    
+
     // Métodos principais
     initializeDragAndDrop,
     cleanup,
-    
+
     // Event handlers
     onClientDrop,
     onAuthorDrop,
     onAuthorityDrop,
-    
+
     // Utilitários
     makeDraggable,
-    makeDropZone
-  }
+    makeDropZone,
+  };
 }
 
 /**
@@ -331,4 +337,4 @@ export const dragDropCSS = `
 .drop-success {
   animation: dropSuccess 1s ease;
 }
-`
+`;

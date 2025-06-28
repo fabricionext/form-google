@@ -88,12 +88,12 @@ class FormularioApp {
 
   captureOriginalState() {
     const form = document.getElementById('peticao_form');
-    if (!form) return;
+    if (!form) {return;}
 
     const formData = new FormData(form);
     this.originalFormData = {};
 
-    for (let [key, value] of formData.entries()) {
+    for (const [key, value] of formData.entries()) {
       if (key !== 'csrf_token') {
         this.originalFormData[key] = value;
       }
@@ -116,14 +116,14 @@ class FormularioApp {
     `;
 
     const existing = document.getElementById('unsaved-indicator');
-    if (existing) existing.remove();
+    if (existing) {existing.remove();}
 
     document.body.appendChild(indicator);
   }
 
   removeDataChangeIndicator() {
     const indicator = document.getElementById('unsaved-indicator');
-    if (indicator) indicator.remove();
+    if (indicator) {indicator.remove();}
     this.dataChanged = false;
   }
 
@@ -155,7 +155,7 @@ class FormularioApp {
         }
 
         const cpf = this.cpfBusca.replace(/\D/g, '');
-        if (cpf.length !== 11) return;
+        if (cpf.length !== 11) {return;}
 
         // Validar CPF antes de buscar
         const cpfValidation = window.FormValidators.validaCPF(cpf);
@@ -213,7 +213,7 @@ class FormularioApp {
       },
 
       get nomeCompleto() {
-        if (!this.cliente) return '';
+        if (!this.cliente) {return '';}
         return (
           this.cliente.nome_completo ||
           `${this.cliente.primeiro_nome || ''} ${this.cliente.sobrenome || ''}`.trim() ||
@@ -362,7 +362,7 @@ class FormularioApp {
           );
           const draftData = {};
 
-          for (let [key, value] of formData.entries()) {
+          for (const [key, value] of formData.entries()) {
             if (key !== 'csrf_token') {
               draftData[key] = value;
             }
@@ -647,7 +647,7 @@ class FormularioApp {
 
   // === SETUP INTERACT.JS ===
   setupInteractJS() {
-    if (typeof interact === 'undefined') return;
+    if (typeof interact === 'undefined') {return;}
 
     interact('.draggable-card').draggable({
       autoScroll: true,
@@ -747,7 +747,7 @@ class FormularioApp {
   }
 
   setupFuseSearch() {
-    if (this.clientesData.length === 0 || typeof Fuse === 'undefined') return;
+    if (this.clientesData.length === 0 || typeof Fuse === 'undefined') {return;}
 
     const options = {
       keys: [
@@ -766,7 +766,7 @@ class FormularioApp {
 
   setupAuthorityFuseSearch() {
     if (this.autoridadesData.length === 0 || typeof Fuse === 'undefined')
-      return;
+      {return;}
 
     const options = {
       keys: [
@@ -926,7 +926,7 @@ class FormularioApp {
       const label = group.querySelector('label');
       const input = group.querySelector('input, select, textarea');
 
-      if (!label || !input) return;
+      if (!label || !input) {return;}
 
       const fieldData = {
         name: input.name || input.id,
@@ -1017,7 +1017,7 @@ class FormularioApp {
     // Implementação simples de drag-and-drop
     document.addEventListener('mousedown', e => {
       const fieldItem = e.target.closest('.field-item');
-      if (!fieldItem) return;
+      if (!fieldItem) {return;}
 
       this.isDragging = true;
       fieldItem.classList.add('dragging');
@@ -1050,7 +1050,7 @@ class FormularioApp {
 
   updateFormFieldOrder() {
     const formContainer = document.querySelector('.form-section');
-    if (!formContainer) return;
+    if (!formContainer) {return;}
 
     // Reordenar elementos do formulário baseado na nova ordem do organizador
     this.fieldSections.forEach(section => {
@@ -1092,7 +1092,7 @@ class FormularioApp {
   }
 
   applyFieldOrder() {
-    if (!this.customFieldOrder) return;
+    if (!this.customFieldOrder) {return;}
 
     // Aplicar ordem personalizada salvs
     console.log('🔄 Aplicando ordem personalizada de campos');
@@ -1192,7 +1192,7 @@ function formularioApp(modeloData, documentoGerado, linkDocumento) {
       }
 
       const cpf = this.cpfBusca.replace(/\D/g, '');
-      if (cpf.length !== 11) return;
+      if (cpf.length !== 11) {return;}
 
       // Validar CPF antes de buscar
       if (window.FormValidators) {
@@ -1298,7 +1298,7 @@ function formularioApp(modeloData, documentoGerado, linkDocumento) {
 
     // Computed properties
     get clienteNomeCompleto() {
-      if (!this.cliente) return '';
+      if (!this.cliente) {return '';}
       return (
         this.cliente.nome_completo ||
         `${this.cliente.primeiro_nome || ''} ${this.cliente.sobrenome || ''}`.trim() ||
@@ -1350,7 +1350,7 @@ function formularioApp(modeloData, documentoGerado, linkDocumento) {
         const requiredFields = [];
 
         // Converter FormData para objeto
-        for (let [key, value] of formData.entries()) {
+        for (const [key, value] of formData.entries()) {
           if (key !== 'csrf_token') {
             formObj[key] = value;
 
@@ -1436,7 +1436,7 @@ function formularioApp(modeloData, documentoGerado, linkDocumento) {
         const formData = new FormData(document.getElementById('peticao_form'));
         const draftData = {};
 
-        for (let [key, value] of formData.entries()) {
+        for (const [key, value] of formData.entries()) {
           if (key !== 'csrf_token') {
             draftData[key] = value;
           }

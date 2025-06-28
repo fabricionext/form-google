@@ -163,18 +163,19 @@ function initializeFormValidation() {
   forms.forEach(form => {
     form.addEventListener('submit', function (e) {
       // Pular validação para formulários de exclusão/desativação
-      const deleteAction = this.action && (
-        this.action.includes('/excluir_') || 
-        this.action.includes('/delete') || 
-        this.action.includes('/remove')
-      );
-      const deleteButton = this.querySelector('button[class*="danger"]') || 
-                          this.querySelector('button[onclick*="confirm"]');
-      
+      const deleteAction =
+        this.action &&
+        (this.action.includes('/excluir_') ||
+          this.action.includes('/delete') ||
+          this.action.includes('/remove'));
+      const deleteButton =
+        this.querySelector('button[class*="danger"]') ||
+        this.querySelector('button[onclick*="confirm"]');
+
       if (deleteAction || deleteButton) {
         return true; // Permitir submit sem validação
       }
-      
+
       if (!validateForm(this)) {
         e.preventDefault();
         return false;
@@ -240,35 +241,35 @@ function validateForm(form) {
  */
 function isValidCPF(cpf) {
   cpf = cpf.replace(/\D/g, '');
-  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {return false;}
 
   let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(cpf.charAt(i)) * (10 - i);
+  for (let i = 0; i < 9; i++) {sum += parseInt(cpf.charAt(i)) * (10 - i);}
   let rev = 11 - (sum % 11);
-  if (rev === 10 || rev === 11) rev = 0;
-  if (rev !== parseInt(cpf.charAt(9))) return false;
+  if (rev === 10 || rev === 11) {rev = 0;}
+  if (rev !== parseInt(cpf.charAt(9))) {return false;}
 
   sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(cpf.charAt(i)) * (11 - i);
+  for (let i = 0; i < 10; i++) {sum += parseInt(cpf.charAt(i)) * (11 - i);}
   rev = 11 - (sum % 11);
-  if (rev === 10 || rev === 11) rev = 0;
+  if (rev === 10 || rev === 11) {rev = 0;}
   return rev === parseInt(cpf.charAt(10));
 }
 
 function isValidCNPJ(cnpj) {
   cnpj = cnpj.replace(/\D/g, '');
-  if (cnpj.length !== 14) return false;
+  if (cnpj.length !== 14) {return false;}
 
   const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
   const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
 
   let sum = 0;
-  for (let i = 0; i < 12; i++) sum += parseInt(cnpj.charAt(i)) * weights1[i];
+  for (let i = 0; i < 12; i++) {sum += parseInt(cnpj.charAt(i)) * weights1[i];}
   let rev = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (rev !== parseInt(cnpj.charAt(12))) return false;
+  if (rev !== parseInt(cnpj.charAt(12))) {return false;}
 
   sum = 0;
-  for (let i = 0; i < 13; i++) sum += parseInt(cnpj.charAt(i)) * weights2[i];
+  for (let i = 0; i < 13; i++) {sum += parseInt(cnpj.charAt(i)) * weights2[i];}
   rev = sum % 11 < 2 ? 0 : 11 - (sum % 11);
   return rev === parseInt(cnpj.charAt(13));
 }

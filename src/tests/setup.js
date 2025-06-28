@@ -1,8 +1,8 @@
-import { vi } from 'vitest'
-import { config } from '@vue/test-utils'
+import { vi } from 'vitest';
+import { config } from '@vue/test-utils';
 
 // Mock fetch globally
-global.fetch = vi.fn()
+global.fetch = vi.fn();
 
 // Mock localStorage
 const localStorageMock = {
@@ -11,24 +11,24 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn()
-}
+  key: vi.fn(),
+};
 
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
-})
+  value: localStorageMock,
+});
 
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,
   warn: vi.fn(),
-  error: vi.fn()
-}
+  error: vi.fn(),
+};
 
 // Vue Test Utils global configuration
 config.global.mocks = {
-  $t: (key) => key // Mock translation function
-}
+  $t: key => key, // Mock translation function
+};
 
 // Mock axios
 vi.mock('axios', () => ({
@@ -40,15 +40,15 @@ vi.mock('axios', () => ({
       delete: vi.fn(),
       interceptors: {
         request: { use: vi.fn() },
-        response: { use: vi.fn() }
-      }
+        response: { use: vi.fn() },
+      },
     })),
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
-    delete: vi.fn()
-  }
-}))
+    delete: vi.fn(),
+  },
+}));
 
 // Mock Heroicons
 vi.mock('@heroicons/vue/24/outline', () => ({
@@ -64,22 +64,22 @@ vi.mock('@heroicons/vue/24/outline', () => ({
   UserIcon: 'UserIcon',
   MapPinIcon: 'MapPinIcon',
   DocumentTextIcon: 'DocumentTextIcon',
-  BuildingOfficeIcon: 'BuildingOfficeIcon'
-}))
+  BuildingOfficeIcon: 'BuildingOfficeIcon',
+}));
 
 // Setup and teardown for each test
 beforeEach(() => {
   // Reset all mocks before each test
-  vi.clearAllMocks()
-  
+  vi.clearAllMocks();
+
   // Reset localStorage
-  localStorageMock.getItem.mockClear()
-  localStorageMock.setItem.mockClear()
-  localStorageMock.removeItem.mockClear()
-  localStorageMock.clear.mockClear()
-})
+  localStorageMock.getItem.mockClear();
+  localStorageMock.setItem.mockClear();
+  localStorageMock.removeItem.mockClear();
+  localStorageMock.clear.mockClear();
+});
 
 afterEach(() => {
   // Cleanup after each test
-  vi.resetAllMocks()
-})
+  vi.resetAllMocks();
+});

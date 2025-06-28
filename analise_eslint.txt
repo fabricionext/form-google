@@ -1,0 +1,117 @@
+
+/var/www/estevaoalmeida.com.br/form-google/app/peticionador/static/js/auto_fill_cliente.js
+  131:27  warning  Expected { after 'if' condition                          curly
+  174:27  warning  Expected { after 'if' condition                          curly
+  177:9   warning  'searchParams' is never reassigned. Use 'const' instead  prefer-const
+  270:33  error    'Event' is not defined                                   no-undef
+  323:31  error    'bootstrap' is not defined                               no-undef
+
+/var/www/estevaoalmeida.com.br/form-google/app/peticionador/static/js/form_validators.js
+   36:15  warning  Expected { after 'if' condition        curly
+   55:21  warning  Expected { after 'if' condition        curly
+   62:21  warning  Expected { after 'if' condition        curly
+   78:16  warning  Expected { after 'if' condition        curly
+  117:17  warning  Expected { after 'if' condition        curly
+  130:15  warning  Expected { after 'if' condition        curly
+  143:20  warning  Expected { after 'if' condition        curly
+  156:15  warning  Expected { after 'if' condition        curly
+  171:14  warning  Expected { after 'if' condition        curly
+  183:28  warning  'fieldName' is defined but never used  no-unused-vars
+  195:17  warning  Expected { after 'if' condition        curly
+  208:17  warning  Expected { after 'if' condition        curly
+  259:16  warning  Expected { after 'if' condition        curly
+  338:16  warning  Expected { after 'if' condition        curly
+
+/var/www/estevaoalmeida.com.br/form-google/app/peticionador/static/js/formulario_app_refatorado.js
+    91:16  warning  Expected { after 'if' condition                   curly
+    96:15  warning  'key' is never reassigned. Use 'const' instead    prefer-const
+    96:20  warning  'value' is never reassigned. Use 'const' instead  prefer-const
+   119:19  warning  Expected { after 'if' condition                   curly
+   126:20  warning  Expected { after 'if' condition                   curly
+   158:32  warning  Expected { after 'if' condition                   curly
+   216:28  warning  Expected { after 'if' condition                   curly
+   365:21  warning  'key' is never reassigned. Use 'const' instead    prefer-const
+   365:26  warning  'value' is never reassigned. Use 'const' instead  prefer-const
+   650:42  warning  Expected { after 'if' condition                   curly
+   750:72  warning  Expected { after 'if' condition                   curly
+   769:7   warning  Expected { after 'if' condition                   curly
+   865:30  warning  Unexpected confirm                                no-alert
+   929:29  warning  Expected { after 'if' condition                   curly
+  1020:23  warning  Expected { after 'if' condition                   curly
+  1025:32  warning  'e' is defined but never used                     no-unused-vars
+  1029:30  warning  'e' is defined but never used                     no-unused-vars
+  1053:25  warning  Expected { after 'if' condition                   curly
+  1095:33  warning  Expected { after 'if' condition                   curly
+  1118:10  warning  'formularioApp' is defined but never used         no-unused-vars
+  1195:30  warning  Expected { after 'if' condition                   curly
+  1301:26  warning  Expected { after 'if' condition                   curly
+  1319:11  warning  Unexpected confirm                                no-alert
+  1353:19  warning  'key' is never reassigned. Use 'const' instead    prefer-const
+  1353:24  warning  'value' is never reassigned. Use 'const' instead  prefer-const
+  1439:19  warning  'key' is never reassigned. Use 'const' instead    prefer-const
+  1439:24  warning  'value' is never reassigned. Use 'const' instead  prefer-const
+
+/var/www/estevaoalmeida.com.br/form-google/app/peticionador/static/js/formulario_dinamico_masks.js
+   11:24  error    'MutationObserver' is not defined  no-undef
+   15:33  error    'Node' is not defined              no-undef
+   77:31  warning  Expected { after 'if' condition    curly
+   88:31  warning  Expected { after 'if' condition    curly
+  100:31  warning  Expected { after 'if' condition    curly
+  109:31  warning  Expected { after 'if' condition    curly
+
+/var/www/estevaoalmeida.com.br/form-google/app/peticionador/static/js/peticionador_custom.js
+  151:35  error    'Event' is not defined            no-undef
+  244:54  warning  Expected { after 'if' condition   curly
+  247:31  warning  Expected { after 'for' condition  curly
+  249:33  warning  Expected { after 'if' condition   curly
+  250:40  warning  Expected { after 'if' condition   curly
+  253:32  warning  Expected { after 'for' condition  curly
+  255:33  warning  Expected { after 'if' condition   curly
+  261:27  warning  Expected { after 'if' condition   curly
+  267:32  warning  Expected { after 'for' condition  curly
+  269:42  warning  Expected { after 'if' condition   curly
+  272:32  warning  Expected { after 'for' condition  curly
+  343:23  error    'bootstrap' is not defined        no-undef
+  369:12  warning  Unexpected confirm                no-alert
+
+/var/www/estevaoalmeida.com.br/form-google/src/composables/useDragAndDrop.js
+   12:9   warning  'dropZones' is assigned a value but never used  no-unused-vars
+   36:42  warning  'event' is defined but never used               no-unused-vars
+  104:20  warning  Expected { after 'if' condition                 curly
+
+/var/www/estevaoalmeida.com.br/form-google/src/composables/useFormValidation.js
+   46:14  warning  Expected { after 'if' condition  curly
+   58:33  warning  Expected { after 'if' condition  curly
+   83:14  warning  Expected { after 'if' condition  curly
+  129:19  warning  Expected { after 'if' condition  curly
+  138:19  warning  Expected { after 'if' condition  curly
+  156:19  warning  Expected { after 'if' condition  curly
+  172:19  warning  Expected { after 'if' condition  curly
+  184:19  warning  Expected { after 'if' condition  curly
+  196:19  warning  Expected { after 'if' condition  curly
+  204:19  warning  Expected { after 'if' condition  curly
+  341:37  warning  Expected { after 'if' condition  curly
+  342:42  warning  Expected { after 'if' condition  curly
+  350:37  warning  Expected { after 'if' condition  curly
+  351:43  warning  Expected { after 'if' condition  curly
+  371:44  warning  Expected { after 'if' condition  curly
+  380:44  warning  Expected { after 'if' condition  curly
+
+/var/www/estevaoalmeida.com.br/form-google/src/tests/components/DynamicField.test.js
+    1:32  warning  'vi' is defined but never used  no-unused-vars
+   15:3   error    'afterEach' is not defined      no-undef
+  242:24  error    'File' is not defined           no-undef
+
+/var/www/estevaoalmeida.com.br/form-google/src/tests/setup.js
+   5:1  error  'global' is not defined      no-undef
+  22:1  error  'global' is not defined      no-undef
+  71:1  error  'beforeEach' is not defined  no-undef
+  82:1  error  'afterEach' is not defined   no-undef
+
+/var/www/estevaoalmeida.com.br/form-google/src/tests/stores/formulario.test.js
+  229:13  warning  'results' is assigned a value but never used  no-unused-vars
+  280:13  warning  'results' is assigned a value but never used  no-unused-vars
+
+✖ 93 problems (12 errors, 81 warnings)
+  0 errors and 69 warnings potentially fixable with the `--fix` option.
+
