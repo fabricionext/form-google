@@ -4,7 +4,7 @@ Repository para Templates.
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_, and_
-from app.models.template import Template
+from app.models.document_template import DocumentTemplate as Template
 from app.repositories.base import BaseRepository
 from app.utils.exceptions import TemplateNotFoundException
 
@@ -136,7 +136,7 @@ class TemplateRepository(BaseRepository[Template]):
             Lista de dicionários com template e contagem de uso
         """
         from sqlalchemy import func
-        from app.models.document import Document
+        from app.models.form import FormSubmission as Document
         
         results = self.session.query(
             Template,
@@ -241,7 +241,7 @@ class TemplateRepository(BaseRepository[Template]):
             Dicionário com estatísticas
         """
         from sqlalchemy import func
-        from app.models.document import Document
+        from app.models.form import FormSubmission as Document
         
         total_templates = self.count()
         active_templates = self.count(is_active=True)

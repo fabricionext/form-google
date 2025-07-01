@@ -318,6 +318,7 @@ class FormServiceException(ServiceException):
 DocumentGenerationError = DocumentGenerationException
 TemplateNotFound = TemplateNotFoundException
 DocumentNotFound = DocumentNotFoundException
+PlaceholderException = PlaceholderValidationException
 
 
 # Helpers adicionais para as novas exceções

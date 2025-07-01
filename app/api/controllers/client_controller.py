@@ -13,7 +13,7 @@ from marshmallow import ValidationError
 from .base import BaseController
 from app.peticionador.models import Cliente
 from app.utils.exceptions import NotFoundException, ValidationException
-from extensions import db
+from app.extensions import db
 
 
 class ClientController(BaseController):

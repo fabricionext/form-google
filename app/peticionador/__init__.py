@@ -1,6 +1,7 @@
 import traceback
 
 from flask import Blueprint, current_app, jsonify, render_template, request
+from flask_login import login_required
 
 # Criar o blueprint
 peticionador_bp = Blueprint(
@@ -23,7 +24,10 @@ peticionador_bp = Blueprint(
 #         return f"Erro interno: {str(e)}", 500
 
 
+# Este endpoint de teste deve ser acessível apenas por usuários autenticados para evitar exposição pública.
+# Portanto, adicionamos o decorator `login_required`.
 @peticionador_bp.route("/api/test")
+@login_required
 def api_test():
     """Endpoint de teste para verificar se o blueprint está funcionando"""
     return jsonify(
@@ -98,14 +102,15 @@ def monitor_requests():
         current_app.logger.warning(f"Erro no monitoramento de request: {monitor_error}")
 
 
-from . import forms, models, routes
+from . import forms, models
+from . import routes  # ✅ Rotas ativadas para o novo sistema
 
-# Legacy API endpoints disabled to prevent blueprint conflicts
-# try:
-#     from .api.legacy_endpoints import legacy_api_bp
-#     peticionador_bp.register_blueprint(legacy_api_bp)
-# except ImportError as e:
-#     print(f"Warning: Could not import legacy_api_bp: {e}")
-# except Exception as e:
-#     print(f"Warning: Error registering legacy_api_bp: {e}")
+# Register legacy API endpoints for compatibility
+try:
+    from .api.legacy_endpoints import legacy_api_bp
+    peticionador_bp.register_blueprint(legacy_api_bp)
+except ImportError as e:
+    print(f"Warning: Could not import legacy_api_bp: {e}")
+except Exception as e:
+    print(f"Warning: Error registering legacy_api_bp: {e}")
 

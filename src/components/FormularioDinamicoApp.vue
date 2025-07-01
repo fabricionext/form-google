@@ -69,7 +69,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useFormularioStore } from '../stores/formulario.js';
+import { useFormularioStore } from '@/stores/formulario.js';
 import ClienteSearch from './ClienteSearch.vue';
 import AutoridadeSearch from './AutoridadeSearch.vue';
 import FormularioSecao from './FormularioSecao.vue';

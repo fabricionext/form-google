@@ -1,0 +1,11 @@
+[
+  { "value": "text", "label": "Texto" },
+  { "value": "email", "label": "E-mail" },
+  { "value": "number", "label": "Número" },
+  { "value": "date", "label": "Data" },
+  { "value": "select", "label": "Seleção" },
+  { "value": "multiselect", "label": "Seleção Múltipla" },
+  { "value": "textarea", "label": "Área de Texto" },
+  { "value": "checkbox", "label": "Checkbox" },
+  { "value": "file", "label": "Arquivo" }
+]

@@ -4,24 +4,26 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask, g, redirect, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.routing import BaseConverter
+import uuid
 
-from app.peticionador.models import AutoridadeTransito
+from .extensions import db, login_manager, csrf, limiter, migrate
 from app.peticionador.models import User as PeticionadorUser
-
-db = SQLAlchemy()
-login_manager = LoginManager()
-csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address)
-talisman = Talisman()
 
 logging.basicConfig(level=logging.DEBUG)  # Ensure basicConfig is called if not already
 
+class UUIDConverter(BaseConverter):
+    def to_python(self, value):
+        try:
+            return uuid.UUID(value)
+        except ValueError:
+            raise ValidationError(self.map, f"Invalid UUID: {value}")
+
+    def to_url(self, value):
+        return str(value)
 
 def create_app(config_object=None):
     logging.debug("APP/__INIT__.PY: ENTERING create_app()")
@@ -32,6 +34,7 @@ def create_app(config_object=None):
         static_folder="../static",
         instance_relative_config=True,
     )
+    app.url_map.converters['uuid'] = UUIDConverter
     logging.debug("APP/__INIT__.PY: Flask app object created")
     # ----------------------
     # Carregamento de configuração
@@ -41,9 +44,9 @@ def create_app(config_object=None):
         # Prioriza FLASK_CONFIG; se ausente, usa FLASK_ENV para manter compatibilidade
         env_name = os.getenv("FLASK_CONFIG") or os.getenv("FLASK_ENV", "development")
         env_name = env_name.lower()
-        from app.config.settings import config_by_name
+        from app.config.settings import CONFIG_MAP
 
-        config_object = config_by_name.get(env_name, config_by_name["default"])
+        config_object = CONFIG_MAP.get(env_name, CONFIG_MAP["default"])
         logging.debug(
             f'APP/__INIT__.PY: Carregando configuração baseada em classe para env "{env_name}" -> {config_object}'
         )
@@ -53,31 +56,96 @@ def create_app(config_object=None):
     else:
         app.config.from_object(config_object)
     logging.debug("APP/__INIT__.PY: Configuração carregada no app")
+    
+    # Adicionar ProxyFix para lidar com headers X-Forwarded-*
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    
+    # Inicializa as extensões
+    db.init_app(app)
+    migrate.init_app(app, db)
+    csrf.init_app(app)
+    limiter.init_app(app)
+    login_manager.init_app(app)
+    
+    # Configurar CORS para desenvolvimento local
+    CORS(app, resources={
+        r"/api/*": {"origins": "*"},
+        r"/health": {"origins": "*"}  # Permitir health check
+    })
+
+    # ----------------------
+    # Configuração de segurança
+    # ----------------------
+    # CSP condicional baseado no ambiente
+    if app.config.get('FLASK_ENV') == 'development' or app.debug:
+        # CSP mais permissiva para desenvolvimento
+        csp_config = {
+            'default-src': "'self' 'unsafe-inline' 'unsafe-eval' data: blob: *",
+            'script-src': "'self' 'unsafe-inline' 'unsafe-eval' *",
+            'style-src': "'self' 'unsafe-inline' *",
+            'img-src': "'self' data: blob: *",
+            'font-src': "'self' data: *",
+            'connect-src': "'self' *"
+        }
+        talisman = Talisman(
+            app,
+            force_https=False,
+            strict_transport_security=False,
+            content_security_policy=csp_config,
+            content_security_policy_nonce_in=[]
+        )
+    else:
+        # CSP mais rigorosa para produção
+        talisman = Talisman(
+            app,
+            force_https=False,  
+            strict_transport_security=False,
+            content_security_policy={
+                'default-src': "'self'",
+                'script-src': [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "'unsafe-eval'",
+                    "https://cdn.jsdelivr.net",
+                    "https://unpkg.com",
+                    "https://cdnjs.cloudflare.com"
+                ],
+                'style-src': [
+                    "'self'",
+                    "'unsafe-inline'",
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.googleapis.com",
+                    "https://cdnjs.cloudflare.com"
+                ],
+                'font-src': [
+                    "'self'",
+                    "https://fonts.gstatic.com",
+                    "data:"
+                ],
+                'img-src': [
+                    "'self'",
+                    "data:",
+                    "https:",
+                    "blob:"
+                ],
+                'connect-src': [
+                    "'self'",
+                    "https://api.google.com",
+                    "wss:",
+                    "ws:"
+                ],
+                'object-src': "'none'",
+                'base-uri': "'self'"
+            },
+            content_security_policy_nonce_in=[]
+        )
+
     # Registrar comandos CLI
     from . import commands as app_commands
 
     app.cli.add_command(app_commands.import_clients_cli)
     app.cli.add_command(app_commands.find_client_by_cpf_cli)
     app.cli.add_command(app_commands.find_client_by_email_cli)
-
-    db.init_app(app)
-    csrf.init_app(app)
-    limiter.init_app(app)
-    login_manager.init_app(app)
-    # talisman.init_app(app, # Temporariamente comentado
-    #                   force_https=app.config.get('TALISMAN_FORCE_HTTPS', True),
-    #                   content_security_policy=app.config.get('TALISMAN_CSP_POLICY', {
-    #                       'default-src': ["'self'"],
-    #                       'script-src': ["'self'", "'unsafe-inline'", "https:"],
-    #                       'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
-    #                       'img-src': ["'self'", "data:", "https:"],
-    #                       'font-src': ["'self'", "data:", "https:"],
-    #                       'connect-src': ["'self'", "https:"]
-    #                   }),
-    #                   content_security_policy_nonce_in=['script-src'],
-    #                   referrer_policy='strict-origin-when-cross-origin',
-    #                   session_cookie_secure=app.config.get('SESSION_COOKIE_SECURE', True)
-    #                  )
 
     login_manager.login_view = "peticionador.login"
     login_manager.login_message = "Por favor, realize o login para acessar esta página."
@@ -92,28 +160,58 @@ def create_app(config_object=None):
     # Temporarily disable problematic API and schemas
     try:
         from app.peticionador.api import api_bp
-        from app.peticionador.schemas import ma
+        from app.extensions import ma
         # Inicializar Marshmallow
         if ma:
             ma.init_app(app)
-        # Registro da API refatorada
+        # STEP 7: Configure JWT + CORS (Solução Otimizada)
+        from app.config.jwt_config import configure_jwt
+        jwt = configure_jwt(app)
+        
+        # STEP 8: Register API blueprints (Estrutura Otimizada)
+        from app.api.auth_optimized import auth_bp
+        from app.api.public_api import public_bp
+        from app.api.admin_api import admin_bp
+        
+        # Registro da API refatorada (legacy)
         app.register_blueprint(api_bp)
+        
+        # Registro das novas APIs JWT otimizadas
+        app.register_blueprint(auth_bp)     # APIs de autenticação JWT
+        app.register_blueprint(public_bp)   # APIs públicas (sem auth)
+        app.register_blueprint(admin_bp)    # APIs administrativas (JWT required)
     except Exception as e:
         app.logger.warning(f"Could not register API/schemas: {e}")
 
     # Registro do blueprint Peticionador
     # O próprio blueprint já define url_prefix='/peticionador', portanto não passamos novamente
     app.register_blueprint(peticionador_bp)
+    
+    # Registro do blueprint público (sem autenticação)
+    try:
+        from app.public import public_bp
+        app.register_blueprint(public_bp)
+        app.logger.info("Public routes registered successfully")
+    except Exception as e:
+        app.logger.warning(f"Could not register public routes: {e}")
+
+    # Registro das APIs REST com ENUMs - Fase 2
+    try:
+        from app.api.routes.templates import templates_bp
+        app.register_blueprint(templates_bp)
+        app.logger.info("Template API routes registered successfully")
+    except Exception as e:
+        app.logger.warning(f"Could not register Template API routes: {e}")
 
     # Isentar o blueprint do peticionador da proteção CSRF temporariamente
     csrf.exempt(peticionador_bp)
     try:
         csrf.exempt(api_bp)
+        csrf.exempt(templates_bp)
     except:
         pass
 
     from app.main import main_bp
-
     app.register_blueprint(main_bp)
 
     if not app.debug and not app.testing:
@@ -145,17 +243,6 @@ def create_app(config_object=None):
             )
             app.logger.debug(f"Headers: {request.headers}")
             app.logger.debug(f"Body: {request.get_data(as_text=True)}")
-
-    @app.before_request
-    def ensure_https_behind_proxy():
-        forwarded_proto = request.headers.get("X-Forwarded-Proto", "").lower()
-        # Temporariamente desativado para testes - removemos o redirect HTTP->HTTPS
-        # if not app.debug and forwarded_proto == "http":
-        #     url = request.url.replace("http://", "https://", 1)
-        #     app.logger.info(f"Redirecionando para HTTPS (proxy): {url}")
-        #     return redirect(url, code=301)
-        if forwarded_proto == "https":
-            request.environ["wsgi.url_scheme"] = "https"
 
     @app.after_request
     def add_security_headers(response):
@@ -192,5 +279,30 @@ def create_app(config_object=None):
             )
 
         return response
+
+    # ----------------------
+    # Rota de Health Check Central
+    # ----------------------
+    @app.route('/health', methods=['GET'])
+    def health_check():
+        """Health check central da aplicação."""
+        try:
+            # Verificar conexão com banco de dados
+            db.session.execute("SELECT 1")
+            
+            return {
+                'status': 'healthy',
+                'timestamp': datetime.datetime.utcnow().isoformat(),
+                'database': 'ok',
+                'version': app.config.get('VERSION', '1.0.0')
+            }, 200
+            
+        except Exception as e:
+            app.logger.error(f"Health check falhou: {str(e)}")
+            return {
+                'status': 'unhealthy',
+                'timestamp': datetime.datetime.utcnow().isoformat(),
+                'error': str(e)
+            }, 503
 
     return app

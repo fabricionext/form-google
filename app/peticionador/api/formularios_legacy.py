@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required
 
 from ..models import PeticaoModelo, PeticaoPlaceholder
-from extensions import db
+from app.extensions import db
 
 # Blueprint para endpoints legacy de formulários
 formularios_legacy_bp = Blueprint('formularios_legacy', __name__)

@@ -21,28 +21,28 @@ from flask import (
     request,
     send_from_directory,
     url_for,
+    Blueprint,
+    flash,
+    session,
 )
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import (  # Manter generate_csrf se usado, remover CSRFProtect e a instanciação local
     generate_csrf,
 )
 from werkzeug.utils import secure_filename
+from flask_login import current_user, login_required
 
-from models import RespostaForm
+# RespostaForm não está mais disponível - removido
 
 # A task 'process_document_request_task' foi removida.
 # A importação dela aqui deve ser removida para evitar ImportError.
 # from app.tasks.document_generation import process_document_request_task
 
-# Importar funções de geração de documentos e modelos
-from document_generator import (
-    _initialize_google_services,
-    buscar_ou_criar_pasta_cliente,
-    gerar_documento_cliente,
-)
+# TODO: Importar funções de geração de documentos quando necessário
+# from document_generator import (...)  # Removido temporariamente
 
 # Importar extensões centralizadas
-from extensions import csrf, db, limiter
+from app.extensions import csrf, db, limiter
 
 # Importar o blueprint 'main_bp' de app.main.__init__
 from . import main_bp
@@ -86,12 +86,13 @@ def require_api_key(f):
 
 
 
-@main_bp.route("/")
-@limiter.limit("100 per day")
-@csrf.exempt  # Página inicial pode ser acessada sem CSRF
-def home():
-    """Rota principal que redireciona para o formulário de cadastro."""
-    return redirect(url_for("main.cadastro_de_cliente"))
+# @main_bp.route("/")
+# @limiter.limit("100 per day") 
+# @csrf.exempt  # Página inicial pode ser acessada sem CSRF
+# def home():
+#     """Rota principal que redireciona para o formulário de cadastro."""
+#     return redirect(url_for("main.cadastro_de_cliente"))
+# COMENTADO: A rota raiz agora é servida pelo Vue.js frontend
 
 
 # Definição do formulário para carregar o token CSRF
@@ -102,9 +103,83 @@ class ClientForm(FlaskForm):
 @main_bp.route("/cadastrodecliente")
 @limiter.limit("100 per hour")
 def cadastro_de_cliente():
-    """Exibe o formulário de cadastro de cliente com proteção CSRF."""
-    form = ClientForm()
-    return render_template("index.html", form=form)
+    """Serve a aplicação Vue.js para cadastro de cliente."""
+    return serve_vue_app()
+
+# Rotas adicionais que devem servir a mesma aplicação Vue.js (SPA routing)
+@main_bp.route("/clientes/novo")
+@main_bp.route("/modelos")
+@main_bp.route("/admin/formularios")  # Prefixo /admin para evitar conflito
+@main_bp.route("/admin/formularios/<path:subpath>")
+@limiter.limit("100 per hour")
+def vue_spa_routes(subpath=None):
+    """Serve a aplicação Vue.js para rotas do SPA."""
+    return serve_vue_app()
+
+
+def serve_vue_app():
+    """
+    Serve a aplicação Vue.js construída.
+    
+    Lê o arquivo index.html da pasta html/ (build do frontend)
+    e retorna com headers apropriados para SPA.
+    """
+    import os
+    from flask import current_app, send_file, Response
+    
+    try:
+        # Caminho para o build do frontend
+        html_path = os.path.join(current_app.root_path, '..', 'html', 'index.html')
+        
+        if not os.path.exists(html_path):
+            current_app.logger.error(f"Arquivo Vue.js não encontrado: {html_path}")
+            return "Aplicação frontend não encontrada", 404
+            
+        # Ler o conteúdo do arquivo
+        with open(html_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Criar resposta com headers apropriados
+        response = Response(content, mimetype='text/html')
+        
+        # Headers para SPA - não cachear o index.html
+        response.cache_control.no_store = True
+        response.cache_control.max_age = 0
+        response.cache_control.must_revalidate = True
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro ao servir aplicação Vue.js: {str(e)}")
+        return "Erro interno do servidor", 500
+
+
+@main_bp.route("/assets/<path:filename>")
+def vue_assets(filename):
+    """Serve arquivos estáticos do Vue.js (CSS, JS, etc.)."""
+    import os
+    from flask import current_app, send_file, abort
+    
+    try:
+        # Caminho para a pasta de assets do build
+        assets_path = os.path.join(current_app.root_path, '..', 'html', 'assets', filename)
+        
+        if not os.path.exists(assets_path):
+            current_app.logger.warning(f"Asset não encontrado: {filename}")
+            abort(404)
+            
+        # Enviar arquivo com cache longo (assets têm hash no nome)
+        response = send_file(assets_path)
+        response.cache_control.max_age = 31536000  # 1 ano
+        response.cache_control.public = True
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro ao servir asset {filename}: {str(e)}")
+        abort(500)
 
 
 @main_bp.route("/api/cep/<cep>")
@@ -192,67 +267,16 @@ def gerar_documento_api():
         # Normalizar CPF
         cpf_normalizado = re.sub(r'\\D', '', dados_cliente.get("cpf", ""))
 
-        novo_cliente = RespostaForm(
-            tipo_pessoa=payload.get("tipoPessoa"),
-            cpf=cpf_normalizado,
-            email=dados_cliente.get("email"),
-            primeiro_nome=dados_cliente.get("primeiroNome"),
-            sobrenome=dados_cliente.get("sobrenome"),
-            nacionalidade=dados_cliente.get("nacionalidade"),
-            estado_civil=dados_cliente.get("estadoCivil"),
-            profissao=dados_cliente.get("profissao"),
-            data_nascimento=dados_cliente.get("dataNascimento"),
-            rg=dados_cliente.get("rg"),
-            estado_emissor_rg=dados_cliente.get("estadoEmissorRg"),
-            cnh=dados_cliente.get("cnh"),
-            cep=dados_cliente.get("cep"),
-            logradouro=dados_cliente.get("endereco") or dados_cliente.get("logradouro"),
-            numero=dados_cliente.get("numero"),
-            complemento=dados_cliente.get("complemento"),
-            bairro=dados_cliente.get("bairro"),
-            cidade=dados_cliente.get("cidade"),
-            uf_endereco=dados_cliente.get("estado") or dados_cliente.get("uf"),
-            telefone_celular=dados_cliente.get("telefoneCelular"),
-            outro_telefone=dados_cliente.get("telefoneAdicional"),
-            status_processamento="Recebido",
-            submission_id=f"api-{datetime.now().isoformat()}"
-        )
+        # TODO: Substituir por novo modelo quando necessário
+        # Por enquanto, esta funcionalidade está sendo refatorada
+        current_app.logger.warning("Funcionalidade de geração de documentos temporariamente desabilitada")
+        return jsonify({
+            "status": "temporariamente_indisponivel",
+            "mensagem": "Esta funcionalidade está sendo atualizada"
+        }), 503
         
-        db.session.add(novo_cliente)
-        db.session.commit()
-        
-        current_app.logger.info(f"Cliente salvo no banco com ID: {novo_cliente.id}")
-
-        # 2. Enfileirar a tarefa de geração de documentos passando apenas o ID.
-        from app.tasks.document_generation import gerar_documentos_task
-        from kombu.exceptions import KombuError
-
-        try:
-            task = gerar_documentos_task.delay(
-                resposta_id=novo_cliente.id,
-                documentos_requeridos=payload.get("documentosRequeridos")
-            )
-            current_app.logger.info(
-                f"Tarefa de geração de documentos enfileirada para o cliente ID {novo_cliente.id} com a Task ID: {task.id}"
-            )
-        except KombuError as e:
-            current_app.logger.error(f"ERRO DE SERIALIZAÇÃO/KOMBU AO ENFILEIRAR: {e}", exc_info=True)
-            return jsonify({"status": "erro_fila_serializacao", "mensagem": "Erro interno ao processar a solicitação."}), 500
-        except Exception as e:
-             current_app.logger.error(f"Erro inesperado ao enfileirar tarefa: {e}", exc_info=True)
-             return jsonify({"status": "erro_fila_inesperado", "mensagem": "Não foi possível iniciar o processamento."}), 500
-
-        # Responde imediatamente com HTTP 202 Accepted
-        return (
-            jsonify(
-                {
-                    "status": "sucesso_enfileirado",
-                    "mensagem": "Solicitação recebida e está sendo processada em segundo plano.",
-                    "task_id": task.id,
-                }
-            ),
-            202,
-        )
+        # Esta funcionalidade será implementada posteriormente
+        # quando o novo modelo estiver disponível
 
     except Exception as e:
         current_app.logger.error(
@@ -307,18 +331,12 @@ def task_status(task_id):
             
             # Se houver resposta_id, buscar informações adicionais do banco
             if isinstance(result, dict) and result.get("resposta_id"):
-                from models import RespostaForm
-                resposta = RespostaForm.query.get(result["resposta_id"])
+                # TODO: Atualizar quando novo modelo estiver disponível
+                resposta = None
                 if resposta:
-                    response_data["cliente_nome"] = f"{resposta.primeiro_nome or ''} {resposta.sobrenome or ''}".strip()
-                    response_data["link_pasta_cliente"] = resposta.link_pasta_cliente
-                    if resposta.observacoes_processamento:
-                        try:
-                            import json
-                            obs = json.loads(resposta.observacoes_processamento)
-                            response_data["documentos_gerados"] = obs.get("links", [])
-                        except:
-                            pass
+                    response_data["cliente_nome"] = "Cliente"
+                    response_data["link_pasta_cliente"] = ""
+                    response_data["documentos_gerados"] = []
                             
         elif task.state == "FAILURE":
             response_data["error_message"] = str(task.info)
@@ -342,3 +360,32 @@ def task_status(task_id):
             "error_message": "Erro interno ao consultar status",
             "timestamp": datetime.now().isoformat()
         }), 500
+
+
+@main_bp.route("/health", methods=["GET"])
+@limiter.exempt  # Health check não precisa de rate limiting
+def health_check():
+    """
+    Endpoint de health check para monitoramento da aplicação.
+    Verifica conectividade com banco de dados e status geral.
+    """
+    try:
+        # Testa conexão com banco de dados
+        db.session.execute("SELECT 1")
+        db.session.commit()
+        
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "database": "connected",
+            "version": "1.0"
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Health check failed: {e}")
+        return jsonify({
+            "status": "unhealthy",
+            "timestamp": datetime.now().isoformat(),
+            "database": "disconnected",
+            "error": str(e)
+        }), 503

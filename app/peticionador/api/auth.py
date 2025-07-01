@@ -7,7 +7,7 @@ from flask_restx import Namespace, Resource, fields
 from marshmallow import ValidationError
 
 # Local application imports
-from extensions import db
+from app.extensions import db
 
 from ..models import User
 from ..schemas.user_schema import UserLoginSchema

@@ -1,0 +1,6 @@
+[
+  { "value": "draft", "label": "Rascunho" },
+  { "value": "reviewing", "label": "Em Revisão" },
+  { "value": "published", "label": "Publicado" },
+  { "value": "archived", "label": "Arquivado" }
+]

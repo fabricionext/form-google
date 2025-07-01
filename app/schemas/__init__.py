@@ -6,15 +6,17 @@ data input and output across the application.
 """
 
 from .template_schema import TemplateSchema, TemplateCreateSchema, TemplateUpdateSchema
-from .document_schema import DocumentGenerationSchema, DocumentResponseSchema
-from .form_schema import FormSchema, FormValidationSchema
+from .document_schema import DocumentTemplateSchema, DocumentTemplateCreate, DocumentTemplateUpdate, DocumentTemplateListSchema
+from .form_schema import FormSchema, FormFieldSchema
 
 __all__ = [
     'TemplateSchema',
     'TemplateCreateSchema', 
     'TemplateUpdateSchema',
-    'DocumentGenerationSchema',
-    'DocumentResponseSchema',
+    'DocumentTemplateSchema',
+    'DocumentTemplateCreate',
+    'DocumentTemplateUpdate',
+    'DocumentTemplateListSchema',
     'FormSchema',
-    'FormValidationSchema'
+    'FormFieldSchema'
 ] 

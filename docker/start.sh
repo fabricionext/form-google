@@ -40,6 +40,7 @@ python run_migration.py
 
 # Create necessary directories
 echo "📁 Creating directories..."
+mkdir -p /var/log/supervisor
 mkdir -p /var/log/gunicorn
 mkdir -p /var/log/nginx
 mkdir -p /home/app/documents

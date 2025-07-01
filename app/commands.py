@@ -1,9 +1,17 @@
-import csv
-import logging
-import re
-from typing import Any, Dict, List, Optional
+"""
+Comandos CLI personalizados para o sistema peticionador.
+"""
 
 import click
+from flask import current_app
+from flask.cli import with_appcontext
+import csv
+import re
+from datetime import datetime
+from typing import Optional, Dict, Any, List
+import logging
+
+from app.extensions import db
 
 # Configure basic logging to output to console
 logging.basicConfig(
@@ -14,15 +22,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import os
-from datetime import datetime
-
-from flask.cli import with_appcontext
 from google.auth.exceptions import DefaultCredentialsError
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 from app.peticionador.models import Cliente, TipoPessoaEnum
-from extensions import db
 
 # Mapeamento de nomes de estado para siglas
 ESTADOS_SIGLAS = {

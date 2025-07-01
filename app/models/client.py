@@ -20,7 +20,7 @@ class TipoPessoaEnum(enum.Enum):
 class Client(BaseModel):
     """Modelo para clientes do sistema."""
     
-    __tablename__ = "clients"
+    __tablename__ = "clientes"
     
     # Identificação básica
     tipo_pessoa = Column(Enum(TipoPessoaEnum), nullable=False)

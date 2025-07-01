@@ -9,8 +9,8 @@ Implementa circuit breakers, retry logic e instrumentação de métricas.
 from celery import current_task
 from celery.exceptions import Retry
 from app.celery_config import make_celery
-from app.models.document import Document
-from app.models.template import Template
+from app.models.document_template import DocumentTemplate
+from app.models.form import GeneratedForm, FormSubmission
 from app.adapters.enhanced_google_drive import EnhancedGoogleDriveAdapter
 from app.services.document_service import DocumentService
 from app.services.advanced_placeholder_service import AdvancedPlaceholderService
@@ -204,8 +204,7 @@ def generate_document_task(template_id, form_data, options=None, user_id=None):
         )
         
         # 1. Carregar template
-        template_service = DocumentService()
-        template = template_service.get_template(template_id)
+        template = DocumentTemplate.query.get(template_id)
         
         if not template:
             raise DocumentGenerationException(f"Template {template_id} não encontrado")
@@ -282,18 +281,32 @@ def generate_document_task(template_id, form_data, options=None, user_id=None):
             }
         )
         
-        # 6. Salvar metadados no banco
-        document_record = template_service.create_document_record({
-            'template_id': template_id,
-            'google_doc_id': document_copy['id'],
-            'name': document_copy['name'],
-            'form_data': form_data,
-            'processed_data': processed_data,
-            'status': 'completed',
-            'user_id': user_id,
-            'generation_options': options or {},
-            'task_id': task_id
-        })
+        # 6. Salvar metadados no banco  
+        from app.extensions import db
+        
+        # Criar formulário gerado se não existir
+        generated_form = GeneratedForm.query.filter_by(template_id=template_id).first()
+        if not generated_form:
+            generated_form = GeneratedForm(
+                template_id=template_id,
+                name=f"Form for {template.name}",
+                slug=f"form-{template_id}",
+                status='active'
+            )
+            db.session.add(generated_form)
+            db.session.flush()
+        
+        # Criar submission do formulário
+        document_record = FormSubmission(
+            form_id=generated_form.id,
+            client_id=user_id,
+            data=form_data,
+            status='completed',
+            document_id=document_copy['id'],
+            document_url=document_copy.get('webViewLink')
+        )
+        db.session.add(document_record)
+        db.session.commit()
         
         # Calcular métricas finais
         total_duration = time.time() - start_time
@@ -301,12 +314,12 @@ def generate_document_task(template_id, form_data, options=None, user_id=None):
         # Instrumentar sucesso
         if PROMETHEUS_AVAILABLE:
             DOCUMENT_GENERATION_DURATION.labels(
-                template_type=template.category or 'unknown',
+                template_type=template.category.name if template.category else 'unknown',
                 status='success'
             ).observe(total_duration)
             
             DOCUMENT_GENERATION_TOTAL.labels(
-                template_type=template.category or 'unknown',
+                template_type=template.category.name if template.category else 'unknown',
                 status='success'
             ).inc()
         
@@ -343,9 +356,9 @@ def generate_document_task(template_id, form_data, options=None, user_id=None):
         if PROMETHEUS_AVAILABLE:
             template_type = 'unknown'
             try:
-                template = Template.query.get(template_id)
+                template = DocumentTemplate.query.get(template_id)
                 if template:
-                    template_type = template.category or 'unknown'
+                    template_type = template.category.name if template.category else 'unknown'
             except:
                 pass
             
@@ -391,7 +404,7 @@ def cleanup_failed_documents_task():
     """
     try:
         from datetime import timedelta
-        from app.models.document import Document
+        from app.models.form import FormSubmission as Document
         from app import db
         
         cutoff_date = datetime.now() - timedelta(hours=24)

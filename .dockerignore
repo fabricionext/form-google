@@ -1,0 +1,113 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+README*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+log/
+
+# Test files
+tests/
+test_*.py
+*_test.py
+.pytest_cache/
+
+# Development tools
+.mypy_cache/
+.pylint.d/
+
+# Backup and temp files
+*.bak
+*.tmp
+*.temp
+.backup/
+backups/
+
+# Node.js (only exclude node_modules, keep package files for build)
+node_modules/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Monitoring and scripts
+monitoring/
+scripts/
+coverage/
+
+# Instance and run directories
+instance/
+run/
+
+# Volumes data
+volumes/
+
+# Docker
+Dockerfile.*
+docker-compose*.yml
+.dockerignore 

@@ -57,19 +57,21 @@ project_root_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root_path))
 print(f"!!! env.py: Added to sys.path: {str(project_root_path)} !!!")
 try:
-    from application import app, db  # Import app and db from your Flask app
+    from application import app
+    from app.extensions import db
 
-    print("!!! env.py: Successfully imported 'app' and 'db' from 'application.py' !!!")
-    target_metadata = db.metadata
-    print("!!! env.py: target_metadata set from db.metadata !!!")
+    print("!!! env.py: Successfully imported 'app' and 'db' !!!")
+    with app.app_context():
+        target_metadata = db.metadata
+    print("!!! env.py: target_metadata set from db.metadata within app_context !!!")
 except ImportError as e:
-    print(f"!!! env.py: FAILED to import 'app' or 'db' from 'application.py': {e} !!!")
+    print(f"!!! env.py: FAILED to import 'app' or 'db': {e} !!!")
     print(
-        "!!! env.py: Ensure your Flask app ('application.py') and its SQLAlchemy instance ('db') are correctly defined and accessible."
+        "!!! env.py: Ensure your Flask app ('application.py') and its SQLAlchemy instance ('db' in 'app/extensions.py') are correctly defined and accessible."
     )
-    target_metadata = None  # Keep this for safety
+    target_metadata = None
     raise ImportError(
-        "Could not import 'app' or 'db' from application.py, Alembic cannot proceed."
+        "Could not import 'app' or 'db', Alembic cannot proceed."
     ) from e
 # --- End Flask-SQLAlchemy setup ---
 
@@ -100,6 +102,11 @@ def run_migrations_online() -> None:
         # 'db' is the instance imported from application.py, which should be configured by the Flask app.
         # The Flask app itself (application.py) handles loading .env and setting up its database URI.
         # db.engine should reflect that configuration.
+        
+        # DEBUG: Print the database URI from the app config
+        db_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+        print(f"!!! env.py ONLINE:SQLALCHEMY_DATABASE_URI from app.config: {db_uri} !!!")
+        
         connectable = db.engine
         print(f"!!! env.py ONLINE: Using db.engine from Flask app: {connectable} !!!")
         # We expect application.py to have correctly configured the DB_URI, including any SSL requirements if necessary.

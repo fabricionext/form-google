@@ -5,7 +5,7 @@ Repository para Documents.
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy import and_, or_, func, desc
-from app.models.document import Document
+from app.models.form import FormSubmission as Document
 from app.repositories.base import BaseRepository
 from app.utils.exceptions import DocumentNotFoundException
 from app.config.constants import DOCUMENT_STATUSES

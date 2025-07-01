@@ -17,19 +17,32 @@ services:
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - REDIS_URL=redis://redis:6379/0
     volumes:
-      - ./documents:/home/app/documents
-      - ./logs:/var/log
-      - ./static/uploads:/home/app/static/uploads
+      - /tmp/form-google-volumes/documents:/home/app/documents
+      - /tmp/form-google-volumes/logs:/var/log
+      - /tmp/form-google-volumes/uploads:/home/app/static/uploads
     depends_on:
       - db
       - redis
     networks:
       - form-google-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /var/tmp
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost/health']
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
 
   # Banco de dados PostgreSQL
   db:
@@ -43,7 +56,7 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
+      - /tmp/form-google-volumes/backups:/backups
     ports:
       - '5432:5432'
     networks:
@@ -97,7 +110,7 @@ services:
     environment:
       - PGPASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - ./backups:/backups
+      - /tmp/form-google-volumes/backups:/backups
       - ./docker/backup.sh:/backup.sh:ro
     command: /backup.sh
     depends_on:

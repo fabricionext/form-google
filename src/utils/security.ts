@@ -16,20 +16,20 @@ const VALIDATION_PATTERNS = {
   fileName: /^[a-zA-Z0-9._-]+$/,
 } as const;
 
-// Caracteres perigosos
-const DANGEROUS_CHARS = [
-  '<',
-  '>',
-  '"',
-  "'",
-  '&',
-  ';',
-  '--',
-  '/*',
-  '*/',
-  'eval(',
-  'javascript:',
-];
+// Caracteres perigosos (para referência futura, não usado diretamente)
+// const DANGEROUS_CHARS = [
+//   '<',
+//   '>',
+//   '"',
+//   "'",
+//   '&',
+//   ';',
+//   '--',
+//   '/*',
+//   '*/',
+//   'eval(',
+//   'javascript:',
+// ];
 
 /**
  * Sanitiza entrada do usuário removendo caracteres perigosos
@@ -331,7 +331,11 @@ export function validateFileInput(
   if (file.size > maxSize) {
     return {
       isValid: false,
-      error: `Arquivo muito grande. Máximo permitido: ${(maxSize / 1024 / 1024).toFixed(1)}MB`,
+      error: `Arquivo muito grande. Máximo permitido: ${(
+        maxSize /
+        1024 /
+        1024
+      ).toFixed(1)}MB`,
     };
   }
 
@@ -339,7 +343,9 @@ export function validateFileInput(
   if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
     return {
       isValid: false,
-      error: `Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(', ')}`,
+      error: `Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(
+        ', '
+      )}`,
     };
   }
 

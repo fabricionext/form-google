@@ -10,11 +10,25 @@ from flask import Flask
 
 from .auth import auth_bp
 from .clients import clients_bp
+from .google_auth import google_auth_bp
+from .document_analysis import document_analysis_bp
+from .template_conversion import template_conversion_bp
+from .service_account_test import service_account_test_bp
+from .cache_management import cache_management_bp
+from .template_import import template_import_bp
+from .preview_generation import preview_generation_bp
 
 # Lista de blueprints disponíveis
 AVAILABLE_BLUEPRINTS = [
     ('auth_bp', auth_bp, 'Autenticação'),
     ('clients_bp', clients_bp, 'Clientes'),
+    ('google_auth_bp', google_auth_bp, 'Autenticação Google'),
+    ('document_analysis_bp', document_analysis_bp, 'Análise de Documentos'),
+    ('template_conversion_bp', template_conversion_bp, 'Conversão de Templates'),
+    ('service_account_test_bp', service_account_test_bp, 'Teste Conta de Serviço'),
+    ('cache_management_bp', cache_management_bp, 'Gerenciamento de Cache'),
+    ('template_import_bp', template_import_bp, 'Importação de Templates'),
+    ('preview_generation_bp', preview_generation_bp, 'Geração de Previews'),
     ('templates_bp', None, 'Templates'), # Carregado dinamicamente
     ('forms_bp', None, 'Formulários'),   # Carregado dinamicamente  
     ('documents_bp', None, 'Documentos'), # Carregado dinamicamente
@@ -24,6 +38,13 @@ AVAILABLE_BLUEPRINTS = [
 FEATURE_FLAGS = {
     'NEW_AUTH_API': True,       # ✅ Nova API de autenticação - FASE 3 Completa
     'NEW_CLIENTS_API': True,    # ✅ Nova API de clientes - FASE 3 Completa
+    'GOOGLE_AUTH_API': True,    # ✅ Autenticação Google OAuth 2.0 - FASE 4
+    'DOCUMENT_ANALYSIS_API': True,  # ✅ Análise de documentos Google Docs - FASE 4
+    'TEMPLATE_CONVERSION_API': True,  # ✅ Conversão automática de templates - FASE 4
+    'SERVICE_ACCOUNT_TEST_API': True,  # ✅ Teste de conta de serviço - FASE 4
+    'CACHE_MANAGEMENT_API': True,  # ✅ Gerenciamento de cache - FASE 4
+    'TEMPLATE_IMPORT_API': True,  # ✅ Importação real de templates - FASE 4
+    'PREVIEW_GENERATION_API': True,  # ✅ Geração de previews dinâmicos - FASE 4
     'NEW_TEMPLATES_API': True,  # ✅ Nova API de templates - FASE 4 Implementada
     'NEW_FORMS_API': True,      # ✅ Nova API de formulários - FASE 4 Implementada
     'NEW_DOCUMENTS_API': True,  # ✅ Nova API de documentos - FASE 4 Implementada
@@ -49,6 +70,41 @@ def register_new_api_routes(app: Flask):
         if FEATURE_FLAGS.get('NEW_CLIENTS_API', False):
             app.register_blueprint(clients_bp)
             app.logger.info("✅ Blueprint de clientes registrado: /api/clients")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('GOOGLE_AUTH_API', False):
+            app.register_blueprint(google_auth_bp)
+            app.logger.info("✅ Blueprint de autenticação Google registrado: /api/google")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('DOCUMENT_ANALYSIS_API', False):
+            app.register_blueprint(document_analysis_bp)
+            app.logger.info("✅ Blueprint de análise de documentos registrado: /api/documents")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('TEMPLATE_CONVERSION_API', False):
+            app.register_blueprint(template_conversion_bp)
+            app.logger.info("✅ Blueprint de conversão de templates registrado: /api/template-conversion")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('SERVICE_ACCOUNT_TEST_API', False):
+            app.register_blueprint(service_account_test_bp)
+            app.logger.info("✅ Blueprint de teste da conta de serviço registrado: /api/service-account")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('CACHE_MANAGEMENT_API', False):
+            app.register_blueprint(cache_management_bp)
+            app.logger.info("✅ Blueprint de gerenciamento de cache registrado: /api/cache")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('TEMPLATE_IMPORT_API', False):
+            app.register_blueprint(template_import_bp)
+            app.logger.info("✅ Blueprint de importação de templates registrado: /api/import")
+            registered_count += 1
+        
+        if FEATURE_FLAGS.get('PREVIEW_GENERATION_API', False):
+            app.register_blueprint(preview_generation_bp)
+            app.logger.info("✅ Blueprint de geração de previews registrado: /api/preview")
             registered_count += 1
         
         # FASE 4 - APIs expandidas

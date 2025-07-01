@@ -54,8 +54,8 @@ export default defineConfig({
   // Resolver aliases para importações
   resolve: {
     alias: {
-      '@': new URL('./src', import.meta.url).pathname,
-      '~': new URL('./src', import.meta.url).pathname,
+      '@': new URL('./frontend/src', import.meta.url).pathname,
+      '~': new URL('./frontend/src', import.meta.url).pathname,
     },
   },
 });

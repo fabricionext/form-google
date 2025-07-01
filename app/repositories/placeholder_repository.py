@@ -4,7 +4,7 @@ Repository para Placeholders.
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy import and_, or_, func
-from app.models.placeholder import Placeholder
+from app.models.template_placeholder import TemplatePlaceholder as Placeholder
 from app.repositories.base import BaseRepository
 from app.config.constants import PLACEHOLDER_CATEGORIES
 
@@ -322,7 +322,7 @@ class PlaceholderRepository(BaseRepository[Placeholder]):
         Returns:
             Lista de placeholders sem template associado
         """
-        from app.models.template import Template
+        from app.models.document_template import DocumentTemplate as Template
         
         return self.session.query(Placeholder).outerjoin(Template).filter(
             Template.id.is_(None)

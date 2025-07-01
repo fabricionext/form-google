@@ -4,7 +4,7 @@ import enum
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from extensions import db  # Importa diretamente da raiz do projeto
+from app.extensions import db  # Importa a partir do módulo de extensões da app
 
 # Ajuste o import de 'db' conforme a estrutura do seu projeto.
 # Exemplo: from app import db

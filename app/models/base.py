@@ -6,7 +6,10 @@ from datetime import datetime
 from typing import Dict, Any
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, DateTime
-from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.declarative import declared_attr, declarative_base
+
+# Criar a base declarativa para SQLAlchemy
+Base = declarative_base()
 
 db = SQLAlchemy()
 

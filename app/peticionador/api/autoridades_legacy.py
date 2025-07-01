@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required
 
 from ..models import AutoridadeTransito
-from extensions import db
+from app.extensions import db
 
 # Blueprint para endpoints legacy de autoridades
 autoridades_legacy_bp = Blueprint('autoridades_legacy', __name__)

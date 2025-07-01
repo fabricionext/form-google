@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   FieldType,
-  DocumentStatus,
   TemplateStatus,
   EnumValidator,
 } from '@/types/enums';

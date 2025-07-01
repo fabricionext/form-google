@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple, Union, Any
 from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 
-from extensions import db
+from app.extensions import db
 from app.peticionador.models import (
     FormularioGerado, 
     PeticaoModelo, 

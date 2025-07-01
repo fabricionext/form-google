@@ -1,30 +1,14 @@
 import os
+from flask_migrate import Migrate, upgrade
+from app import create_app, db
 
-from flask import Flask
-from flask_migrate import Migrate
-
-from app.peticionador.models import (
-    AutoridadeTransito,
-    Cliente,
-    PeticaoGerada,
-    PeticaoModelo,
-    User,
-)
-from extensions import db  # Importa a instância compartilhada
-
-# Importar todos os modelos para que o Alembic os reconheça
-from app.peticionador.models import FormularioGerado
-
-# Carregar a URI do banco de dados a partir das variáveis de ambiente
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL não está configurada.")
-
-# Criar uma instância mínima do Flask
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Inicializar as extensões com a instância da aplicação
-db.init_app(app)
+# Cria uma instância da aplicação usando a factory
+# Isso garante que toda a configuração, incluindo a DATABASE_URL, seja carregada
+app = create_app(os.getenv('FLASK_CONFIG') or None)
 migrate = Migrate(app, db)
+
+# Aplicar as migrações ao iniciar
+with app.app_context():
+    print("INFO: Aplicando migrações do banco de dados...")
+    upgrade()
+    print("INFO: Migrações aplicadas com sucesso.")

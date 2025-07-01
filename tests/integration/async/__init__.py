@@ -1,0 +1,1 @@
+# Testes de Integração Assíncrona - Fase 3 

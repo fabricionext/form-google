@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ form_gerado.nome }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        .form-section {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container my-5" x-data="formularioApp()">
+        
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold text-primary">{{ form_gerado.nome }}</h1>
+            {% if modelo.descricao %}
+                <p class="lead text-muted">{{ modelo.descricao }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Messages -->
+        <div x-show="message" x-transition>
+            <div :class="messageType === 'success' ? 'success-message' : 'error-message'" x-text="message"></div>
+        </div>
+
+        <!-- Form -->
+        <form @submit.prevent="submitForm" method="POST">
+            {{ form.hidden_tag() }}
+            
+            {% for categoria, campos in campo_grupos.items() %}
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-{{ loop.index % 4 == 1 and 'user' or loop.index % 4 == 2 and 'building' or loop.index % 4 == 3 and 'gavel' or 'info-circle' }}"></i>
+                        {{ categoria.title() }}
+                    </h3>
+                    
+                    <div class="row">
+                        {% for field in campos %}
+                            <div class="col-md-6 mb-3">
+                                {{ field.label(class="form-label fw-semibold") }}
+                                
+                                {% if field.type == 'StringField' or field.type == 'TextField' %}
+                                    {{ field(class="form-control") }}
+                                {% elif field.type == 'TextAreaField' %}
+                                    {{ field(class="form-control", rows="3") }}
+                                {% elif field.type == 'SelectField' %}
+                                    {{ field(class="form-select") }}
+                                {% elif field.type == 'DateField' %}
+                                    {{ field(class="form-control", type="date") }}
+                                {% elif field.type == 'EmailField' %}
+                                    {{ field(class="form-control", type="email") }}
+                                {% elif field.type == 'TelField' %}
+                                    {{ field(class="form-control", type="tel") }}
+                                {% elif field.type == 'IntegerField' %}
+                                    {{ field(class="form-control", type="number") }}
+                                {% else %}
+                                    {{ field(class="form-control") }}
+                                {% endif %}
+                                
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in field.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <!-- Submit Button -->
+            <div class="text-center mt-4">
+                <button 
+                    type="submit" 
+                    class="btn btn-primary btn-lg px-5"
+                    :disabled="loading"
+                    x-text="loading ? 'Gerando documento...' : 'Gerar Documento'"
+                ></button>
+            </div>
+        </form>
+        
+        <!-- Loading Overlay -->
+        <div x-show="loading" class="loading-overlay">
+            <div class="text-center text-white">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <div class="mt-3">Gerando seu documento...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- FontAwesome -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    
+    <script>
+        function formularioApp() {
+            return {
+                loading: false,
+                message: '',
+                messageType: 'success',
+                
+                async submitForm(event) {
+                    this.loading = true;
+                    this.message = '';
+                    
+                    try {
+                        const formData = new FormData(event.target);
+                        
+                        const response = await fetch(window.location.href, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            this.messageType = 'success';
+                            this.message = result.message || 'Documento gerado com sucesso!';
+                            
+                            if (result.link) {
+                                setTimeout(() => {
+                                    window.open(result.link, '_blank');
+                                }, 1000);
+                            }
+                            
+                            // Reset form
+                            event.target.reset();
+                        } else {
+                            this.messageType = 'error';
+                            this.message = result.error || 'Erro ao gerar documento.';
+                        }
+                    } catch (error) {
+                        this.messageType = 'error';
+                        this.message = 'Erro de conexão. Tente novamente.';
+                        console.error('Erro:', error);
+                    } finally {
+                        this.loading = false;
+                        
+                        // Scroll to top to show message
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ from app.config.constants import (
     VALIDATION_RULES,
     FIELD_TYPES
 )
-from extensions import db, limiter
+from app.extensions import db, limiter
 from .auth import permission_required
 
 # Blueprint para rotas de clientes

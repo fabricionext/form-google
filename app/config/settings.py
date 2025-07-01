@@ -5,6 +5,24 @@ Configurações centralizadas do sistema peticionador.
 import os
 from typing import Optional
 
+def _get_database_uri():
+    """Constrói a URI do banco de dados a partir das variáveis de ambiente."""
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        # Use a DATABASE_URL diretamente se fornecida
+        return database_url
+
+    db_user = os.environ.get('DB_USER')
+    db_pass = os.environ.get('DB_PASS')
+    db_host = os.environ.get('DB_HOST')
+    db_port = os.environ.get('DB_PORT', '5432')  # Default para 5432
+    db_name = os.environ.get('DB_NAME')
+
+    if all([db_user, db_pass, db_host, db_port, db_name]):
+        return f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+
+    return 'sqlite:///peticionador.db'
+
 
 class BaseConfig:
     """Configuração base."""
@@ -15,7 +33,7 @@ class BaseConfig:
     WTF_CSRF_TIME_LIMIT = 3600  # 1 hora
     
     # Database
-    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///peticionador.db')
+    SQLALCHEMY_DATABASE_URI = _get_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -123,21 +141,15 @@ class ProductionConfig(BaseConfig):
     DEBUG = False
     TESTING = False
     
-    # Database
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    if not DATABASE_URL:
-        raise ValueError("DATABASE_URL environment variable is required for production")
+    # Database - A URI já é pega pela BaseConfig, mas podemos garantir aqui.
+    SQLALCHEMY_DATABASE_URI = _get_database_uri()
     
     # Security
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
-        raise ValueError("SECRET_KEY environment variable is required for production")
     
     # Google credentials
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        raise ValueError("Google credentials are required for production")
     
     # Logging
     LOG_LEVEL = 'INFO'
@@ -145,6 +157,18 @@ class ProductionConfig(BaseConfig):
     # Enable all security features
     SESSION_COOKIE_SECURE = True
     WTF_CSRF_ENABLED = True
+    
+    @classmethod
+    def validate(cls):
+        """Valida configurações obrigatórias para produção."""
+        if not cls.SQLALCHEMY_DATABASE_URI or 'sqlite' in cls.SQLALCHEMY_DATABASE_URI:
+            raise ValueError("DATABASE_URL ou variáveis DB_* são obrigatórias para produção e não pode ser SQLite.")
+        
+        if not cls.SECRET_KEY:
+            raise ValueError("SECRET_KEY environment variable is required for production")
+        
+        if not cls.GOOGLE_CLIENT_ID or not cls.GOOGLE_CLIENT_SECRET:
+            raise ValueError("Google credentials are required for production")
 
 
 # Configuration mapping

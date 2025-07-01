@@ -7,7 +7,7 @@ from flask_restx import Namespace, Resource, fields
 from marshmallow import ValidationError
 
 # Local application imports
-from extensions import db
+from app.extensions import db
 
 from ..models import FormularioGerado, PeticaoModelo
 from ..schemas.formulario_schema import (
@@ -288,5 +288,123 @@ class FormularioValidationResource(Resource):
             return {
                 "success": False,
                 "message": "Erro interno do servidor",
+                "data": None,
+            }, 500
+
+
+@formularios_ns.route("/<string:slug>/gerar_documento")
+class DocumentoGenerationResource(Resource):
+    """Endpoint para geração de documentos a partir do formulário."""
+
+    @login_required
+    @formularios_ns.expect(formulario_model)
+    @formularios_ns.marshal_with(response_model)
+    @formularios_ns.doc("gerar_documento")
+    def post(self, slug):
+        """Gerar documento a partir dos dados do formulário."""
+        try:
+            from ..google_services import GoogleServices
+            from datetime import datetime
+            
+            # Buscar o formulário gerado pelo slug
+            form_gerado = FormularioGerado.query.filter_by(slug=slug).first()
+            if not form_gerado:
+                return {
+                    "success": False,
+                    "message": "Formulário não encontrado",
+                    "data": None,
+                }, 404
+
+            # Buscar o modelo
+            modelo = PeticaoModelo.query.get(form_gerado.modelo_id)
+            if not modelo:
+                return {
+                    "success": False,
+                    "message": "Modelo não encontrado",
+                    "data": None,
+                }, 404
+
+            # Obter dados do formulário
+            dados_formulario = request.get_json()
+            if not dados_formulario:
+                return {
+                    "success": False,
+                    "message": "Dados do formulário não fornecidos",
+                    "data": None,
+                }, 400
+
+            # Preparar dados para substituição
+            replacements = dados_formulario.copy()
+
+            # Adicionar data atual (placeholder comum)
+            try:
+                google_services = GoogleServices()
+                replacements['data_atual_extenso'] = google_services.get_current_date_extenso()
+            except:
+                from datetime import datetime
+                replacements['data_atual_extenso'] = datetime.now().strftime("%d de %B de %Y")
+
+            # Gerar nome do arquivo
+            data_atual_str = datetime.now().strftime("%d-%m-%Y")
+            nome_cliente = replacements.get("primeiro_nome", "Cliente")
+            sobrenome_cliente = replacements.get("sobrenome", "")
+            nome_arquivo = f"{data_atual_str} - {nome_cliente} {sobrenome_cliente} - {form_gerado.nome}".strip()
+
+            # Gerar documento via Google Services
+            try:
+                google_services = GoogleServices()
+                drive_service = google_services.get_drive_service()
+                docs_service = google_services.get_docs_service()
+
+                novo_id, link = google_services.copy_template_and_fill(
+                    drive_service=drive_service,
+                    docs_service=docs_service,
+                    template_id=modelo.doc_template_id,
+                    new_file_name=nome_arquivo,
+                    target_folder_id=modelo.pasta_destino_id,
+                    replacements=replacements
+                )
+
+                if novo_id and link:
+                    # Salvar registro da petição gerada
+                    from ..models import PeticaoGerada
+                    peticao = PeticaoGerada(
+                        cliente_id=None,  # Implementar se necessário
+                        modelo=modelo.nome,
+                        google_id=novo_id,
+                        link=link
+                    )
+                    db.session.add(peticao)
+                    db.session.commit()
+
+                    return {
+                        "success": True,
+                        "message": "Documento gerado com sucesso",
+                        "data": {
+                            "documento_id": novo_id,
+                            "nome_arquivo": nome_arquivo
+                        },
+                        "document_url": link
+                    }, 200
+                else:
+                    return {
+                        "success": False,
+                        "message": "Erro ao gerar documento - serviço não retornou dados válidos",
+                        "data": None,
+                    }, 500
+
+            except Exception as google_error:
+                current_app.logger.error(f"Erro nos serviços Google: {str(google_error)}")
+                return {
+                    "success": False,
+                    "message": f"Erro ao gerar documento: {str(google_error)}",
+                    "data": None,
+                }, 500
+
+        except Exception as e:
+            current_app.logger.error(f"Erro ao gerar documento para slug {slug}: {str(e)}")
+            return {
+                "success": False,
+                "message": f"Erro interno do servidor: {str(e)}",
                 "data": None,
             }, 500

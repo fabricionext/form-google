@@ -1,0 +1,22 @@
+{
+  "templates": [
+    {
+      "id": 1,
+      "name": "Suspensão Condicional",
+      "status": "published",
+      "fields": [
+        { "id": 1, "name": "nome", "type": "text", "required": true },
+        { "id": 2, "name": "email", "type": "email", "required": false }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Ação Anulatória",
+      "status": "draft",
+      "fields": [
+        { "id": 3, "name": "requerente", "type": "text", "required": true }
+      ]
+    }
+  ],
+  "total": 2
+}

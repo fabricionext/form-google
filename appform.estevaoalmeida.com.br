@@ -42,9 +42,16 @@ server {
         access_log off;
     }
     
-    # Configuração do proxy para o Gunicorn
-    location / {
-        proxy_pass http://unix:/var/www/estevaoalmeida.com.br/form-google/form_google.sock;
+    # Assets estáticos do Vue.js com cache (DEVE VIR PRIMEIRO)
+    location /assets/ {
+        alias /var/www/estevaoalmeida.com.br/form-google/html/assets/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # APIs do Flask (específicas)
+    location /api/ {
+        proxy_pass http://unix:/var/www/estevaoalmeida.com.br/form-google/run/gunicorn.sock;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -58,6 +65,48 @@ server {
         
         # Desativa o buffering para o EventSource
         proxy_buffering off;
+    }
+    
+    # Sistema legado (peticionador)
+    location /peticionador/ {
+        proxy_pass http://unix:/var/www/estevaoalmeida.com.br/form-google/run/gunicorn.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+        send_timeout 300s;
+        proxy_buffering off;
+    }
+    
+    # Sistema legado (formularios)
+    location /formularios {
+        proxy_pass http://unix:/var/www/estevaoalmeida.com.br/form-google/run/gunicorn.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+        send_timeout 300s;
+        proxy_buffering off;
+    }
+    
+    # Frontend Vue.js moderno (ROTA PADRÃO)
+    location / {
+        root /var/www/estevaoalmeida.com.br/form-google/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+        
+        # Headers para SPA
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
     }
     
     # Desativa o acesso a arquivos ocultos

@@ -85,7 +85,7 @@ class SystemMonitor:
     def _check_database_connection(self) -> Dict[str, str]:
         """Verifica conexão com banco de dados."""
         try:
-            from extensions import db
+            from app.extensions import db
             from sqlalchemy import text
             
             # Tentar uma query simples com text() para SQLAlchemy 2.0+

@@ -10,11 +10,13 @@ from functools import wraps
 from flask import Blueprint, request, jsonify, session, current_app
 from flask_login import current_user, login_user, logout_user, login_required
 from marshmallow import ValidationError
+import json
+from datetime import datetime
 
 from app.api.controllers import BaseController
 from app.peticionador.models import User
 from app.peticionador.forms import LoginForm
-from extensions import db, limiter
+from app.extensions import db, limiter
 
 # Blueprint para rotas de autenticação
 auth_bp = Blueprint('auth_api', __name__, url_prefix='/api/auth')

@@ -1,243 +1,280 @@
+#!/usr/bin/env python3
 """
-Template Controller - Gerenciamento completo de templates
-========================================================
-
-Controller para operações CRUD de templates e sincronização de placeholders.
+Template Controller - Integração com ENUMs Fase 1.5.2
+Implementação para fazer testes TDD passarem (Green phase)
 """
 
 from typing import Dict, Any, List, Optional
-from flask import request, current_app
-from marshmallow import ValidationError
+from flask import request, jsonify
+from sqlalchemy.exc import IntegrityError
+from app.models.enums import FieldType, TemplateStatus, EnumValidator
+from app.models.document_template import DocumentTemplate
+from app.models.template_placeholder import TemplatePlaceholder
+from app.extensions import db
+import logging
 
-from .base import BaseController
-from app.services.template_service import TemplateService
-from app.services.placeholder_service import PlaceholderService
-from app.utils.exceptions import (
-    NotFoundException, 
-    ValidationException, 
-    TemplateNotFoundException,
-    IntegrationException
-)
+logger = logging.getLogger(__name__)
 
-
-class TemplateController(BaseController):
-    """Controller para operações com templates."""
+class TemplateController:
+    """
+    Controller para Templates com integração de ENUMs.
+    Segue padrões REST e valida usando ENUMs da Fase 1.5.2.
+    """
     
-    def __init__(self):
-        super().__init__()
-        self.template_service = TemplateService()
-        self.placeholder_service = PlaceholderService()
-    
-    def list_templates(self, filters: Dict[str, Any] = None, 
-                      pagination: Dict[str, int] = None) -> Dict[str, Any]:
-        """Lista templates com filtros e paginação."""
+    def create_template(self) -> Dict[str, Any]:
+        """
+        Criar novo template validando ENUMs.
+        POST /api/templates/
+        """
         try:
-            # Parâmetros de consulta
-            page = pagination.get('page', 1) if pagination else 1
-            per_page = min(pagination.get('per_page', 20) if pagination else 20, 100)
+            data = request.get_json()
             
-            # Filtros
-            filters = filters or {}
+            # Validar dados obrigatórios
+            if not data or 'name' not in data:
+                return {'error': 'Template name is required'}, 400
             
-            # Buscar templates via service
-            templates_data = self.template_service.list_templates(
-                filters=filters,
-                page=page,
-                per_page=per_page
+            # Validar status se fornecido
+            status = data.get('status', TemplateStatus.DRAFT.value)
+            if not EnumValidator.validate_template_status(status):
+                return {'error': f'Invalid template status: {status}'}, 400
+            
+            # Validar campos se fornecidos
+            fields = data.get('fields', [])
+            for field in fields:
+                if 'type' in field:
+                    field_type = field['type']
+                    if not EnumValidator.validate_field_type(field_type):
+                        return {'error': f'Invalid field type: {field_type}'}, 400
+            
+            # Criar template
+            template = DocumentTemplate(
+                name=data['name'],
+                description=data.get('description', ''),
+                status=status,
+                is_active=True
             )
             
-            return self.paginated_response(
-                items=templates_data['items'],
-                total=templates_data['total'],
-                pagination_params={
-                    'page': page,
-                    'per_page': per_page,
-                    'pages': templates_data.get('pages', 1)
-                },
-                message=f"Encontrados {templates_data['total']} templates"
-            )
+            db.session.add(template)
+            db.session.flush()  # Para obter ID
+            
+            # Criar placeholders para cada campo
+            for i, field in enumerate(fields):
+                placeholder = TemplatePlaceholder(
+                    template_id=template.id,
+                    name=field['name'],
+                    label=field.get('label', field['name']),
+                    field_type=field['type'],
+                    required=field.get('required', False),
+                    field_order=field.get('order', i + 1)
+                )
+                db.session.add(placeholder)
+            
+            db.session.commit()
+            
+            # Retornar template criado
+            result = self._serialize_template(template)
+            logger.info(f"Template created: {template.id}")
+            
+            return result, 201
+            
+        except IntegrityError as e:
+            db.session.rollback()
+            logger.error(f"Integrity error creating template: {e}")
+            return {'error': 'Template name already exists'}, 400
             
         except Exception as e:
-            current_app.logger.error(f"Erro ao listar templates: {str(e)}")
-            return self.error_response("Erro ao listar templates")
+            db.session.rollback()
+            logger.error(f"Error creating template: {e}")
+            return {'error': 'Internal server error'}, 500
     
     def get_template(self, template_id: int) -> Dict[str, Any]:
-        """Busca template por ID com placeholders."""
+        """
+        Obter template específico.
+        GET /api/templates/<id>
+        """
         try:
-            template_data = self.template_service.get_template_by_id(template_id)
-            
-            if not template_data:
-                raise TemplateNotFoundException(template_id)
-            
-            # Incluir placeholders
-            placeholders = self.placeholder_service.get_placeholders_for_template(template_id)
-            template_data['placeholders'] = placeholders
-            
-            return self.success_response(
-                data={'template': template_data},
-                message="Template encontrado com sucesso"
-            )
-            
-        except TemplateNotFoundException as e:
-            return self.error_response(str(e), 404)
-        except Exception as e:
-            current_app.logger.error(f"Erro ao buscar template {template_id}: {str(e)}")
-            return self.error_response("Erro ao buscar template")
-    
-    def create_template(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Cria novo template."""
-        try:
-            # Validação básica
-            required_fields = ['nome', 'tipo', 'google_doc_id']
-            for field in required_fields:
-                if not data.get(field):
-                    raise ValidationException(f"Campo '{field}' é obrigatório")
-            
-            # Criar template via service
-            template_data = self.template_service.create_template(data)
-            
-            # Sincronizar placeholders automaticamente
-            try:
-                self.sync_placeholders(template_data['id'])
-            except Exception as e:
-                current_app.logger.warning(f"Erro ao sincronizar placeholders: {str(e)}")
-            
-            return self.success_response(
-                data={'template': template_data},
-                message="Template criado com sucesso",
-                status_code=201
-            )
-            
-        except ValidationException as e:
-            return self.error_response(str(e), 400)
-        except Exception as e:
-            current_app.logger.error(f"Erro ao criar template: {str(e)}")
-            return self.error_response("Erro ao criar template")
-    
-    def update_template(self, template_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Atualiza template existente."""
-        try:
-            # Verificar se template existe
-            existing_template = self.template_service.get_template_by_id(template_id)
-            if not existing_template:
-                raise TemplateNotFoundException(template_id)
-            
-            # Atualizar via service
-            updated_template = self.template_service.update_template(template_id, data)
-            
-            # Se google_doc_id foi alterado, re-sincronizar placeholders
-            if 'google_doc_id' in data and data['google_doc_id'] != existing_template.get('google_doc_id'):
-                try:
-                    self.sync_placeholders(template_id)
-                except Exception as e:
-                    current_app.logger.warning(f"Erro ao re-sincronizar placeholders: {str(e)}")
-            
-            return self.success_response(
-                data={'template': updated_template},
-                message="Template atualizado com sucesso"
-            )
-            
-        except TemplateNotFoundException as e:
-            return self.error_response(str(e), 404)
-        except ValidationException as e:
-            return self.error_response(str(e), 400)
-        except Exception as e:
-            current_app.logger.error(f"Erro ao atualizar template {template_id}: {str(e)}")
-            return self.error_response("Erro ao atualizar template")
-    
-    def delete_template(self, template_id: int) -> Dict[str, Any]:
-        """Remove template (soft delete)."""
-        try:
-            # Verificar se template existe
-            template = self.template_service.get_template_by_id(template_id)
+            template = DocumentTemplate.query.get(template_id)
             if not template:
-                raise TemplateNotFoundException(template_id)
+                return {'error': 'Template not found'}, 404
             
-            # Verificar se template pode ser removido (não tem documentos gerados)
-            can_delete = self.template_service.can_delete_template(template_id)
-            if not can_delete:
-                return self.error_response(
-                    "Template não pode ser removido pois possui documentos gerados",
-                    400
+            result = self._serialize_template(template)
+            return result, 200
+            
+        except Exception as e:
+            logger.error(f"Error getting template {template_id}: {e}")
+            return {'error': 'Internal server error'}, 500
+    
+    def list_templates(self) -> Dict[str, Any]:
+        """
+        Listar templates com filtros opcionais.
+        GET /api/templates/
+        """
+        try:
+            # Parâmetros de filtro
+            status_filter = request.args.get('status')
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 20))
+            
+            # Query base
+            query = DocumentTemplate.query.filter_by(is_active=True)
+            
+            # Filtrar por status se fornecido
+            if status_filter:
+                if not EnumValidator.validate_template_status(status_filter):
+                    return {'error': f'Invalid status filter: {status_filter}'}, 400
+                query = query.filter_by(status=status_filter)
+            
+            # Paginação
+            pagination = query.paginate(
+                page=page, 
+                per_page=per_page, 
+                error_out=False
+            )
+            
+            # Serializar templates
+            templates = [
+                self._serialize_template(template) 
+                for template in pagination.items
+            ]
+            
+            result = {
+                'templates': templates,
+                'total': pagination.total,
+                'page': page,
+                'per_page': per_page,
+                'has_next': pagination.has_next,
+                'has_prev': pagination.has_prev
+            }
+            
+            return result, 200
+            
+        except Exception as e:
+            logger.error(f"Error listing templates: {e}")
+            return {'error': 'Internal server error'}, 500
+    
+    def update_template_status(self, template_id: int) -> Dict[str, Any]:
+        """
+        Atualizar status do template validando transições.
+        PATCH /api/templates/<id>/status
+        """
+        try:
+            data = request.get_json()
+            new_status = data.get('status')
+            
+            if not new_status:
+                return {'error': 'Status is required'}, 400
+            
+            if not EnumValidator.validate_template_status(new_status):
+                return {'error': f'Invalid status: {new_status}'}, 400
+            
+            template = DocumentTemplate.query.get(template_id)
+            if not template:
+                return {'error': 'Template not found'}, 404
+            
+            # Validar transição de status
+            current_status = TemplateStatus(template.status)
+            new_status_enum = TemplateStatus(new_status)
+            
+            if not EnumValidator.validate_status_transition(
+                current_status.value, new_status_enum.value, 'template'
+            ):
+                return {
+                    'error': f'Invalid status transition: {current_status.value} → {new_status}'
+                }, 400
+            
+            # Atualizar status
+            template.status = new_status
+            db.session.commit()
+            
+            result = self._serialize_template(template)
+            logger.info(f"Template {template_id} status updated to {new_status}")
+            
+            return result, 200
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error updating template status: {e}")
+            return {'error': 'Internal server error'}, 500
+    
+    def _serialize_template(self, template: DocumentTemplate) -> Dict[str, Any]:
+        """
+        Serializar template para JSON com ENUMs.
+        """
+        # Obter placeholders/campos
+        placeholders = TemplatePlaceholder.query.filter_by(
+            template_id=template.id
+        ).order_by(TemplatePlaceholder.field_order).all()
+        
+        fields = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'label': p.label,
+                'type': p.field_type,
+                'required': p.required,
+                'order': p.field_order
+            }
+            for p in placeholders
+        ]
+        
+        return {
+            'id': template.id,
+            'name': template.name,
+            'description': template.description,
+            'status': template.status,
+            'fields': fields,
+            'created_at': template.created_at.isoformat() if template.created_at else None,
+            'updated_at': template.updated_at.isoformat() if template.updated_at else None
+        }
+
+class EnumInfoController:
+    """
+    Controller para fornecer informações sobre ENUMs disponíveis.
+    """
+    
+    def get_field_types(self) -> Dict[str, Any]:
+        """
+        Obter tipos de campo disponíveis.
+        GET /api/field-types/
+        """
+        try:
+            field_types = [
+                {
+                    'value': field_type.value,
+                    'label': label
+                }
+                for field_type, label in zip(
+                    FieldType,
+                    ['Texto', 'E-mail', 'Número', 'Data', 'Seleção', 
+                     'Seleção Múltipla', 'Área de Texto', 'Checkbox', 'Arquivo']
                 )
+            ]
             
-            # Soft delete via service
-            self.template_service.delete_template(template_id)
+            return field_types, 200
             
-            return self.success_response(
-                message="Template removido com sucesso"
-            )
-            
-        except TemplateNotFoundException as e:
-            return self.error_response(str(e), 404)
         except Exception as e:
-            current_app.logger.error(f"Erro ao remover template {template_id}: {str(e)}")
-            return self.error_response("Erro ao remover template")
+            logger.error(f"Error getting field types: {e}")
+            return {'error': 'Internal server error'}, 500
     
-    def sync_placeholders(self, template_id: int) -> Dict[str, Any]:
-        """Sincroniza placeholders do Google Docs."""
+    def get_template_statuses(self) -> Dict[str, Any]:
+        """
+        Obter status de template disponíveis.
+        GET /api/template-statuses/
+        """
         try:
-            # Verificar se template existe
-            template = self.template_service.get_template_by_id(template_id)
-            if not template:
-                raise TemplateNotFoundException(template_id)
+            statuses = [
+                {
+                    'value': status.value,
+                    'label': label
+                }
+                for status, label in zip(
+                    TemplateStatus,
+                    ['Rascunho', 'Em Revisão', 'Publicado', 'Arquivado']
+                )
+            ]
             
-            # Sincronizar via service
-            sync_result = self.template_service.sync_placeholders(template_id)
+            return statuses, 200
             
-            return self.success_response(
-                data=sync_result,
-                message="Placeholders sincronizados com sucesso"
-            )
-            
-        except TemplateNotFoundException as e:
-            return self.error_response(str(e), 404)
-        except IntegrationException as e:
-            return self.error_response(f"Erro de integração: {str(e)}", 502)
         except Exception as e:
-            current_app.logger.error(f"Erro ao sincronizar placeholders {template_id}: {str(e)}")
-            return self.error_response("Erro ao sincronizar placeholders")
-    
-    def get_template_preview(self, template_id: int) -> Dict[str, Any]:
-        """Gera preview do template com dados fictícios."""
-        try:
-            # Verificar se template existe
-            template = self.template_service.get_template_by_id(template_id)
-            if not template:
-                raise TemplateNotFoundException(template_id)
-            
-            # Gerar preview via service
-            preview_data = self.template_service.generate_preview(template_id)
-            
-            return self.success_response(
-                data={'preview': preview_data},
-                message="Preview gerado com sucesso"
-            )
-            
-        except TemplateNotFoundException as e:
-            return self.error_response(str(e), 404)
-        except Exception as e:
-            current_app.logger.error(f"Erro ao gerar preview {template_id}: {str(e)}")
-            return self.error_response("Erro ao gerar preview")
-    
-    def get_template_statistics(self, template_id: int) -> Dict[str, Any]:
-        """Retorna estatísticas de uso do template."""
-        try:
-            # Verificar se template existe
-            template = self.template_service.get_template_by_id(template_id)
-            if not template:
-                raise TemplateNotFoundException(template_id)
-            
-            # Buscar estatísticas via service
-            stats = self.template_service.get_template_statistics(template_id)
-            
-            return self.success_response(
-                data={'statistics': stats},
-                message="Estatísticas obtidas com sucesso"
-            )
-            
-        except TemplateNotFoundException as e:
-            return self.error_response(str(e), 404)
-        except Exception as e:
-            current_app.logger.error(f"Erro ao obter estatísticas {template_id}: {str(e)}")
-            return self.error_response("Erro ao obter estatísticas") 
+            logger.error(f"Error getting template statuses: {e}")
+            return {'error': 'Internal server error'}, 500 
