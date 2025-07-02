@@ -149,7 +149,6 @@
                                                         variant="outlined"
                                                         prepend-inner-icon="mdi-account"
                                                         @input="updateProgress"
-                                                        @blur="cliente.primeiro_nome = formatarNome(cliente.primeiro_nome)"
                                                     ></v-text-field>
                                                 </v-col>
                                                 <v-col cols="12" md="6">
@@ -485,57 +484,6 @@
                                     </template>
                                     {{ mensagem }}
                                 </v-alert>
-
-                                <!-- Diálogo de Sucesso -->
-                                <v-dialog v-model="showSuccessDialog" max-width="500" persistent>
-                                    <v-card rounded="lg">
-                                        <v-card-title class="text-center pa-6">
-                                            <div class="d-flex flex-column align-center">
-                                                <v-icon 
-                                                    icon="mdi-check-circle" 
-                                                    size="80" 
-                                                    color="success"
-                                                    class="mb-4"
-                                                ></v-icon>
-                                                <h2 class="text-h5 text-success">Cliente Cadastrado!</h2>
-                                            </div>
-                                        </v-card-title>
-                                        <v-card-text class="text-center">
-                                            <p class="text-h6 mb-2">✅ Cadastro realizado com sucesso!</p>
-                                            <p class="text-body-1 mb-4">
-                                                O cliente <strong>{{ nomeClienteCadastrado }}</strong> foi cadastrado no sistema.
-                                            </p>
-                                            <div v-if="documentosGerados && documentosGerados.length > 0">
-                                                <p class="text-body-2 text-success mb-2">
-                                                    📁 Documentos gerados automaticamente:
-                                                </p>
-                                                <v-chip 
-                                                    v-for="doc in documentosGerados" 
-                                                    :key="doc"
-                                                    size="small" 
-                                                    color="success" 
-                                                    variant="outlined"
-                                                    class="ma-1"
-                                                >
-                                                    {{ formatarTipoDocumento(doc) }}
-                                                </v-chip>
-                                            </div>
-                                        </v-card-text>
-                                        <v-card-actions class="justify-center pa-6">
-                                            <v-btn 
-                                                color="primary"
-                                                variant="elevated"
-                                                size="large"
-                                                rounded="lg"
-                                                @click="fecharDialogoSucesso"
-                                                class="px-8"
-                                            >
-                                                <v-icon icon="mdi-plus" class="me-2"></v-icon>
-                                                Cadastrar Novo Cliente
-                                            </v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-dialog>
                             </div>
                         </v-card>
                     </div>
@@ -576,13 +524,8 @@
         // Composables
         function useFormValidation() {
             const rules = {
-                required: value => {
-                    if (!value) return 'Este campo é obrigatório';
-                    const trimmed = String(value).trim();
-                    return !!trimmed || 'Este campo é obrigatório';
-                },
+                required: value => !!value || 'Este campo é obrigatório',
                 email: value => {
-                    if (!value) return true;
                     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     return pattern.test(value) || 'E-mail inválido';
                 },
@@ -771,56 +714,6 @@
             return { carregandoCEP, buscarCEP };
         }
 
-        function useTextFormatting() {
-            // Função para normalizar nomes (capitalizar e tratar preposições)
-            const formatarNome = (nome) => {
-                if (!nome) return '';
-                
-                // Remover espaços extras
-                nome = nome.trim().replace(/\s+/g, ' ');
-                
-                // Preposições que devem ficar em minúsculo
-                const preposicoes = ['de', 'do', 'da', 'dos', 'das', 'e', 'em', 'na', 'no', 'para', 'por'];
-                
-                return nome
-                    .toLowerCase()
-                    .split(' ')
-                    .map((palavra, index) => {
-                        // Primeira palavra sempre maiúscula
-                        if (index === 0) {
-                            return palavra.charAt(0).toUpperCase() + palavra.slice(1);
-                        }
-                        
-                        // Preposições ficam em minúsculo
-                        if (preposicoes.includes(palavra)) {
-                            return palavra;
-                        }
-                        
-                        // Outras palavras ficam capitalizadas
-                        return palavra.charAt(0).toUpperCase() + palavra.slice(1);
-                    })
-                    .join(' ');
-            };
-
-            // Função para limpar e formatar texto geral
-            const limparTexto = (texto) => {
-                if (!texto) return '';
-                return texto.trim().replace(/\s+/g, ' ');
-            };
-
-            // Função para capitalizar texto
-            const capitalizarTexto = (texto) => {
-                if (!texto) return '';
-                return texto
-                    .toLowerCase()
-                    .split(' ')
-                    .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1))
-                    .join(' ');
-            };
-
-            return { formatarNome, limparTexto, capitalizarTexto };
-        }
-
         function useConstants() {
             const estadosCivis = [
                 { title: 'Solteiro(a)', value: 'SOLTEIRO' },
@@ -874,27 +767,6 @@
             const loading = ref(false);
             const mensagem = ref('');
             const tipoMensagem = ref('success');
-            const showSuccessDialog = ref(false);
-            const nomeClienteCadastrado = ref('');
-            const documentosGerados = ref([]);
-
-            const formatarTipoDocumento = (tipo) => {
-                const tipos = {
-                    'FICHA_CADASTRAL': 'Ficha Cadastral',
-                    'CONTRATO_HONORARIOS': 'Contrato de Honorários',
-                    'PROCURACAO_JUDICIAL': 'Procuração Judicial',
-                    'PROCURACAO_ADMINISTRATIVA': 'Procuração Administrativa',
-                    'CONTRATO_ADMINISTRATIVO': 'Contrato Administrativo',
-                    'DECLARACAO_POBREZA': 'Declaração de Pobreza'
-                };
-                return tipos[tipo] || tipo;
-            };
-
-            const fecharDialogoSucesso = () => {
-                showSuccessDialog.value = false;
-                limparFormulario();
-                mensagem.value = '';
-            };
 
             const submitForm = async () => {
                 loading.value = true;
@@ -904,27 +776,13 @@
                     // Preparar dados conforme tipo de pessoa
                     const dadosEnvio = { ...cliente };
                     
-                    // Adicionar lista de documentos a gerar automaticamente
+                    // Remover campos não aplicáveis
                     if (cliente.tipo_pessoa === 'FISICA') {
-                        dadosEnvio.documentos_gerar = [
-                            'FICHA_CADASTRAL',
-                            'CONTRATO_HONORARIOS', 
-                            'PROCURACAO_JUDICIAL',
-                            'PROCURACAO_ADMINISTRATIVA',
-                            'CONTRATO_ADMINISTRATIVO',
-                            'DECLARACAO_POBREZA'
-                        ];
                         delete dadosEnvio.razao_social;
                         delete dadosEnvio.nome_fantasia;
                         delete dadosEnvio.cnpj;
                         delete dadosEnvio.inscricao_estadual;
                     } else {
-                        dadosEnvio.documentos_gerar = [
-                            'FICHA_CADASTRAL',
-                            'CONTRATO_HONORARIOS',
-                            'PROCURACAO_JUDICIAL', 
-                            'PROCURACAO_ADMINISTRATIVA'
-                        ];
                         delete dadosEnvio.primeiro_nome;
                         delete dadosEnvio.sobrenome;
                         delete dadosEnvio.cpf;
@@ -939,22 +797,9 @@
 
                     const response = await axios.post('/api/public/clientes', dadosEnvio);
 
-                    // Extrair nome do cliente para o diálogo
-                    if (cliente.tipo_pessoa === 'FISICA') {
-                        nomeClienteCadastrado.value = `${cliente.primeiro_nome} ${cliente.sobrenome}`.trim();
-                    } else {
-                        nomeClienteCadastrado.value = cliente.razao_social;
-                    }
-
-                    // Extrair documentos gerados com sucesso
-                    if (response.data.documentos) {
-                        documentosGerados.value = response.data.documentos
-                            .filter(doc => doc.status === 'success')
-                            .map(doc => doc.type);
-                    }
-
-                    // Mostrar diálogo de sucesso
-                    showSuccessDialog.value = true;
+                    mensagem.value = 'Cliente cadastrado com sucesso!';
+                    tipoMensagem.value = 'success';
+                    limparFormulario();
                     
                 } catch (error) {
                     console.error('Erro ao cadastrar cliente:', error);
@@ -975,17 +820,7 @@
                 }
             };
 
-            return { 
-                loading, 
-                mensagem, 
-                tipoMensagem, 
-                submitForm,
-                showSuccessDialog,
-                nomeClienteCadastrado,
-                documentosGerados,
-                formatarTipoDocumento,
-                fecharDialogoSucesso
-            };
+            return { loading, mensagem, tipoMensagem, submitForm };
         }
 
         // Componente principal
@@ -1000,7 +835,6 @@
                 const { cliente, limparFormulario } = useCliente();
                 const { progressoFormulario } = useProgress(cliente);
                 const { estadosCivis, estados, estadosSiglas } = useConstants();
-                const { formatarNome, limparTexto, capitalizarTexto } = useTextFormatting();
                 
                 // Função para atualizar progresso
                 const updateProgress = () => {
@@ -1009,17 +843,7 @@
 
                 const { aplicarMascaraCPF, aplicarMascaraCNPJ, aplicarMascaraTelefone, aplicarMascaraTelefoneFixo, aplicarMascaraCEP } = useMasks(cliente, updateProgress);
                 const { carregandoCEP, buscarCEP } = useCEP(cliente, updateProgress);
-                const { 
-                    loading, 
-                    mensagem, 
-                    tipoMensagem, 
-                    submitForm, 
-                    showSuccessDialog, 
-                    nomeClienteCadastrado, 
-                    documentosGerados, 
-                    formatarTipoDocumento, 
-                    fecharDialogoSucesso 
-                } = useFormSubmission(cliente, limparFormulario);
+                const { loading, mensagem, tipoMensagem, submitForm } = useFormSubmission(cliente, limparFormulario);
 
                 // Função para mudança de tipo de pessoa
                 const onTipoPessoaChange = () => {
@@ -1057,9 +881,6 @@
                     carregandoCEP,
                     mensagem,
                     tipoMensagem,
-                    showSuccessDialog,
-                    nomeClienteCadastrado,
-                    documentosGerados,
                     
                     // Constants
                     estadosCivis,
@@ -1076,12 +897,7 @@
                     buscarCEP,
                     updateProgress,
                     onTipoPessoaChange,
-                    submitForm,
-                    formatarNome,
-                    limparTexto,
-                    capitalizarTexto,
-                    formatarTipoDocumento,
-                    fecharDialogoSucesso
+                    submitForm
                 };
             }
         });

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Peticionador{% endblock %} - Sistema ADV</title>
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='favicon.ico') }}"
+      type="image/x-icon"
+    />
+
+    <!-- Vuetify CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/vuetify@3.8.11/dist/vuetify.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <!-- Estilos customizados -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('peticionador.static', filename='css/style.css') }}"
+    />
+
+    <style>
+      :root {
+        --primary-color: #1976d2;
+        --secondary-color: #424242;
+        --success-color: #4caf50;
+        --warning-color: #ff9800;
+        --error-color: #f44336;
+      }
+
+      .v-application {
+        font-family: 'Roboto', sans-serif !important;
+      }
+
+      .custom-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+
+      .custom-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+      }
+
+      .gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .gradient-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+
+      .gradient-warning {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+
+    {% block head_extra %}{% endblock %}
+  </head>
+  <body>
+    <div id="app">
+      <v-app>
+        <!-- Navigation Drawer -->
+        <v-navigation-drawer
+          v-model="drawer"
+          :rail="rail"
+          permanent
+          @click="rail = false"
+          class="elevation-2"
+        >
+          <v-list-item
+            prepend-avatar="https://randomuser.me/api/portraits/men/85.jpg"
+            :title="'{{ current_user.name or current_user.email }}'"
+            nav
+          >
+            <template v-slot:append>
+              <v-btn
+                variant="text"
+                icon="mdi-chevron-left"
+                @click.stop="rail = !rail"
+              ></v-btn>
+            </template>
+          </v-list-item>
+
+          <v-divider></v-divider>
+
+          <v-list density="compact" nav>
+            <v-list-item
+              prepend-icon="mdi-view-dashboard"
+              title="Dashboard"
+              value="dashboard"
+              href="{{ url_for('peticionador.index') }}"
+              :active="request.endpoint == 'peticionador.index'"
+            ></v-list-item>
+
+            <v-list-item
+              prepend-icon="mdi-account-group"
+              title="Clientes"
+              value="clientes"
+              href="{{ url_for('peticionador.listar_clientes') }}"
+              :active="request.endpoint == 'peticionador.listar_clientes'"
+            ></v-list-item>
+
+            <v-list-item
+              prepend-icon="mdi-file-document-multiple"
+              title="Modelos"
+              value="modelos"
+              href="{{ url_for('peticionador.listar_modelos') }}"
+              :active="request.endpoint == 'peticionador.listar_modelos'"
+            ></v-list-item>
+
+            <v-list-item
+              prepend-icon="mdi-shield-account"
+              title="Autoridades"
+              value="autoridades"
+              href="{{ url_for('peticionador.listar_autoridades') }}"
+              :active="request.endpoint == 'peticionador.listar_autoridades'"
+            ></v-list-item>
+
+            <v-list-item
+              prepend-icon="mdi-cog"
+              title="Configurações"
+              value="configuracoes"
+              href="{{ url_for('peticionador.configuracoes') }}"
+              :active="request.endpoint == 'peticionador.configuracoes'"
+            ></v-list-item>
+          </v-list>
+        </v-navigation-drawer>
+
+        <!-- App Bar -->
+        <v-app-bar :elevation="2" color="primary" dark>
+          <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+
+          <v-app-bar-title class="d-flex align-center">
+            <v-icon icon="mdi-scale-balance" class="me-2"></v-icon>
+            Peticionador ADV
+          </v-app-bar-title>
+
+          <v-spacer></v-spacer>
+
+          <v-btn icon="mdi-bell" variant="text"></v-btn>
+          <v-btn icon="mdi-account" variant="text"></v-btn>
+
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn
+                icon="mdi-dots-vertical"
+                variant="text"
+                v-bind="props"
+              ></v-btn>
+            </template>
+            <v-list>
+              <v-list-item
+                prepend-icon="mdi-account"
+                title="Perfil"
+                value="perfil"
+              ></v-list-item>
+              <v-list-item
+                prepend-icon="mdi-logout"
+                title="Sair"
+                value="sair"
+                href="{{ url_for('peticionador.logout') }}"
+              ></v-list-item>
+            </v-list>
+          </v-menu>
+        </v-app-bar>
+
+        <!-- Main Content -->
+        <v-main>
+          <v-container fluid class="pa-6">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %} {%
+            if messages %}
+            <div class="mb-4">
+              {% for category, message in messages %}
+              <v-alert
+                type="{{ 'error' if category == 'danger' else category }}"
+                variant="tonal"
+                closable
+                class="mb-2"
+              >
+                {{ message }}
+              </v-alert>
+              {% endfor %}
+            </div>
+            {% endif %} {% endwith %}
+
+            <!-- Page Content -->
+            <div class="fade-in">
+              {% block content %}
+              <v-card>
+                <v-card-text>
+                  <p>Bem-vindo ao Peticionador. Faça login para continuar.</p>
+                </v-card-text>
+              </v-card>
+              {% endblock %}
+            </div>
+          </v-container>
+        </v-main>
+
+        <!-- Footer -->
+        <v-footer app color="grey-lighten-4" class="text-center">
+          <v-container>
+            <div class="text-body-2 text-grey-darken-1">
+              &copy; {{ current_year }} Estevao Almeida Advogados. Todos os
+              direitos reservados.
+            </div>
+          </v-container>
+        </v-footer>
+      </v-app>
+    </div>
+
+    <!-- Vue.js and Vuetify JS (PRODUCTION BUILD) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3.8.11/dist/vuetify.min.js"></script>
+
+    <!-- Scripts customizados -->
+    <script src="{{ url_for('peticionador.static', filename='js/peticionador_custom.js') }}"></script>
+    <script src="{{ url_for('peticionador.static', filename='js/input_masks.js') }}"></script>
+
+    <script>
+      const { createApp } = Vue;
+      const { createVuetify } = Vuetify;
+
+      const vuetify = createVuetify({
+        theme: {
+          defaultTheme: 'light',
+          themes: {
+            light: {
+              colors: {
+                primary: '#1976d2',
+                secondary: '#424242',
+                accent: '#82B1FF',
+                error: '#FF5252',
+                info: '#2196F3',
+                success: '#4CAF50',
+                warning: '#FFC107',
+              },
+            },
+          },
+        },
+      });
+
+      const app = createApp({
+        data() {
+          return {
+            drawer: true,
+            rail: false,
+            request: {
+              endpoint: '{{ request.endpoint }}',
+            },
+          };
+        },
+        mounted() {
+          // Auto-hide rail on mobile
+          if (window.innerWidth < 960) {
+            this.rail = true;
+          }
+        },
+        errorCaptured(err, instance, info) {
+          console.error('Vue error captured:', err, info);
+          return false;
+        },
+      });
+
+      // Mount the Vue app
+      try {
+        app.use(vuetify);
+        app.mount('#app');
+      } catch (error) {
+        console.error('Error mounting Vue app:', error);
+      }
+    </script>
+
+    {% block scripts %}{% endblock %} {% block scripts_extra %}{% endblock %}
+  </body>
+</html>

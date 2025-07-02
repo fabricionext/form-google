@@ -1,0 +1,441 @@
+{% extends '_base_peticionador_vuetify.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+  <!-- Header Section -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <h1 class="text-h4 font-weight-bold text-primary mb-2">
+            <v-icon icon="mdi-account-details" class="me-3"></v-icon>
+            Detalhes do Cliente
+          </h1>
+          <v-breadcrumbs :items="[
+            { title: 'Dashboard', href: '{{ url_for('peticionador.index') }}', disabled: false },
+            { title: 'Clientes', href: '{{ url_for('peticionador.listar_clientes') }}', disabled: false },
+            { title: 'Detalhes', disabled: true }
+          ]" class="pa-0"></v-breadcrumbs>
+        </div>
+        <div>
+          <v-btn
+            color="warning"
+            variant="elevated"
+            prepend-icon="mdi-pencil"
+            class="me-2"
+            href="{{ url_for('peticionador.editar_cliente', cliente_id=cliente.id) }}"
+          >
+            Editar
+          </v-btn>
+          <v-btn
+            color="grey"
+            variant="outlined"
+            prepend-icon="mdi-arrow-left"
+            href="{{ url_for('peticionador.listar_clientes') }}"
+          >
+            Voltar
+          </v-btn>
+        </div>
+      </div>
+    </v-col>
+  </v-row>
+
+  <!-- Cliente Info Card -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <v-card elevation="2">
+        <v-card-title class="d-flex align-center">
+          <v-avatar color="primary" size="48" class="me-3">
+            <v-icon icon="mdi-account" size="24" color="white"></v-icon>
+          </v-avatar>
+          <div>
+            <h2 class="text-h5">{{ cliente.nome_completo_formatado }}</h2>
+            <p class="text-subtitle-1 text-medium-emphasis mb-0">
+              {% if cliente.tipo_pessoa.name == 'FISICA' %}
+                Pessoa Física - CPF: {{ cliente.cpf or 'N/A' }}
+              {% else %}
+                Pessoa Jurídica - CNPJ: {{ cliente.cnpj or 'N/A' }}
+              {% endif %}
+            </p>
+          </div>
+          <v-spacer></v-spacer>
+          <v-chip 
+            :color="'{{ 'blue' if cliente.tipo_pessoa.name == 'FISICA' else 'green' }}'"
+            variant="tonal"
+            size="large"
+          >
+            <v-icon start icon="mdi-{{ 'account' if cliente.tipo_pessoa.name == 'FISICA' else 'office-building' }}"></v-icon>
+            {{ 'Pessoa Física' if cliente.tipo_pessoa.name == 'FISICA' else 'Pessoa Jurídica' }}
+          </v-chip>
+        </v-card-title>
+      </v-card>
+    </v-col>
+  </v-row>
+
+  <!-- Dados Gerais -->
+  <v-row class="mb-6">
+    <v-col cols="12" md="6">
+      <v-card elevation="2" class="h-100">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-information" class="me-2"></v-icon>
+          Dados Gerais
+        </v-card-title>
+        <v-card-text>
+          <v-list density="compact">
+            <v-list-item>
+              <v-list-item-title>Email</v-list-item-title>
+              <v-list-item-subtitle>
+                <v-icon icon="mdi-email" size="16" class="me-2"></v-icon>
+                {{ cliente.email or 'N/A' }}
+              </v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>Telefone Celular</v-list-item-title>
+              <v-list-item-subtitle>
+                <v-icon icon="mdi-cellphone" size="16" class="me-2"></v-icon>
+                {{ cliente.telefone_celular or 'N/A' }}
+              </v-list-item-subtitle>
+            </v-list-item>
+            {% if cliente.telefone_outro %}
+            <v-list-item>
+              <v-list-item-title>Telefone Fixo</v-list-item-title>
+              <v-list-item-subtitle>
+                <v-icon icon="mdi-phone" size="16" class="me-2"></v-icon>
+                {{ cliente.telefone_outro }}
+              </v-list-item-subtitle>
+            </v-list-item>
+            {% endif %}
+            <v-list-item>
+              <v-list-item-title>ID do Cliente</v-list-item-title>
+              <v-list-item-subtitle>
+                <v-icon icon="mdi-identifier" size="16" class="me-2"></v-icon>
+                #{{ cliente.id }}
+              </v-list-item-subtitle>
+            </v-list-item>
+            {% if cliente.ativo %}
+            <v-list-item>
+              <v-list-item-title>Status</v-list-item-title>
+              <v-list-item-subtitle>
+                <v-chip color="success" size="small" variant="tonal">
+                  <v-icon start icon="mdi-check-circle"></v-icon>
+                  Ativo
+                </v-chip>
+              </v-list-item-subtitle>
+            </v-list-item>
+            {% endif %}
+          </v-list>
+        </v-card-text>
+      </v-card>
+    </v-col>
+
+    <!-- Endereço -->
+    <v-col cols="12" md="6">
+      <v-card elevation="2" class="h-100">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-map-marker" class="me-2"></v-icon>
+          Endereço
+        </v-card-title>
+        <v-card-text>
+          {% if cliente.endereco_logradouro %}
+          <div class="text-body-1 mb-2">
+            <v-icon icon="mdi-road" size="16" class="me-2"></v-icon>
+            {{ cliente.endereco_logradouro }}{% if cliente.endereco_numero %}, {{ cliente.endereco_numero }}{% endif %}
+            {% if cliente.endereco_complemento %}<br><span class="text-caption">{{ cliente.endereco_complemento }}</span>{% endif %}
+          </div>
+          {% endif %}
+          
+          {% if cliente.endereco_bairro %}
+          <div class="text-body-2 mb-1">
+            <v-icon icon="mdi-city" size="16" class="me-2"></v-icon>
+            {{ cliente.endereco_bairro }}
+          </div>
+          {% endif %}
+          
+          {% if cliente.endereco_cidade %}
+          <div class="text-body-2 mb-1">
+            <v-icon icon="mdi-city-variant" size="16" class="me-2"></v-icon>
+            {{ cliente.endereco_cidade }}{% if cliente.endereco_estado %}/{{ cliente.endereco_estado }}{% endif %}
+          </div>
+          {% endif %}
+          
+          {% if cliente.endereco_cep %}
+          <div class="text-body-2">
+            <v-icon icon="mdi-mailbox" size="16" class="me-2"></v-icon>
+            CEP: {{ cliente.endereco_cep }}
+          </div>
+          {% endif %}
+          
+          {% if not (cliente.endereco_logradouro or cliente.endereco_cidade or cliente.endereco_cep) %}
+          <div class="text-center pa-4">
+            <v-icon icon="mdi-map-marker-off" size="48" color="grey-lighten-1" class="mb-2"></v-icon>
+            <div class="text-caption text-grey-darken-1">Endereço não informado</div>
+          </div>
+          {% endif %}
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+
+  <!-- Dados Específicos por Tipo -->
+  {% if cliente.tipo_pessoa.name == 'FISICA' %}
+  <!-- Pessoa Física -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <v-card elevation="2">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-account" class="me-2"></v-icon>
+          Dados Pessoais (Pessoa Física)
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-list density="compact">
+                <v-list-item>
+                  <v-list-item-title>Nome Completo</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.primeiro_nome }} {{ cliente.sobrenome or '' }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                  <v-list-item-title>CPF</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.cpf or 'N/A' }}</v-list-item-subtitle>
+                </v-list-item>
+                {% if cliente.rg_numero %}
+                <v-list-item>
+                  <v-list-item-title>RG</v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ cliente.rg_numero }}
+                    {% if cliente.rg_orgao_emissor %} - {{ cliente.rg_orgao_emissor }}{% endif %}
+                    {% if cliente.rg_uf_emissor %}/{{ cliente.rg_uf_emissor }}{% endif %}
+                  </v-list-item-subtitle>
+                </v-list-item>
+                {% endif %}
+                {% if cliente.data_nascimento %}
+                <v-list-item>
+                  <v-list-item-title>Data de Nascimento</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.data_nascimento.strftime('%d/%m/%Y') }}</v-list-item-subtitle>
+                </v-list-item>
+                {% endif %}
+              </v-list>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-list density="compact">
+                {% if cliente.nacionalidade %}
+                <v-list-item>
+                  <v-list-item-title>Nacionalidade</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.nacionalidade }}</v-list-item-subtitle>
+                </v-list-item>
+                {% endif %}
+                {% if cliente.estado_civil %}
+                <v-list-item>
+                  <v-list-item-title>Estado Civil</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.estado_civil }}</v-list-item-subtitle>
+                </v-list-item>
+                {% endif %}
+                {% if cliente.profissao %}
+                <v-list-item>
+                  <v-list-item-title>Profissão</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.profissao }}</v-list-item-subtitle>
+                </v-list-item>
+                {% endif %}
+                {% if cliente.cnh_numero %}
+                <v-list-item>
+                  <v-list-item-title>CNH</v-list-item-title>
+                  <v-list-item-subtitle>{{ cliente.cnh_numero }}</v-list-item-subtitle>
+                </v-list-item>
+                {% endif %}
+              </v-list>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+
+  {% else %}
+  <!-- Pessoa Jurídica -->
+  <v-row class="mb-6">
+    <v-col cols="12" md="6">
+      <v-card elevation="2" class="h-100">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-office-building" class="me-2"></v-icon>
+          Dados da Empresa
+        </v-card-title>
+        <v-card-text>
+          <v-list density="compact">
+            <v-list-item>
+              <v-list-item-title>Razão Social</v-list-item-title>
+              <v-list-item-subtitle>{{ cliente.razao_social or 'N/A' }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>CNPJ</v-list-item-title>
+              <v-list-item-subtitle>{{ cliente.cnpj or 'N/A' }}</v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+      </v-card>
+    </v-col>
+
+    <!-- Representante Legal -->
+    <v-col cols="12" md="6">
+      <v-card elevation="2" class="h-100">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-account-tie" class="me-2"></v-icon>
+          Representante Legal
+        </v-card-title>
+        <v-card-text>
+          {% if cliente.representante_nome %}
+          <v-list density="compact">
+            <v-list-item>
+              <v-list-item-title>Nome</v-list-item-title>
+              <v-list-item-subtitle>{{ cliente.representante_nome }}</v-list-item-subtitle>
+            </v-list-item>
+            {% if cliente.representante_cargo %}
+            <v-list-item>
+              <v-list-item-title>Cargo</v-list-item-title>
+              <v-list-item-subtitle>{{ cliente.representante_cargo }}</v-list-item-subtitle>
+            </v-list-item>
+            {% endif %}
+            {% if cliente.representante_cpf %}
+            <v-list-item>
+              <v-list-item-title>CPF</v-list-item-title>
+              <v-list-item-subtitle>{{ cliente.representante_cpf }}</v-list-item-subtitle>
+            </v-list-item>
+            {% endif %}
+            {% if cliente.representante_rg_numero %}
+            <v-list-item>
+              <v-list-item-title>RG</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ cliente.representante_rg_numero }}
+                {% if cliente.representante_rg_orgao_emissor %} - {{ cliente.representante_rg_orgao_emissor }}{% endif %}
+                {% if cliente.representante_rg_uf_emissor %}/{{ cliente.representante_rg_uf_emissor }}{% endif %}
+              </v-list-item-subtitle>
+            </v-list-item>
+            {% endif %}
+          </v-list>
+          {% else %}
+          <div class="text-center pa-4">
+            <v-icon icon="mdi-account-off" size="48" color="grey-lighten-1" class="mb-2"></v-icon>
+            <div class="text-caption text-grey-darken-1">Representante não informado</div>
+          </div>
+          {% endif %}
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+  {% endif %}
+
+  <!-- Ações -->
+  <v-row>
+    <v-col cols="12">
+      <v-card elevation="2">
+        <v-card-text class="text-center">
+          <v-btn
+            color="warning"
+            variant="elevated"
+            size="large"
+            prepend-icon="mdi-pencil"
+            class="me-3"
+            href="{{ url_for('peticionador.editar_cliente', cliente_id=cliente.id) }}"
+          >
+            Editar Cliente
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="outlined"
+            size="large"
+            prepend-icon="mdi-delete"
+            class="me-3"
+            @click="confirmDelete"
+          >
+            Excluir Cliente
+          </v-btn>
+          <v-btn
+            color="grey"
+            variant="outlined"
+            size="large"
+            prepend-icon="mdi-arrow-left"
+            href="{{ url_for('peticionador.listar_clientes') }}"
+          >
+            Voltar para Lista
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+</div>
+
+<!-- Delete Confirmation Dialog -->
+<v-dialog v-model="deleteDialog" max-width="500">
+  <v-card>
+    <v-card-title class="text-h5">
+      <v-icon icon="mdi-delete-alert" color="error" class="me-2"></v-icon>
+      Confirmar Exclusão
+    </v-card-title>
+    <v-card-text>
+      Tem certeza que deseja excluir o cliente <strong>{{ cliente.nome_completo_formatado }}</strong>?
+      <br><br>
+      <v-alert type="warning" variant="tonal" class="mt-2">
+        Esta ação não pode ser desfeita! Todos os dados do cliente serão permanentemente removidos.
+      </v-alert>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="grey" variant="text" @click="deleteDialog = false">
+        Cancelar
+      </v-btn>
+      <v-btn color="error" variant="elevated" @click="deleteClient">
+        Excluir
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Aguardar o Vue app estar pronto
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      if (window.vueApp && window.vueApp._instance) {
+        // Adicionar dados e métodos específicos
+        Object.assign(window.vueApp._instance.data, {
+          deleteDialog: false
+        });
+
+        // Adicionar métodos
+        Object.assign(window.vueApp._instance.methods, {
+          confirmDelete() {
+            this.deleteDialog = true;
+          },
+          
+          async deleteClient() {
+            try {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = '{{ url_for('peticionador.excluir_cliente', cliente_id=cliente.id) }}';
+              
+              const csrfToken = document.querySelector('meta[name=csrf-token]');
+              if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken.getAttribute('content');
+                form.appendChild(csrfInput);
+              }
+              
+              document.body.appendChild(form);
+              form.submit();
+            } catch (error) {
+              console.error('Erro ao excluir cliente:', error);
+              alert('Erro ao excluir cliente. Tente novamente.');
+            }
+            
+            this.deleteDialog = false;
+          }
+        });
+      }
+    }, 100);
+  });
+</script>
+{% endblock %}

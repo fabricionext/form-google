@@ -1,37 +1,141 @@
-{% extends "_base_peticionador.html" %} {% block title %}{{ title }}{% endblock
-%} {% block content %}
-<div class="container mt-4">
-  <h2>{{ title }}</h2>
-  <p>Escolha o modelo de petição que deseja gerar:</p>
+{% extends "_base_peticionador_vuetify.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+  <!-- Header Section -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <h1 class="text-h4 font-weight-bold text-primary mb-2">
+            <v-icon icon="mdi-file-plus" class="me-3"></v-icon>
+            {{ title }}
+          </h1>
+          <v-breadcrumbs :items="[
+            { title: 'Dashboard', href: '{{ url_for('peticionador.index') }}', disabled: false },
+            { title: 'Nova Petição', disabled: true }
+          ]" class="pa-0"></v-breadcrumbs>
+          <p class="text-body-1 text-medium-emphasis mt-2">
+            Escolha o modelo de petição que deseja gerar:
+          </p>
+        </div>
+        <v-btn
+          color="secondary"
+          variant="outlined"
+          prepend-icon="mdi-arrow-left"
+          href="{{ url_for('peticionador.index') }}"
+        >
+          Voltar
+        </v-btn>
+      </div>
+    </v-col>
+  </v-row>
 
   {% if modelos %}
-  <div class="list-group">
+  <!-- Models Grid -->
+  <v-row>
     {% for modelo in modelos %}
-    <a
-      href="{{ url_for('peticionador.gerar_peticao_dinamica', modelo_id=modelo.id) }}"
-      class="list-group-item list-group-item-action"
-    >
-      <div class="d-flex w-100 justify-content-between">
-        <h5 class="mb-1">
-          <i class="fas fa-file-alt me-2"></i>{{ modelo.nome }}
-        </h5>
-      </div>
-      {% if modelo.descricao %}
-      <p class="mb-1 text-muted">{{ modelo.descricao }}</p>
-      {% endif %}
-    </a>
+    <v-col cols="12" md="6" lg="4">
+      <v-card 
+        class="custom-card h-100"
+        elevation="2"
+        href="{{ url_for('peticionador.gerar_peticao_dinamica', modelo_id=modelo.id) }}"
+        style="cursor: pointer"
+        tag="a"
+      >
+        <v-card-text class="pa-6">
+          <div class="d-flex align-center mb-4">
+            <v-avatar color="primary" size="48" class="me-3">
+              <v-icon icon="mdi-file-document" color="white" size="24"></v-icon>
+            </v-avatar>
+            <div class="flex-1-1">
+              <h3 class="text-h6 font-weight-medium mb-1">{{ modelo.nome }}</h3>
+              <div class="text-caption text-medium-emphasis">ID: {{ modelo.id }}</div>
+            </div>
+          </div>
+          
+          {% if modelo.descricao %}
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            {{ modelo.descricao }}
+          </p>
+          {% else %}
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            Modelo de petição disponível para geração
+          </p>
+          {% endif %}
+          
+          <div class="d-flex justify-space-between align-center">
+            <v-chip color="success" size="small" variant="tonal">
+              <v-icon icon="mdi-check-circle" size="14" class="me-1"></v-icon>
+              Disponível
+            </v-chip>
+            <v-icon icon="mdi-arrow-right" color="primary"></v-icon>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
     {% endfor %}
-  </div>
-  {% else %}
-  <div class="alert alert-warning" role="alert">
-    Nenhum modelo de petição disponível no momento.
-  </div>
-  {% endif %}
+  </v-row>
 
-  <div class="mt-4">
-    <a href="{{ url_for('peticionador.index') }}" class="btn btn-secondary">
-      <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
-    </a>
-  </div>
+  <!-- Action Cards -->
+  <v-row class="mt-8">
+    <v-col cols="12">
+      <v-card color="info" variant="tonal" elevation="1">
+        <v-card-text class="pa-6">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-information" color="info" size="32" class="me-4"></v-icon>
+            <div>
+              <h4 class="text-h6 font-weight-medium mb-1">Como funciona?</h4>
+              <p class="text-body-2 mb-0">
+                Selecione um modelo acima para criar uma nova petição. Você preencherá um formulário dinâmico 
+                baseado no modelo escolhido e o sistema gerará automaticamente o documento final.
+              </p>
+            </div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+
+  {% else %}
+  <!-- No Models Available -->
+  <v-row>
+    <v-col cols="12">
+      <v-card elevation="2">
+        <v-card-text class="pa-8 text-center">
+          <v-icon icon="mdi-file-document-alert" size="64" color="warning" class="mb-4"></v-icon>
+          <h4 class="text-h5 font-weight-medium text-grey-darken-2 mb-2">
+            Nenhum modelo disponível
+          </h4>
+          <p class="text-body-1 text-grey-darken-1 mb-6">
+            Não há modelos de petição disponíveis no momento. Entre em contato com o administrador 
+            ou acesse a seção de modelos para criar um novo.
+          </p>
+          
+          <div class="d-flex gap-3 justify-center">
+            <v-btn 
+              color="primary" 
+              variant="elevated"
+              prepend-icon="mdi-arrow-left"
+              href="{{ url_for('peticionador.index') }}"
+            >
+              Voltar ao Dashboard
+            </v-btn>
+            <v-btn 
+              color="secondary" 
+              variant="outlined"
+              prepend-icon="mdi-layer-group"
+              href="{{ url_for('peticionador.listar_modelos') }}"
+            >
+              Ver Modelos
+            </v-btn>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+  {% endif %}
 </div>
 {% endblock %}

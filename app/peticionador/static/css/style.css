@@ -328,3 +328,353 @@ footer {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--secondary-color);
 }
+
+/* Estilos customizados para o Peticionador com Vuetify */
+
+/* Variáveis CSS personalizadas */
+:root {
+  --primary-color: #1976d2;
+  --secondary-color: #424242;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --info-color: #2196f3;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Classes utilitárias */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Cards customizados */
+.custom-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-card:active {
+  transform: translateY(-4px);
+}
+
+/* Gradientes personalizados */
+.gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.gradient-warning {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.gradient-info {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+/* Melhorias no Vuetify */
+.v-application {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif !important;
+}
+
+.v-card {
+  border-radius: 12px !important;
+}
+
+.v-btn {
+  border-radius: 8px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+}
+
+.v-chip {
+  border-radius: 16px !important;
+}
+
+.v-text-field {
+  border-radius: 8px !important;
+}
+
+/* Navegação customizada */
+.v-navigation-drawer {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.v-list-item--active {
+  background: linear-gradient(
+    90deg,
+    rgba(25, 118, 210, 0.1) 0%,
+    rgba(25, 118, 210, 0.05) 100%
+  );
+  border-right: 3px solid var(--primary-color);
+}
+
+/* App Bar customizado */
+.v-app-bar {
+  backdrop-filter: blur(10px);
+  background: rgba(25, 118, 210, 0.95) !important;
+}
+
+/* Data Table customizado */
+.v-data-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.v-data-table__wrapper {
+  border-radius: 12px;
+}
+
+/* Alertas customizados */
+.v-alert {
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.v-alert--success {
+  border-left-color: var(--success-color);
+}
+
+.v-alert--error {
+  border-left-color: var(--error-color);
+}
+
+.v-alert--warning {
+  border-left-color: var(--warning-color);
+}
+
+.v-alert--info {
+  border-left-color: var(--info-color);
+}
+
+/* Loading states */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsividade melhorada */
+@media (max-width: 960px) {
+  .v-container {
+    padding: 16px !important;
+  }
+
+  .custom-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .text-h4 {
+    font-size: 1.5rem !important;
+  }
+
+  .text-h3 {
+    font-size: 2rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .v-container {
+    padding: 12px !important;
+  }
+
+  .custom-card {
+    margin-bottom: 16px;
+  }
+
+  .v-card-text {
+    padding: 16px !important;
+  }
+}
+
+/* Melhorias de acessibilidade */
+.v-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.v-card:focus-within {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Estados de hover melhorados */
+.v-list-item:hover {
+  background: rgba(25, 118, 210, 0.05);
+}
+
+.v-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Tipografia melhorada */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Efeitos de glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Estados de loading */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Melhorias para formulários */
+.v-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.v-form .v-text-field {
+  margin-bottom: 16px;
+}
+
+/* Tooltips customizados */
+.v-tooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+}
+
+/* Notificações */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  max-width: 400px;
+}
+
+/* Melhorias para impressão */
+@media print {
+  .v-navigation-drawer,
+  .v-app-bar,
+  .v-footer {
+    display: none !important;
+  }
+
+  .v-main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .v-container {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}

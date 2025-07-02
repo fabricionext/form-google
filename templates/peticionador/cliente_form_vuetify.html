@@ -1,0 +1,558 @@
+{% extends '_base_peticionador_vuetify.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+  <!-- Header Section -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <h1 class="text-h4 font-weight-bold text-primary mb-2">
+            <v-icon icon="mdi-account-plus" class="me-3"></v-icon>
+            {{ title }}
+          </h1>
+          <v-breadcrumbs :items="[
+            { title: 'Dashboard', href: '{{ url_for('peticionador.index') }}', disabled: false },
+            { title: 'Clientes', href: '{{ url_for('peticionador.listar_clientes') }}', disabled: false },
+            { title: '{{ title }}', disabled: true }
+          ]" class="pa-0"></v-breadcrumbs>
+        </div>
+      </div>
+    </v-col>
+  </v-row>
+
+  <!-- Form Card -->
+  <v-card elevation="2">
+    <v-card-title class="d-flex align-center">
+      <v-icon icon="mdi-account-details" class="me-2"></v-icon>
+      Dados do Cliente
+    </v-card-title>
+
+    <v-card-text>
+      <form method="POST" @submit="submitForm">
+        <!-- CSRF Token -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <!-- Tipo de Pessoa -->
+        <v-row class="mb-4">
+          <v-col cols="12">
+            <h3 class="text-h6 mb-3">Tipo de Pessoa</h3>
+            <v-radio-group v-model="tipoPessoa" row>
+              <v-radio label="Pessoa Física" value="FISICA"></v-radio>
+              <v-radio label="Pessoa Jurídica" value="JURIDICA"></v-radio>
+            </v-radio-group>
+            <input type="hidden" name="tipo_pessoa" :value="tipoPessoa" required>
+          </v-col>
+        </v-row>
+
+        <v-divider class="mb-6"></v-divider>
+
+        <!-- Dados de Contato -->
+        <v-row class="mb-4">
+          <v-col cols="12">
+            <h3 class="text-h6 mb-3">
+              <v-icon icon="mdi-email" class="me-2"></v-icon>
+              Dados de Contato
+            </h3>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="formData.email"
+              name="email"
+              label="E-mail *"
+              type="email"
+              variant="outlined"
+              :rules="[rules.required, rules.email]"
+              prepend-inner-icon="mdi-email"
+              required
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="formData.telefone_celular"
+              name="telefone_celular"
+              label="Telefone Celular"
+              variant="outlined"
+              prepend-inner-icon="mdi-cellphone"
+              placeholder="(11) 99999-9999"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="formData.telefone_outro"
+              name="telefone_outro"
+              label="Telefone (2)"
+              variant="outlined"
+              prepend-inner-icon="mdi-phone"
+              placeholder="(11) 3333-3333"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+
+        <!-- Endereço -->
+        <v-row class="mb-4">
+          <v-col cols="12">
+            <h3 class="text-h6 mb-3">
+              <v-icon icon="mdi-map-marker" class="me-2"></v-icon>
+              Endereço
+            </h3>
+            <p class="text-caption text-medium-emphasis mb-3">
+              Formato: {{Endereço_Logradouro}}, {{Endereço_Numero}}, {{Endereço_Complemento}}, {{Endereço_Bairro}}
+            </p>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="formData.endereco_logradouro"
+              name="endereco_logradouro"
+              label="Endereço_Logradouro"
+              variant="outlined"
+              prepend-inner-icon="mdi-road"
+              
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="formData.endereco_numero"
+              name="endereco_numero"
+              label="Endereço_Numero"
+              variant="outlined"
+              prepend-inner-icon="mdi-numeric"
+              
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="formData.endereco_complemento"
+              name="endereco_complemento"
+              label="Endereço_Complemento"
+              variant="outlined"
+              prepend-inner-icon="mdi-home-plus"
+              
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="formData.endereco_bairro"
+              name="endereco_bairro"
+              label="Endereço_Bairro"
+              variant="outlined"
+              prepend-inner-icon="mdi-city"
+              
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="formData.endereco_cidade"
+              name="endereco_cidade"
+              label="Endereço_Cidade"
+              variant="outlined"
+              prepend-inner-icon="mdi-city-variant"
+              
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-select
+              v-model="formData.endereco_estado"
+              name="endereco_estado"
+              label="Endereço_Estado"
+              :items="estados"
+              variant="outlined"
+              prepend-inner-icon="mdi-map"
+              
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="formData.endereco_cep"
+              name="endereco_cep"
+              label="Endereço_CEP"
+              variant="outlined"
+              prepend-inner-icon="mdi-mailbox"
+              placeholder="00000-000"
+              
+            ></v-text-field>
+          </v-col>
+        </v-row>
+
+        <v-divider class="mb-6"></v-divider>
+
+        <!-- Campos Pessoa Física -->
+        <div v-show="tipoPessoa === 'FISICA'">
+          <v-row class="mb-4">
+            <v-col cols="12">
+              <h3 class="text-h6 mb-3">
+                <v-icon icon="mdi-account" class="me-2"></v-icon>
+                FICHA CADASTRAL - Pessoa Física
+              </h3>
+            </v-col>
+            
+            <!-- Nome completo -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.primeiro_nome"
+                name="primeiro_nome"
+                label="Primeiro Nome *"
+                variant="outlined"
+                :rules="tipoPessoa === 'FISICA' ? [rules.required] : []"
+                prepend-inner-icon="mdi-account"
+                :required="tipoPessoa === 'FISICA'"
+                
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.sobrenome"
+                name="sobrenome"
+                label="Sobrenome *"
+                variant="outlined"
+                :rules="tipoPessoa === 'FISICA' ? [rules.required] : []"
+                prepend-inner-icon="mdi-account"
+                :required="tipoPessoa === 'FISICA'"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- Nacionalidade -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.nacionalidade"
+                name="nacionalidade"
+                label="Nacionalidade"
+                variant="outlined"
+                prepend-inner-icon="mdi-flag"
+                placeholder="Brasileira"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- RG e Estado emissor -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.rg_numero"
+                name="rg_numero"
+                label="RG"
+                variant="outlined"
+                prepend-inner-icon="mdi-card-account-details-outline"
+                
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-select
+                v-model="formData.rg_uf_emissor"
+                name="rg_uf_emissor"
+                label="Estado emissor do RG"
+                :items="estados"
+                variant="outlined"
+                prepend-inner-icon="mdi-map"
+                
+              ></v-select>
+            </v-col>
+            
+            <!-- Estado Civil -->
+            <v-col cols="12" md="4">
+              <v-select
+                v-model="formData.estado_civil"
+                name="estado_civil"
+                label="Estado civil"
+                :items="estadosCivis"
+                variant="outlined"
+                prepend-inner-icon="mdi-heart"
+                
+              ></v-select>
+            </v-col>
+            
+            <!-- CPF -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.cpf"
+                name="cpf"
+                label="CPF *"
+                variant="outlined"
+                :rules="tipoPessoa === 'FISICA' ? [rules.required] : []"
+                prepend-inner-icon="mdi-card-account-details"
+                placeholder="000.000.000-00"
+                :required="tipoPessoa === 'FISICA'"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- Profissão -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.profissao"
+                name="profissao"
+                label="Profissão"
+                variant="outlined"
+                prepend-inner-icon="mdi-briefcase"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- CNH -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.cnh_numero"
+                name="cnh_numero"
+                label="CNH"
+                variant="outlined"
+                prepend-inner-icon="mdi-card-account-details"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- Data de Nascimento -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.data_nascimento"
+                name="data_nascimento"
+                label="Nascimento"
+                type="date"
+                variant="outlined"
+                prepend-inner-icon="mdi-calendar"
+                
+              ></v-text-field>
+            </v-col>
+          </v-row>
+        </div>
+
+        <!-- Campos Pessoa Jurídica -->
+        <div v-show="tipoPessoa === 'JURIDICA'">
+          <v-row class="mb-4">
+            <v-col cols="12">
+              <h3 class="text-h6 mb-3">
+                <v-icon icon="mdi-office-building" class="me-2"></v-icon>
+                FICHA CADASTRAL - Pessoa Jurídica
+              </h3>
+            </v-col>
+            
+            <!-- Razão Social -->
+            <v-col cols="12" md="8">
+              <v-text-field
+                v-model="formData.razao_social"
+                name="razao_social"
+                label="Razão Social *"
+                variant="outlined"
+                :rules="tipoPessoa === 'JURIDICA' ? [rules.required] : []"
+                prepend-inner-icon="mdi-office-building"
+                :required="tipoPessoa === 'JURIDICA'"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- CNPJ -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.cnpj"
+                name="cnpj"
+                label="CNPJ *"
+                variant="outlined"
+                :rules="tipoPessoa === 'JURIDICA' ? [rules.required] : []"
+                prepend-inner-icon="mdi-card-account-details"
+                placeholder="00.000.000/0000-00"
+                :required="tipoPessoa === 'JURIDICA'"
+                
+              ></v-text-field>
+            </v-col>
+
+            <!-- Representante Legal -->
+            <v-col cols="12">
+              <h4 class="text-h6 mt-4 mb-3">
+                <v-icon icon="mdi-account-tie" class="me-2"></v-icon>
+                Representante Legal
+              </h4>
+            </v-col>
+            
+            <!-- Nome do Representante Legal -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.representante_nome"
+                name="representante_nome"
+                label="Nome do Representante Legal"
+                variant="outlined"
+                prepend-inner-icon="mdi-account-tie"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- Cargo do Rep. Legal -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.representante_cargo"
+                name="representante_cargo"
+                label="Cargo do Rep. Legal"
+                variant="outlined"
+                prepend-inner-icon="mdi-briefcase"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- CPF do Representante -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.representante_cpf"
+                name="representante_cpf"
+                label="CPF"
+                variant="outlined"
+                prepend-inner-icon="mdi-card-account-details"
+                placeholder="000.000.000-00"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- RG do Representante -->
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.representante_rg_numero"
+                name="representante_rg_numero"
+                label="RG"
+                variant="outlined"
+                prepend-inner-icon="mdi-card-account-details-outline"
+                
+              ></v-text-field>
+            </v-col>
+            
+            <!-- Estado emissor do RG -->
+            <v-col cols="12" md="4">
+              <v-select
+                v-model="formData.representante_rg_uf_emissor"
+                name="representante_rg_uf_emissor"
+                label="Estado emissor do RG"
+                :items="estados"
+                variant="outlined"
+                prepend-inner-icon="mdi-map"
+                
+              ></v-select>
+            </v-col>
+          </v-row>
+        </div>
+
+        <!-- Botões de Ação -->
+        <v-row class="mt-6">
+          <v-col cols="12">
+            <v-btn
+              type="submit"
+              color="primary"
+              size="large"
+              prepend-icon="mdi-content-save"
+              class="me-3"
+            >
+              Salvar Cliente
+            </v-btn>
+            <v-btn
+              color="grey"
+              variant="outlined"
+              size="large"
+              prepend-icon="mdi-arrow-left"
+              :href="'{{ url_for('peticionador.listar_clientes') }}'"
+            >
+              Cancelar
+            </v-btn>
+          </v-col>
+        </v-row>
+      </form>
+    </v-card-text>
+  </v-card>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dados do cliente para edição (se aplicável)
+  const clienteData = {
+    {% if cliente %}
+    tipo_pessoa: '{{ cliente.tipo_pessoa.name if cliente.tipo_pessoa else 'FISICA' }}',
+    email: '{{ cliente.email or '' }}',
+    telefone_celular: '{{ cliente.telefone_celular or '' }}',
+    telefone_outro: '{{ cliente.telefone_outro or '' }}',
+    endereco_logradouro: '{{ cliente.endereco_logradouro or '' }}',
+    endereco_numero: '{{ cliente.endereco_numero or '' }}',
+    endereco_complemento: '{{ cliente.endereco_complemento or '' }}',
+    endereco_bairro: '{{ cliente.endereco_bairro or '' }}',
+    endereco_cidade: '{{ cliente.endereco_cidade or '' }}',
+    endereco_estado: '{{ cliente.endereco_estado or '' }}',
+    endereco_cep: '{{ cliente.endereco_cep or '' }}',
+    primeiro_nome: '{{ cliente.primeiro_nome or '' }}',
+    sobrenome: '{{ cliente.sobrenome or '' }}',
+    cpf: '{{ cliente.cpf or '' }}',
+    rg_numero: '{{ cliente.rg_numero or '' }}',
+    rg_orgao_emissor: '{{ cliente.rg_orgao_emissor or '' }}',
+    rg_uf_emissor: '{{ cliente.rg_uf_emissor or '' }}',
+    data_nascimento: '{{ cliente.data_nascimento.strftime('%Y-%m-%d') if cliente.data_nascimento else '' }}',
+    nacionalidade: '{{ cliente.nacionalidade or '' }}',
+    estado_civil: '{{ cliente.estado_civil or '' }}',
+    profissao: '{{ cliente.profissao or '' }}',
+    cnh_numero: '{{ cliente.cnh_numero or '' }}',
+    razao_social: '{{ cliente.razao_social or '' }}',
+    cnpj: '{{ cliente.cnpj or '' }}',
+    representante_nome: '{{ cliente.representante_nome or '' }}',
+    representante_cargo: '{{ cliente.representante_cargo or '' }}',
+    representante_cpf: '{{ cliente.representante_cpf or '' }}',
+    representante_rg_numero: '{{ cliente.representante_rg_numero or '' }}',
+    representante_rg_orgao_emissor: '{{ cliente.representante_rg_orgao_emissor or '' }}',
+    representante_rg_uf_emissor: '{{ cliente.representante_rg_uf_emissor or '' }}'
+    {% else %}
+    {}
+    {% endif %}
+  };
+
+  // Aguardar o Vue app estar pronto
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      if (window.vueApp && window.vueApp._instance) {
+        // Adicionar dados e métodos específicos para o formulário
+        Object.assign(window.vueApp._instance.data, {
+          tipoPessoa: clienteData.tipo_pessoa || 'FISICA',
+          formData: clienteData,
+          rules: {
+            required: value => !!value || 'Campo obrigatório',
+            email: value => {
+              const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              return pattern.test(value) || 'Email inválido';
+            }
+          },
+          estados: [
+            'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+            'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+            'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+          ],
+          estadosCivis: [
+            'Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 
+            'União Estável', 'Separado(a)'
+          ]
+        });
+
+        // Adicionar métodos
+        Object.assign(window.vueApp._instance.methods, {
+          submitForm(event) {
+            // Validação básica antes do envio
+            if (this.tipoPessoa === 'FISICA') {
+              if (!this.formData.primeiro_nome || !this.formData.sobrenome || !this.formData.cpf) {
+                event.preventDefault();
+                alert('Por favor, preencha todos os campos obrigatórios para Pessoa Física.');
+                return false;
+              }
+            } else if (this.tipoPessoa === 'JURIDICA') {
+              if (!this.formData.razao_social || !this.formData.cnpj) {
+                event.preventDefault();
+                alert('Por favor, preencha todos os campos obrigatórios para Pessoa Jurídica.');
+                return false;
+              }
+            }
+            
+            if (!this.formData.email) {
+              event.preventDefault();
+              alert('Por favor, preencha o email.');
+              return false;
+            }
+            
+            // Se chegou até aqui, permite o envio normal do formulário
+            return true;
+          }
+        });
+      }
+    }, 100);
+  });
+</script>
+{% endblock %}

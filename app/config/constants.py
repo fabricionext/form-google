@@ -3,6 +3,7 @@ Constantes centralizadas do sistema peticionador.
 Versão refatorada com melhor organização e eliminação de duplicações.
 """
 
+import os
 from enum import Enum
 
 # =============================================================================
@@ -58,6 +59,7 @@ class PlaceholderCategory(Enum):
 # Google Drive Configuration
 GOOGLE_DRIVE_CONFIG = {
     'TEMPLATES_FOLDER_ID': '1LvPsvml7bkN2TQjyAqnNAYAy7qRebrDf',
+    'CLIENT_FOLDERS_ROOT_ID': '1sTSGNuAP81x_3Vtq3FCC8xdqfM1rqzdx',
     'CLIENT_FOLDERS_ROOT': 'Clientes',
     'FOLDER_NAMES': {
         'TEMPLATES': 'templates',
@@ -71,6 +73,24 @@ GOOGLE_DRIVE_CONFIG = {
         DocumentTypes.RECURSO_JARI.value: 'Defesas e Recursos',
         DocumentTypes.TERMO_ACORDO.value: 'Termos de Acordo',
         DocumentTypes.ACAO_ANULATORIA.value: 'Ações Anulatórias'
+    },
+    'TEMPLATES': {
+        # Templates PF
+        'PF': {
+            'FICHA_CADASTRAL': os.getenv('TEMPLATE_PF_FICHA_CADASTRAL', '1Yy4CSDioB8K_RDshwNEHGBvhjCMNK8m39o68Wthzyww'),
+            'CONTRATO_HONORARIOS': os.getenv('TEMPLATE_PF_CONTRATO_HONORARIOS', '1LO2VmP048PMK0rlbLH6oFduV2nOJFj-5lIxlmXUbUis'),
+            'PROCURACAO_JUDICIAL': os.getenv('TEMPLATE_PF_PROCURACAO_JUDICIAL', '1C4bJIe-pTMTa4lmMzQ565IXT8b6h9ylj8F27bnngZgE'),
+            'PROCURACAO_ADMINISTRATIVA': os.getenv('TEMPLATE_PF_PROCURACAO_ADMINISTRATIVA', '1FQBVlRGWDHjM9u7prJtep4rg9dRh4SfGAcklQEgSxOU'),
+            'CONTRATO_ADMINISTRATIVO': os.getenv('TEMPLATE_PF_CONTRATO_ADMINISTRATIVO', '1-5Qdv7tbkmxJmzSDFZl9zJomi-bQq9aO0SJ-G-rNF0U'),
+            'DECLARACAO_POBREZA': os.getenv('TEMPLATE_PF_DECLARACAO_POBREZA', '1JYuTqKHX1x0IYfknIH6vKZ_RNhWJzp-6fNyKuRWgSJA')
+        },
+        # Templates PJ
+        'PJ': {
+            'FICHA_CADASTRAL': os.getenv('TEMPLATE_PJ_FICHA_CADASTRAL', '1pEgnOukv8VsivXkonUEJOudpILEkc_t_C0LtN0b7UYE'),
+            'CONTRATO_HONORARIOS': os.getenv('TEMPLATE_PJ_CONTRATO_HONORARIOS', '1ox0ZSUuHyrf37o1EExr7lwZ6Sycf7vClHFpZ65VECIQ'),
+            'PROCURACAO_JUDICIAL': os.getenv('TEMPLATE_PJ_PROCURACAO_JUDICIAL', '1-LbSJzhT2Y7oHf_WXUofVBHfNutHKwtDnqN17c6HAoQ'),
+            'PROCURACAO_ADMINISTRATIVA': os.getenv('TEMPLATE_PJ_PROCURACAO_ADMINISTRATIVA', '1qeaDQ3OfatP6HyWv1FGhD2uVP_6TNiDF8rY0h9zQoTw')
+        }
     },
     'RETRY_ATTEMPTS': 3,
     'RETRY_DELAY': 2,

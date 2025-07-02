@@ -1,0 +1,22 @@
+{
+  "tipo_pessoa": "FISICA",
+  "primeiro_nome": "João",
+  "sobrenome": "Silva",
+  "cpf": "77788899900",
+  "email": "joao.silva.teste.corrigido@gmail.com",
+  "telefone_celular": "(11)99999-1234",
+  "endereco_cep": "01000000",
+  "endereco_logradouro": "Rua A",
+  "endereco_numero": "100",
+  "endereco_bairro": "Centro",
+  "endereco_cidade": "São Paulo",
+  "endereco_estado": "SP",
+  "documentos_gerar": [
+    "FICHA_CADASTRAL",
+    "CONTRATO_HONORARIOS",
+    "PROCURACAO_JUDICIAL",
+    "PROCURACAO_ADMINISTRATIVA",
+    "CONTRATO_ADMINISTRATIVO",
+    "DECLARACAO_POBREZA"
+  ]
+}

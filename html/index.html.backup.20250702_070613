@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastro de Cliente - AppForm</title>
+
+    <!-- Vuetify CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/vuetify@3.8.11/dist/vuetify.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Google Material Icons -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <v-app>
+        <v-main>
+          <div class="container">
+            <div class="fade-in">
+              <v-card class="pa-6" elevation="2">
+                <v-card-title class="text-h4 text-center mb-6">
+                  <v-icon
+                    icon="mdi-account-plus"
+                    class="me-3"
+                    color="primary"
+                  ></v-icon>
+                  Cadastro de Cliente
+                </v-card-title>
+
+                <v-form ref="form" v-model="valid" @submit.prevent="submitForm">
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="cliente.primeiro_nome"
+                        label="Nome"
+                        :rules="[rules.required]"
+                        required
+                        outlined
+                      ></v-text-field>
+                    </v-col>
+
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="cliente.sobrenome"
+                        label="Sobrenome"
+                        :rules="[rules.required]"
+                        required
+                        outlined
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="cliente.email"
+                        label="E-mail"
+                        type="email"
+                        :rules="[rules.required, rules.email]"
+                        required
+                        outlined
+                      ></v-text-field>
+                    </v-col>
+
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="cliente.telefone_celular"
+                        label="Telefone"
+                        :rules="[rules.required]"
+                        required
+                        outlined
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="cliente.cpf"
+                        label="CPF"
+                        :rules="[rules.required]"
+                        required
+                        outlined
+                      ></v-text-field>
+                    </v-col>
+
+                    <v-col cols="12" md="6">
+                      <v-select
+                        v-model="cliente.tipo_pessoa"
+                        :items="tiposPessoa"
+                        label="Tipo de Pessoa"
+                        :rules="[rules.required]"
+                        required
+                        outlined
+                      ></v-select>
+                    </v-col>
+                  </v-row>
+
+                  <v-row class="mt-4">
+                    <v-col cols="12" class="text-center">
+                      <v-btn
+                        type="submit"
+                        color="primary"
+                        size="large"
+                        :loading="loading"
+                        :disabled="!valid"
+                        class="px-8"
+                      >
+                        <v-icon icon="mdi-content-save" class="me-2"></v-icon>
+                        Cadastrar Cliente
+                      </v-btn>
+                    </v-col>
+                  </v-row>
+                </v-form>
+
+                <!-- Mensagem de sucesso -->
+                <v-alert
+                  v-if="mensagem"
+                  :type="tipoMensagem"
+                  variant="tonal"
+                  class="mt-4"
+                  closable
+                  @click:close="mensagem = ''"
+                >
+                  {{ mensagem }}
+                </v-alert>
+              </v-card>
+            </div>
+          </div>
+        </v-main>
+      </v-app>
+    </div>
+
+    <!-- Vue.js and Vuetify from CDN (PRODUCTION BUILD) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3.8.11/dist/vuetify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+
+    <script>
+      const { createApp } = Vue;
+      const { createVuetify } = Vuetify;
+
+      const vuetify = createVuetify({
+        theme: {
+          defaultTheme: 'light',
+        },
+      });
+
+      const app = createApp({
+        data() {
+          return {
+            valid: false,
+            loading: false,
+            mensagem: '',
+            tipoMensagem: 'success',
+            cliente: {
+              primeiro_nome: '',
+              sobrenome: '',
+              email: '',
+              telefone_celular: '',
+              cpf: '',
+              tipo_pessoa: 'FISICA',
+            },
+            tiposPessoa: [
+              { title: 'Pessoa Física', value: 'FISICA' },
+              { title: 'Pessoa Jurídica', value: 'JURIDICA' },
+            ],
+            rules: {
+              required: value => !!value || 'Este campo é obrigatório',
+              email: value => {
+                const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return pattern.test(value) || 'E-mail inválido';
+              },
+            },
+          };
+        },
+        methods: {
+          async submitForm() {
+            if (!this.valid) return;
+
+            this.loading = true;
+            this.mensagem = '';
+
+            try {
+              const response = await axios.post('/api/clientes', this.cliente);
+
+              this.mensagem = 'Cliente cadastrado com sucesso!';
+              this.tipoMensagem = 'success';
+
+              // Limpar formulário após sucesso
+              this.cliente = {
+                primeiro_nome: '',
+                sobrenome: '',
+                email: '',
+                telefone_celular: '',
+                cpf: '',
+                tipo_pessoa: 'FISICA',
+              };
+
+              // Reset form validation
+              this.$refs.form.reset();
+            } catch (error) {
+              console.error('Erro ao cadastrar cliente:', error);
+              this.tipoMensagem = 'error';
+
+              if (error.response && error.response.data) {
+                if (error.response.data.details) {
+                  // Erro de validação
+                  const erros = Object.values(
+                    error.response.data.details
+                  ).flat();
+                  this.mensagem = 'Erro de validação: ' + erros.join(', ');
+                } else {
+                  this.mensagem =
+                    error.response.data.message || 'Erro ao cadastrar cliente';
+                }
+              } else {
+                this.mensagem = 'Erro de conexão. Tente novamente.';
+              }
+            } finally {
+              this.loading = false;
+            }
+          },
+        },
+      });
+
+      app.use(vuetify);
+      app.mount('#app');
+    </script>
+  </body>
+</html>

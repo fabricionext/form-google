@@ -1,147 +1,293 @@
-{% extends '_base_peticionador.html' %}
-{% from '_macros_peticionador.html' import render_flash_messages, render_responsive_table %}
+{% extends '_base_peticionador_vuetify.html' %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h1 class="mt-4">{{ title }}</h1>
-  <ol class="breadcrumb mb-4">
-    <li class="breadcrumb-item">
-      <a href="{{ url_for('peticionador.index') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item active">{{ title }}</li>
-  </ol>
-
-  <div class="card mb-4">
-    <div class="card-header">
-      <i class="fas fa-users me-1"></i>
-      Lista de Clientes Cadastrados
-      <a
-        href="{{ url_for('peticionador.adicionar_cliente') }}"
-        class="btn btn-primary btn-sm float-end"
-      >
-        <i class="fas fa-plus me-1"></i> Adicionar Novo Cliente
-      </a>
-    </div>
-    <div class="card-body">
-      {{ render_flash_messages() }}
-      
-      {% if clientes %}
-        {% set table_headers = ['Nome/Razão Social', 'CPF/CNPJ', 'Email', 'Telefone', 'Tipo'] %}
-        {% set table_fields = ['nome', 'documento', 'email', 'telefone', 'tipo_pessoa'] %}
-        {% set table_actions = [
-          {
-            'label': 'Ver',
-            'icon': 'fas fa-eye',
-            'url': '/peticionador/clientes/{id}/detalhes',
-            'style': 'outline-primary',
-            'title': 'Ver detalhes do cliente'
-          },
-          {
-            'label': 'Editar', 
-            'icon': 'fas fa-edit',
-            'url': '/peticionador/clientes/{id}/editar',
-            'style': 'outline-secondary',
-            'title': 'Editar cliente'
-          }
-        ] %}
-        
-        {# Preprocessar dados para a tabela #}
-        {% set processed_clients = [] %}
-        {% for cliente in clientes %}
-          {% set processed_client = {
-            'id': cliente.id,
-            'nome': cliente.nome_completo_formatado or (cliente.primeiro_nome + ' ' + (cliente.sobrenome or '') if cliente.primeiro_nome else cliente.razao_social or 'N/A'),
-            'documento': cliente.cpf if cliente.tipo_pessoa.name == 'FISICA' else cliente.cnpj,
-            'email': cliente.email or 'N/A',
-            'telefone': cliente.telefone_celular or cliente.telefone_outro or 'N/A',
-            'tipo_pessoa': 'Pessoa Física' if cliente.tipo_pessoa.name == 'FISICA' else 'Pessoa Jurídica'
-          } %}
-          {% set _ = processed_clients.append(processed_client) %}
-        {% endfor %}
-        
-        {{ render_responsive_table(processed_clients, table_headers, table_fields, table_actions) }}
-      {% else %}
-        <div class="alert alert-info" role="alert">
-          <i class="fas fa-info-circle"></i>
-          Nenhum cliente cadastrado ainda.
-          <a href="{{ url_for('peticionador.adicionar_cliente') }}"
-          >Clique aqui para adicionar o primeiro.</a
+<div class="fade-in">
+  <!-- Header Section -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <h1 class="text-h4 font-weight-bold text-primary mb-2">
+            <v-icon icon="mdi-account-group" class="me-3"></v-icon>
+            {{ title }}
+          </h1>
+          <v-breadcrumbs :items="[
+            { title: 'Dashboard', href: '{{ url_for('peticionador.index') }}', disabled: false },
+            { title: '{{ title }}', disabled: true }
+          ]" class="pa-0"></v-breadcrumbs>
+        </div>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          prepend-icon="mdi-plus"
+          href="{{ url_for('peticionador.adicionar_cliente') }}"
+          size="large"
         >
+          Novo Cliente
+        </v-btn>
       </div>
-      {% endif %}
-    </div>
-  </div>
+    </v-col>
+  </v-row>
+
+  <!-- Search and Stats Card -->
+  <v-row class="mb-6">
+    <v-col cols="12" md="8">
+      <v-text-field
+        v-model="search"
+        prepend-inner-icon="mdi-magnify"
+        label="Pesquisar clientes..."
+        variant="outlined"
+        single-line
+        hide-details
+        clearable
+        placeholder="Digite o nome, CPF/CNPJ ou email"
+      ></v-text-field>
+    </v-col>
+    <v-col cols="12" md="4">
+      <v-card color="primary" variant="tonal" class="h-100">
+        <v-card-text class="d-flex align-center justify-center">
+          <div class="text-center">
+            <h3 class="text-h4 font-weight-bold text-primary">{{ clientes|length }}</h3>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              {{ 'Cliente' if clientes|length == 1 else 'Clientes' }} Cadastrados
+            </p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+
+  <!-- Clients Table -->
+  <v-card elevation="2">
+    <v-card-title class="d-flex align-center">
+      <v-icon icon="mdi-format-list-bulleted" class="me-2"></v-icon>
+      Lista de Clientes
+    </v-card-title>
+    
+    {% if clientes %}
+    <v-card-text class="pa-0">
+      <v-data-table
+        v-model:search="search"
+        :headers="headers"
+        :items="clientesData"
+        :items-per-page="10"
+        class="elevation-0"
+        show-current-page
+      >
+        <template v-slot:item.nome="{ item }">
+          <div class="d-flex align-center">
+            <v-avatar color="primary" size="32" class="me-3">
+              <span class="text-white text-caption font-weight-bold" v-text="getInitials(item.nome)">
+              </span>
+            </v-avatar>
+            <div>
+              <div class="font-weight-medium" v-text="item.nome"></div>
+              <div class="text-caption text-medium-emphasis" v-text="item.documento"></div>
+            </div>
+          </div>
+        </template>
+
+        <template v-slot:item.tipo_pessoa="{ item }">
+          <v-chip 
+            :color="item.tipo_pessoa === 'Pessoa Física' ? 'blue' : 'green'"
+            size="small"
+            variant="tonal"
+          >
+            <span v-text="item.tipo_pessoa"></span>
+          </v-chip>
+        </template>
+
+        <template v-slot:item.contato="{ item }">
+          <div>
+            <div class="text-body-2">
+              <v-icon icon="mdi-email" size="14" class="me-1"></v-icon>
+              <span v-text="item.email"></span>
+            </div>
+            <div class="text-caption text-medium-emphasis" v-if="item.telefone !== 'N/A'">
+              <v-icon icon="mdi-phone" size="14" class="me-1"></v-icon>
+              <span v-text="item.telefone"></span>
+            </div>
+          </div>
+        </template>
+
+        <template v-slot:item.acoes="{ item }">
+          <div class="d-flex ga-2">
+            <v-btn
+              icon="mdi-eye"
+              size="small"
+              color="primary"
+              variant="tonal"
+              :href="`{{ url_for('peticionador.visualizar_cliente', cliente_id=1) }}`.replace('1', item.id)"
+              title="Ver detalhes"
+            ></v-btn>
+            <v-btn
+              icon="mdi-pencil"
+              size="small"
+              color="secondary"
+              variant="tonal"
+              :href="`{{ url_for('peticionador.editar_cliente', cliente_id=1) }}`.replace('1', item.id)"
+              title="Editar"
+            ></v-btn>
+            <v-btn
+              icon="mdi-delete"
+              size="small"
+              color="error"
+              variant="tonal"
+              @click="confirmDelete(item)"
+              title="Excluir"
+            ></v-btn>
+          </div>
+        </template>
+
+        <template v-slot:no-data>
+          <div class="text-center pa-8">
+            <v-icon icon="mdi-account-search" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+            <h4 class="text-h6 text-grey-darken-1 mb-2">Nenhum cliente encontrado</h4>
+            <p class="text-body-2 text-grey-darken-1 mb-4">
+              Tente ajustar os termos de busca ou adicione um novo cliente
+            </p>
+            <v-btn 
+              color="primary" 
+              prepend-icon="mdi-plus"
+              href="{{ url_for('peticionador.adicionar_cliente') }}"
+            >
+              Adicionar Primeiro Cliente
+            </v-btn>
+          </div>
+        </template>
+      </v-data-table>
+    </v-card-text>
+    {% else %}
+    <v-card-text class="pa-8 text-center">
+      <v-icon icon="mdi-account-plus" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+      <h4 class="text-h6 text-grey-darken-1 mb-2">Nenhum cliente cadastrado</h4>
+      <p class="text-body-2 text-grey-darken-1 mb-4">
+        Comece adicionando seu primeiro cliente ao sistema
+      </p>
+      <v-btn 
+        color="primary" 
+        size="large"
+        prepend-icon="mdi-plus"
+        href="{{ url_for('peticionador.adicionar_cliente') }}"
+      >
+        Adicionar Primeiro Cliente
+      </v-btn>
+    </v-card-text>
+    {% endif %}
+  </v-card>
 </div>
 
-<!-- Modal de Confirmação de Exclusão (reutilizar o existente se houver ou adaptar) -->
-<!-- Se já existir um modal de confirmação em _base_peticionador.html ou similar, este pode não ser necessário -->
-<div
-  class="modal fade"
-  id="confirmDeleteModal"
-  tabindex="-1"
-  aria-labelledby="confirmDeleteModalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmDeleteModalLabel">
-          Confirmar Exclusão
-        </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body">
-        Tem certeza que deseja excluir o cliente
-        <strong id="itemName"></strong>?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Cancelar
-        </button>
-        <a href="#" id="deleteConfirmButton" class="btn btn-danger">Excluir</a>
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %} {% block scripts_extra %} {{ super() }}
-<!-- Se estiver usando DataTables e o script de inicialização não estiver no _base_peticionador.html -->
-<!-- <script>
-    window.addEventListener('DOMContentLoaded', event => {
-        const datatablesSimple = document.getElementById('datatablesSimple');
-        if (datatablesSimple) {
-            new simpleDatatables.DataTable(datatablesSimple);
+<!-- Delete Confirmation Dialog -->
+<v-dialog v-model="deleteDialog" max-width="500">
+  <v-card>
+    <v-card-title class="text-h5">
+      <v-icon icon="mdi-delete-alert" color="error" class="me-2"></v-icon>
+      Confirmar Exclusão
+    </v-card-title>
+    <v-card-text>
+      Tem certeza que deseja excluir o cliente <strong v-if="selectedClient" v-text="selectedClient.nome"></strong>?
+      <br><br>
+      <v-alert type="warning" variant="tonal" class="mt-2">
+        Esta ação não pode ser desfeita!
+      </v-alert>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="grey" variant="text" @click="deleteDialog = false">
+        Cancelar
+      </v-btn>
+      <v-btn color="error" variant="elevated" @click="deleteClient">
+        Excluir
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dados dos clientes para o Vue.js
+  const clientesData = [
+    {% for cliente in clientes %}
+    {
+      id: {{ cliente.id }},
+      nome: '{{ cliente.nome_completo_formatado or "N/A" }}',
+      documento: '{{ cliente.documento_principal or "N/A" }}',
+      email: '{{ cliente.email or "N/A" }}',
+      telefone: '{{ cliente.telefone_celular or cliente.telefone_outro or "N/A" }}',
+      tipo_pessoa: '{{ "Pessoa Física" if cliente.tipo_pessoa.name == "FISICA" else "Pessoa Jurídica" }}',
+      contato: '{{ cliente.email or "N/A" }}'
+    }{{ "," if not loop.last else "" }}
+    {% endfor %}
+  ];
+
+  // Estender o Vue app existente para incluir funcionalidades dos clientes
+  if (window.Vue && document.getElementById('app').__vue_app__) {
+    const app = document.getElementById('app').__vue_app__;
+    
+    // Adicionar dados e métodos específicos para clientes
+    app._component.data = function() {
+      const originalData = app._component.data ? app._component.data() : {};
+      return {
+        ...originalData,
+        search: '',
+        deleteDialog: false,
+        selectedClient: null,
+        headers: [
+          { title: 'Cliente', key: 'nome', sortable: true },
+          { title: 'Tipo', key: 'tipo_pessoa', sortable: true },
+          { title: 'Contato', key: 'contato', sortable: false },
+          { title: 'Ações', key: 'acoes', sortable: false, align: 'center' }
+        ],
+        clientesData: clientesData
+      };
+    };
+
+    app._component.methods = {
+      ...app._component.methods,
+      getInitials(name) {
+        if (!name || name === 'N/A') return '?';
+        return name.split(' ')
+          .map(word => word.charAt(0))
+          .join('')
+          .substring(0, 2)
+          .toUpperCase();
+      },
+      confirmDelete(client) {
+        this.selectedClient = client;
+        this.deleteDialog = true;
+      },
+      async deleteClient() {
+        if (!this.selectedClient) return;
+        
+        try {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = `{{ url_for('peticionador.excluir_cliente', cliente_id=1) }}`.replace('1', this.selectedClient.id);
+          
+          const csrfToken = document.querySelector('meta[name=csrf-token]');
+          if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+          }
+          
+          document.body.appendChild(form);
+          form.submit();
+        } catch (error) {
+          console.error('Erro ao excluir cliente:', error);
+          alert('Erro ao excluir cliente. Tente novamente.');
         }
-    });
-</script> -->
-
-<!-- Script para o modal de confirmação (se não estiver global) -->
-<script nonce="{{ csp_nonce() }}">
-  document.addEventListener('DOMContentLoaded', function () {
-    var confirmDeleteModal = document.getElementById('confirmDeleteModal');
-    if (confirmDeleteModal) {
-      confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget;
-        var deleteUrl = button.getAttribute('data-delete-url');
-        var itemName = button.getAttribute('data-item-name');
-
-        var modalTitle = confirmDeleteModal.querySelector('.modal-title');
-        var modalBodyStrong =
-          confirmDeleteModal.querySelector('.modal-body strong');
-        var deleteConfirmButton = confirmDeleteModal.querySelector(
-          '#deleteConfirmButton'
-        );
-
-        modalBodyStrong.textContent = itemName;
-        deleteConfirmButton.setAttribute('href', deleteUrl);
-      });
-    }
-  });
+        
+        this.deleteDialog = false;
+        this.selectedClient = null;
+      }
+    };
+  }
 </script>
 {% endblock %}

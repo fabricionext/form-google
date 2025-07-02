@@ -1,11 +1,11 @@
 # =============================================================================
-# MULTI-STAGE DOCKERFILE - Form Google Peticionador ADV
+# DOCKERFILE SIMPLIFICADO - Form Google Peticionador ADV (Vue CDN)
 # =============================================================================
-# Stage 1: Build dependencies and Node.js build
+# Stage 1: Build Python dependencies 
 # Stage 2: Runtime image
 
 # =============================================================================
-# STAGE 1: BUILD
+# STAGE 1: BUILD PYTHON DEPENDENCIES
 # =============================================================================
 FROM python:3.11-slim as builder
 
@@ -15,28 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js for frontend build
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
-
 # Set working directory
 WORKDIR /build
 
-# Copy and install Python dependencies first (for better caching)
+# Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy package files for Node.js dependencies
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm ci
-
-# Install TypeScript compiler globally for vue-tsc
-RUN npm install -g typescript vue-tsc
-
-# Copy source code and build frontend
-COPY . .
-RUN npm run build
 
 # =============================================================================
 # STAGE 2: RUNTIME
@@ -59,9 +43,17 @@ WORKDIR /home/app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy built application and frontend
-COPY --from=builder /build/ /home/app/
+# Copy application files (excluding frontend build artifacts)
+COPY . /home/app/
 RUN chown -R app:app /home/app
+
+# Remove any leftover Node.js artifacts if they exist
+RUN rm -rf /home/app/frontend* \
+    && rm -f /home/app/package*.json \
+    && rm -f /home/app/vite.config.* \
+    && rm -f /home/app/tsconfig.json \
+    && rm -f /home/app/env.d.ts \
+    && find /home/app -name "*.ts" -delete 2>/dev/null || true
 
 # Copy and configure Nginx
 COPY docker/nginx.conf /etc/nginx/nginx.conf

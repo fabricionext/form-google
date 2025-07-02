@@ -32,9 +32,10 @@ class GoogleServiceAccountAuth:
     
     # Escopos necessários para o sistema
     SCOPES = [
-        'https://www.googleapis.com/auth/drive.readonly',
-        'https://www.googleapis.com/auth/documents.readonly',
-        'https://www.googleapis.com/auth/drive.metadata.readonly'
+        'https://www.googleapis.com/auth/drive',  # Acesso completo ao Drive
+        'https://www.googleapis.com/auth/documents',  # Acesso completo ao Docs
+        'https://www.googleapis.com/auth/drive.file',  # Criar e modificar arquivos
+        'https://www.googleapis.com/auth/drive.metadata'  # Metadados
     ]
     
     # Informações da conta de serviço
@@ -335,6 +336,108 @@ class GoogleServiceAccountAuth:
             'authenticated': self.credentials is not None,
             'project_id': getattr(self.credentials, 'project_id', None) if self.credentials else None
         }
+    
+    def create_folder(self, folder_name: str, parent_folder_id: str = None) -> str:
+        """
+        Cria uma pasta no Google Drive.
+        
+        Args:
+            folder_name: Nome da pasta
+            parent_folder_id: ID da pasta pai (opcional)
+            
+        Returns:
+            ID da pasta criada
+            
+        Raises:
+            GoogleDriveException: Se falhar ao criar pasta
+        """
+        try:
+            drive_service = self.get_drive_service()
+            
+            folder_metadata = {
+                'name': folder_name,
+                'mimeType': 'application/vnd.google-apps.folder'
+            }
+            
+            if parent_folder_id:
+                folder_metadata['parents'] = [parent_folder_id]
+            
+            folder = drive_service.files().create(
+                body=folder_metadata,
+                fields='id'
+            ).execute()
+            
+            folder_id = folder.get('id')
+            logger.info(f"Pasta criada com sucesso: {folder_name} (ID: {folder_id})")
+            
+            return folder_id
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar pasta {folder_name}: {e}")
+            raise GoogleDriveException(f"Falha ao criar pasta: {e}")
+    
+    def copy_file(self, file_id: str, new_name: str, destination_folder_id: str = None) -> Dict[str, str]:
+        """
+        Copia um arquivo no Google Drive.
+        
+        Args:
+            file_id: ID do arquivo a ser copiado
+            new_name: Nome do novo arquivo
+            destination_folder_id: ID da pasta de destino (opcional)
+            
+        Returns:
+            Dicionário com id, name e webViewLink do arquivo copiado
+            
+        Raises:
+            GoogleDriveException: Se falhar ao copiar arquivo
+        """
+        try:
+            drive_service = self.get_drive_service()
+            
+            copy_metadata = {
+                'name': new_name
+            }
+            
+            if destination_folder_id:
+                copy_metadata['parents'] = [destination_folder_id]
+            
+            copied_file = drive_service.files().copy(
+                fileId=file_id,
+                body=copy_metadata,
+                fields='id,name,webViewLink'
+            ).execute()
+            
+            logger.info(f"Arquivo copiado com sucesso: {new_name} (ID: {copied_file['id']})")
+            
+            return {
+                'id': copied_file['id'],
+                'name': copied_file['name'],
+                'webViewLink': copied_file.get('webViewLink', '')
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro ao copiar arquivo {file_id}: {e}")
+            raise GoogleDriveException(f"Falha ao copiar arquivo: {e}")
+    
+    def delete_file(self, file_id: str) -> bool:
+        """
+        Delete um arquivo do Google Drive.
+        
+        Args:
+            file_id: ID do arquivo a ser deletado
+            
+        Returns:
+            True se deletado com sucesso
+        """
+        try:
+            drive_service = self.get_drive_service()
+            drive_service.files().delete(fileId=file_id).execute()
+            logger.info(f"Arquivo deletado com sucesso: {file_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao deletar arquivo {file_id}: {e}")
+            return False
 
 
 # Instância global do serviço

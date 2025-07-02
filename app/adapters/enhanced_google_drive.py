@@ -7,6 +7,7 @@ image handling, and folder management with retry mechanisms.
 
 from typing import List, Dict, Any, Optional, Tuple
 import logging
+import re
 import time
 import os
 from datetime import datetime, timedelta
@@ -82,34 +83,21 @@ class EnhancedGoogleDriveAdapter:
         logger.info("Authenticating with Google Drive API")
         
         try:
-            creds = None
-            token_path = 'token.json'
-            
-            # Load existing token
-            if os.path.exists(token_path):
-                creds = Credentials.from_authorized_user_file(token_path, self.scopes)
-            
-            # If no valid credentials, request authorization
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        'credentials.json', self.scopes)
-                    creds = flow.run_local_server(port=0)
-                
-                # Save credentials for next run
-                with open(token_path, 'w') as token:
-                    token.write(creds.to_json())
-            
-            self.credentials = creds
-            self.service = build('drive', 'v3', credentials=creds)
-            
-            # Test connection
-            self.service.about().get(fields="user").execute()
-            
-            logger.info("Google Drive authentication successful")
-            return True
+            service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON') or \
+                '/home/app/app-script-459322-990ad4e6c8ea.json'
+
+            if service_account_json and os.path.exists(service_account_json):
+                # ---- Conta de serviço ----
+                from google.oauth2 import service_account as sa
+                creds = sa.Credentials.from_service_account_file(service_account_json, scopes=self.scopes)
+                self.credentials = creds
+                self.service = build('drive', 'v3', credentials=creds)
+                # Test connection
+                self.service.about().get(fields="user").execute()
+                logger.info('Autenticado via Service Account')
+                return True
+            else:
+                raise GoogleDriveException(f'Service account file not found: {service_account_json}')
             
         except Exception as e:
             logger.error(f"Google Drive authentication failed: {str(e)}")
@@ -119,7 +107,7 @@ class EnhancedGoogleDriveAdapter:
         """
         Creates or locates client folder with standardized naming.
         
-        Format: AAAA-MM-Nome do Cliente
+        Format: [AAAA]-Nome Sobrenome ou [AAAA]-Razão Social
         
         Args:
             client_name: Name of the client
@@ -136,9 +124,9 @@ class EnhancedGoogleDriveAdapter:
         try:
             # Generate standardized folder name
             current_date = datetime.now()
-            year_month = current_date.strftime("%Y-%m")
+            year = current_date.strftime("%Y")
             sanitized_name = self._sanitize_folder_name(client_name)
-            folder_name = f"{year_month}-{sanitized_name}"
+            folder_name = f"[{year}]-{sanitized_name}"
             
             # Get or create clients root folder
             clients_root = self._get_or_create_clients_root()
@@ -563,6 +551,20 @@ class EnhancedGoogleDriveAdapter:
     
     def _get_or_create_clients_root(self) -> str:
         """Gets or creates the root folder for clients."""
+        from app.config.constants import GOOGLE_DRIVE_CONFIG
+        
+        # Use the configured folder ID if available
+        configured_folder_id = GOOGLE_DRIVE_CONFIG.get('CLIENT_FOLDERS_ROOT_ID')
+        if configured_folder_id:
+            # Verify the folder exists and is accessible
+            try:
+                folder = self.service.files().get(fileId=configured_folder_id).execute()
+                logger.info(f"Using configured clients root folder: {configured_folder_id}")
+                self.CLIENTS_ROOT_FOLDER_ID = configured_folder_id
+                return self.CLIENTS_ROOT_FOLDER_ID
+            except Exception as e:
+                logger.warning(f"Configured folder {configured_folder_id} not accessible: {str(e)}")
+        
         if self.CLIENTS_ROOT_FOLDER_ID:
             return self.CLIENTS_ROOT_FOLDER_ID
         

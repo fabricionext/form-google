@@ -1,4 +1,4 @@
-{% extends "_base_peticionador.html" %} {% block title %}Dashboard -
+{% extends "_base_peticionador_vuetify.html" %} {% block title %}Dashboard -
 Peticionador{% endblock %} {% block content %}
 <div class="fade-in">
   <!-- Header Section -->
@@ -58,7 +58,7 @@ Peticionador{% endblock %} {% block content %}
       <v-card
         class="custom-card gradient-primary text-white"
         elevation="4"
-        @click="window.location.href='{{ url_for('peticionador.listar_clientes') }}'"
+        @click="navigateTo('{{ url_for('peticionador.listar_clientes') }}')"
         style="cursor: pointer"
       >
         <v-card-text class="pa-6">
@@ -127,7 +127,7 @@ Peticionador{% endblock %} {% block content %}
           <v-card
             class="custom-card"
             elevation="2"
-            @click="window.location.href='{{ url_for('peticionador.selecionar_modelo_peticao') }}'"
+            @click="navigateTo('{{ url_for('peticionador.selecionar_modelo_peticao') }}')"
             style="cursor: pointer"
           >
             <v-card-text class="pa-6 text-center">
@@ -149,7 +149,7 @@ Peticionador{% endblock %} {% block content %}
           <v-card
             class="custom-card"
             elevation="2"
-            @click="window.location.href='{{ url_for('peticionador.listar_modelos') }}'"
+            @click="navigateTo('{{ url_for('peticionador.listar_modelos') }}')"
             style="cursor: pointer"
           >
             <v-card-text class="pa-6 text-center">
@@ -171,7 +171,7 @@ Peticionador{% endblock %} {% block content %}
           <v-card
             class="custom-card"
             elevation="2"
-            @click="window.location.href='{{ url_for('peticionador.listar_autoridades') }}'"
+            @click="navigateTo('{{ url_for('peticionador.listar_autoridades') }}')"
             style="cursor: pointer"
           >
             <v-card-text class="pa-6 text-center">
@@ -270,6 +270,9 @@ Peticionador{% endblock %} {% block content %}
   </v-row>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
   // Dados da atividade recente para o Vuetify Data Table
   const atividadeData = [
@@ -283,7 +286,15 @@ Peticionador{% endblock %} {% block content %}
       {% endfor %}
   ];
 
-  // Adicionar dados ao Vue app via global data
-  window.atividadeData = atividadeData;
+  // Aguardar o Vue app estar pronto e adicionar dados
+  document.addEventListener('DOMContentLoaded', function() {
+    // Aguardar um pouco para o Vue app ser inicializado
+    setTimeout(function() {
+      if (window.vueApp && window.vueApp._instance) {
+        // Adicionar dados de atividade ao componente
+        window.vueApp._instance.data.atividadeData = atividadeData;
+      }
+    }, 100);
+  });
 </script>
 {% endblock %}

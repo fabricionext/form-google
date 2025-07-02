@@ -95,48 +95,12 @@ def create_app(config_object=None):
             content_security_policy_nonce_in=[]
         )
     else:
-        # CSP mais rigorosa para produção
+        # CSP gerenciada pelo nginx para produção - sem CSP duplicada no Flask
         talisman = Talisman(
             app,
             force_https=False,  
             strict_transport_security=False,
-            content_security_policy={
-                'default-src': "'self'",
-                'script-src': [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "'unsafe-eval'",
-                    "https://cdn.jsdelivr.net",
-                    "https://unpkg.com",
-                    "https://cdnjs.cloudflare.com"
-                ],
-                'style-src': [
-                    "'self'",
-                    "'unsafe-inline'",
-                    "https://cdn.jsdelivr.net",
-                    "https://fonts.googleapis.com",
-                    "https://cdnjs.cloudflare.com"
-                ],
-                'font-src': [
-                    "'self'",
-                    "https://fonts.gstatic.com",
-                    "data:"
-                ],
-                'img-src': [
-                    "'self'",
-                    "data:",
-                    "https:",
-                    "blob:"
-                ],
-                'connect-src': [
-                    "'self'",
-                    "https://api.google.com",
-                    "wss:",
-                    "ws:"
-                ],
-                'object-src': "'none'",
-                'base-uri': "'self'"
-            },
+            content_security_policy=False,  # Desabilita CSP do Flask (nginx gerencia)
             content_security_policy_nonce_in=[]
         )
 
@@ -203,8 +167,8 @@ def create_app(config_object=None):
     except Exception as e:
         app.logger.warning(f"Could not register Template API routes: {e}")
 
-    # Isentar o blueprint do peticionador da proteção CSRF temporariamente
-    csrf.exempt(peticionador_bp)
+    # CSRF proteção habilitada para peticionador (login requer CSRF)
+    # csrf.exempt(peticionador_bp)  # Removido para permitir login
     try:
         csrf.exempt(api_bp)
         csrf.exempt(templates_bp)

@@ -1,0 +1,21 @@
+{
+  "tipo_pessoa": "JURIDICA",
+  "razao_social": "Empresa Exemplo LTDA",
+  "cnpj": "11222333000199",
+  "representante_legal": "Maria Souza",
+  "representante_cpf": "98765432100",
+  "email": "contato@empresa.com",
+  "telefone_celular": "(11)98888-5555",
+  "endereco_cep": "02000000",
+  "endereco_logradouro": "Av. B",
+  "endereco_numero": "200",
+  "endereco_bairro": "Bairro B",
+  "endereco_cidade": "São Paulo",
+  "endereco_estado": "SP",
+  "documentos_gerar": [
+    "FICHA_CADASTRAL",
+    "CONTRATO_HONORARIOS",
+    "PROCURACAO_JUDICIAL",
+    "PROCURACAO_ADMINISTRATIVA"
+  ]
+}

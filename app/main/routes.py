@@ -103,17 +103,55 @@ class ClientForm(FlaskForm):
 @main_bp.route("/cadastrodecliente")
 @limiter.limit("100 per hour")
 def cadastro_de_cliente():
-    """Serve a aplicação Vue.js para cadastro de cliente."""
+    """Serve a aplicação Vue.js para cadastro de cliente - ROTA PÚBLICA."""
     return serve_vue_app()
 
-# Rotas adicionais que devem servir a mesma aplicação Vue.js (SPA routing)
+# Alias para compatibilidade - ambas as rotas servem o mesmo conteúdo público
+@main_bp.route("/cadastrocliente")
+@limiter.limit("100 per hour")
+def cadastro_cliente_alias():
+    """Alias para cadastro de cliente - ROTA PÚBLICA."""
+    return serve_vue_app()
+
+# Rotas adicionais que devem servir a mesma aplicação Vue.js (SPA routing) - PROTEGIDAS
 @main_bp.route("/clientes/novo")
 @main_bp.route("/modelos")
 @main_bp.route("/admin/formularios")  # Prefixo /admin para evitar conflito
 @main_bp.route("/admin/formularios/<path:subpath>")
+@login_required
 @limiter.limit("100 per hour")
 def vue_spa_routes(subpath=None):
-    """Serve a aplicação Vue.js para rotas do SPA."""
+    """Serve a aplicação Vue.js para rotas do SPA - REQUER AUTENTICAÇÃO."""
+    return serve_vue_app()
+
+
+# Verificação de segurança: bloquear acesso direto a rotas protegidas via cadastrodecliente
+@main_bp.route("/cadastrodecliente/<path:subpath>")
+@limiter.limit("100 per hour")
+def block_protected_routes_via_public(subpath):
+    """
+    Bloqueia tentativas de acessar rotas protegidas através do endpoint público.
+    
+    Esta rota captura tentativas como:
+    - /cadastrodecliente/admin
+    - /cadastrodecliente/peticionador
+    - /cadastrodecliente/api
+    """
+    from flask import abort, current_app
+    
+    # Lista de prefixos que nunca devem ser acessíveis via rota pública
+    protected_prefixes = [
+        'admin', 'peticionador', 'api', 'clientes', 'modelos', 
+        'autoridades', 'dashboard', 'login', 'logout', 'configuracoes'
+    ]
+    
+    # Verificar se o subpath começa com algum prefixo protegido
+    for prefix in protected_prefixes:
+        if subpath.startswith(prefix):
+            current_app.logger.warning(f"Tentativa de acesso a rota protegida via endpoint público: /cadastrodecliente/{subpath}")
+            abort(403)  # Forbidden
+    
+    # Se não é um prefixo protegido, serve o app Vue.js normal
     return serve_vue_app()
 
 
@@ -180,6 +218,21 @@ def vue_assets(filename):
     except Exception as e:
         current_app.logger.error(f"Erro ao servir asset {filename}: {str(e)}")
         abort(500)
+
+
+@main_bp.route("/api/clientes", methods=['POST'])
+@csrf.exempt
+@limiter.limit("10 per minute")
+def api_clientes_redirect():
+    """
+    Redirecionamento para a API pública de clientes.
+    Mantém compatibilidade com o frontend.
+    """
+    from flask import request, jsonify
+    from app.api.public_api import create_cliente
+    
+    # Redirecionar para a função real da API pública
+    return create_cliente()
 
 
 @main_bp.route("/api/cep/<cep>")

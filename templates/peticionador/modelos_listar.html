@@ -1,98 +1,314 @@
-{% extends '_base_peticionador.html' %} {% block title %}Modelos de Petição{%
-endblock %} {% block content %}
-<h2 class="mb-4">Modelos de Petição</h2>
-<a
-  href="{{ url_for('peticionador.adicionar_modelo') }}"
-  class="btn btn-primary mb-3"
-  >Novo Modelo</a
->
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Nome</th>
-      <th>Ativo</th>
-      <th>Criado em</th>
-      <th>Ações</th>
-      <th>Link Permanente</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% if modelos|length == 0 %}
-  <tr>
-    <td colspan="7" class="text-center text-muted">Nenhum modelo cadastrado.</td>
-  </tr>
-{% else %}
-{% for m in modelos %}
-    <tr>
-      <td>{{ m.id }}</td>
-      <td>{{ m.nome or 'Sem nome' }}</td>
-      <td>{{ 'Sim' if m.ativo else 'Não' }}</td>
-      <td>{{ m.criado_em.strftime('%d/%m/%Y') if m.criado_em else '-' }}</td>
-      <td>
-        <a
-          href="{{ url_for('peticionador.editar_modelo', modelo_id=m.id) }}"
-          class="btn btn-sm btn-secondary"
-          >Editar</a
+{% extends '_base_peticionador_vuetify.html' %}
+
+{% block title %}Modelos de Petição{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+  <!-- Header Section -->
+  <v-row class="mb-6">
+    <v-col cols="12">
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <h1 class="text-h4 font-weight-bold text-primary mb-2">
+            <v-icon icon="mdi-layer-group" class="me-3"></v-icon>
+            Modelos de Petição
+          </h1>
+          <v-breadcrumbs :items="[
+            { title: 'Dashboard', href: '{{ url_for('peticionador.index') }}', disabled: false },
+            { title: 'Modelos', disabled: true }
+          ]" class="pa-0"></v-breadcrumbs>
+        </div>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          prepend-icon="mdi-plus"
+          href="{{ url_for('peticionador.adicionar_modelo') }}"
+          size="large"
         >
-        <a
-          href="{{ url_for('peticionador.placeholders_modelo', modelo_id=m.id) }}"
-          class="btn btn-sm btn-info"
-          >Placeholders</a
-        >
-        <a
-          href="{{ url_for('peticionador.criar_formulario_dinamico', modelo_id=m.id) }}"
-          class="btn btn-sm btn-success"
-          >Gerar</a
-        >
-        {% if m.ativo %}
-        <form
-          method="post"
-          action="{{ url_for('peticionador.excluir_modelo', modelo_id=m.id) }}"
-          style="display: inline"
-        >
-          <button
-            type="submit"
-            class="btn btn-sm btn-outline-danger"
-            onclick="return confirm('Tem certeza que deseja desativar este modelo? Ele não aparecerá mais na seleção de modelos.')"
-          >
-            Desativar
-          </button>
-        </form>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.formularios_gerados|default([])|length > 0 %}
-          {% for f in m.formularios_gerados %}
-            <div class="d-flex align-items-center gap-2 mb-1">
-              <a
-                href="{{ url_for('peticionador.preencher_formulario_dinamico', formulario_slug=f.slug) }}"
-                class="link-primary"
-              >
-                {{ f.nome or 'Sem nome' }}
-              </a>
-              <form
-                method="post"
-                action="{{ url_for('peticionador.excluir_formulario_dinamico', slug=f.slug) }}"
-                style="display: inline"
-              >
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-danger"
-                  onclick="return confirm('Tem certeza que deseja excluir este formulário?')"
-                >
-                  Excluir
-                </button>
-              </form>
+          Novo Modelo
+        </v-btn>
+      </div>
+    </v-col>
+  </v-row>
+
+  <!-- Stats Cards -->
+  <v-row class="mb-6">
+    <v-col cols="12" md="4">
+      <v-card color="primary" variant="tonal">
+        <v-card-text class="d-flex align-center justify-center">
+          <div class="text-center">
+            <h3 class="text-h4 font-weight-bold text-primary">{{ formularios|length }}</h3>
+            <p class="text-body-2 text-medium-emphasis mb-0">Modelos Ativos</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+    <v-col cols="12" md="4">
+      <v-card color="success" variant="tonal">
+        <v-card-text class="d-flex align-center justify-center">
+          <div class="text-center">
+            <h3 class="text-h4 font-weight-bold text-success">{{ formularios|selectattr('formularios_gerados')|list|length }}</h3>
+            <p class="text-body-2 text-medium-emphasis mb-0">Com Formulários</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+    <v-col cols="12" md="4">
+      <v-card color="info" variant="tonal">
+        <v-card-text class="d-flex align-center justify-center">
+          <div class="text-center">
+            <h3 class="text-h4 font-weight-bold text-info">{{ formularios|map(attribute='formularios_gerados')|map('length')|sum }}</h3>
+            <p class="text-body-2 text-medium-emphasis mb-0">Total de Formulários</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
+
+  <!-- Models Table -->
+  <v-card elevation="2">
+    <v-card-title class="d-flex align-center">
+      <v-icon icon="mdi-format-list-bulleted" class="me-2"></v-icon>
+      Lista de Modelos
+    </v-card-title>
+    
+    {% if formularios %}
+    <v-card-text class="pa-0">
+      <v-data-table
+        :headers="headers"
+        :items="modelosData"
+        :items-per-page="10"
+        class="elevation-0"
+        show-current-page
+      >
+        <template v-slot:item.nome="{ item }">
+          <div class="d-flex align-center">
+            <v-avatar color="secondary" size="32" class="me-3">
+              <v-icon icon="mdi-file-document" color="white" size="16"></v-icon>
+            </v-avatar>
+            <div>
+              <div class="font-weight-medium">{{ item.nome }}</div>
+              <div class="text-caption text-medium-emphasis">ID: {{ item.id }}</div>
             </div>
+          </div>
+        </template>
+
+        <template v-slot:item.ativo="{ item }">
+          <v-chip 
+            :color="item.ativo ? 'success' : 'error'"
+            size="small"
+            variant="tonal"
+          >
+            {{ item.ativo ? 'Ativo' : 'Inativo' }}
+          </v-chip>
+        </template>
+
+        <template v-slot:item.formularios="{ item }">
+          <div v-if="item.formularios_count > 0">
+            <v-chip color="info" size="small" variant="tonal" class="mb-1">
+              {{ item.formularios_count }} {{ item.formularios_count === 1 ? 'formulário' : 'formulários' }}
+            </v-chip>
+            <div v-for="formulario in item.formularios_gerados" :key="formulario.slug" class="mt-1">
+              <v-btn
+                :href="formulario.url"
+                size="x-small"
+                color="primary"
+                variant="text"
+                prepend-icon="mdi-open-in-new"
+              >
+                {{ formulario.nome }}
+              </v-btn>
+            </div>
+          </div>
+          <span v-else class="text-medium-emphasis">Nenhum formulário</span>
+        </template>
+
+        <template v-slot:item.acoes="{ item }">
+          <div class="d-flex ga-1">
+            <v-btn
+              icon="mdi-pencil"
+              size="small"
+              color="secondary"
+              variant="tonal"
+              :href="`{{ url_for('peticionador.editar_modelo', modelo_id=1) }}`.replace('1', item.id)"
+              title="Editar"
+            ></v-btn>
+            <v-btn
+              icon="mdi-code-braces"
+              size="small"
+              color="info"
+              variant="tonal"
+              :href="`{{ url_for('peticionador.placeholders_modelo', modelo_id=1) }}`.replace('1', item.id)"
+              title="Placeholders"
+            ></v-btn>
+            <v-btn
+              icon="mdi-plus-circle"
+              size="small"
+              color="success"
+              variant="tonal"
+              :href="`{{ url_for('peticionador.criar_formulario_dinamico', modelo_id=1) }}`.replace('1', item.id)"
+              title="Gerar Formulário"
+            ></v-btn>
+            <v-btn
+              v-if="item.ativo"
+              icon="mdi-close-circle"
+              size="small"
+              color="error"
+              variant="tonal"
+              @click="confirmDeactivate(item)"
+              title="Desativar"
+            ></v-btn>
+          </div>
+        </template>
+
+        <template v-slot:no-data>
+          <div class="text-center pa-8">
+            <v-icon icon="mdi-file-document-plus" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+            <h4 class="text-h6 text-grey-darken-1 mb-2">Nenhum modelo cadastrado</h4>
+            <p class="text-body-2 text-grey-darken-1 mb-4">
+              Comece criando seu primeiro modelo de petição
+            </p>
+            <v-btn 
+              color="primary" 
+              size="large"
+              prepend-icon="mdi-plus"
+              href="{{ url_for('peticionador.adicionar_modelo') }}"
+            >
+              Criar Primeiro Modelo
+            </v-btn>
+          </div>
+        </template>
+      </v-data-table>
+    </v-card-text>
+    {% else %}
+    <v-card-text class="pa-8 text-center">
+      <v-icon icon="mdi-file-document-plus" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+      <h4 class="text-h6 text-grey-darken-1 mb-2">Nenhum modelo cadastrado</h4>
+      <p class="text-body-2 text-grey-darken-1 mb-4">
+        Comece criando seu primeiro modelo de petição
+      </p>
+      <v-btn 
+        color="primary" 
+        size="large"
+        prepend-icon="mdi-plus"
+        href="{{ url_for('peticionador.adicionar_modelo') }}"
+      >
+        Criar Primeiro Modelo
+      </v-btn>
+    </v-card-text>
+    {% endif %}
+  </v-card>
+</div>
+
+<!-- Deactivate Confirmation Dialog -->
+<v-dialog v-model="deactivateDialog" max-width="500">
+  <v-card>
+    <v-card-title class="text-h5">
+      <v-icon icon="mdi-close-circle-outline" color="warning" class="me-2"></v-icon>
+      Confirmar Desativação
+    </v-card-title>
+    <v-card-text>
+      Tem certeza que deseja desativar o modelo <strong>{{ selectedModel?.nome }}</strong>?
+      <br><br>
+      <v-alert type="warning" variant="tonal" class="mt-2">
+        Ele não aparecerá mais na seleção de modelos!
+      </v-alert>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="grey" variant="text" @click="deactivateDialog = false">
+        Cancelar
+      </v-btn>
+      <v-btn color="warning" variant="elevated" @click="deactivateModel">
+        Desativar
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dados dos modelos para o Vue.js
+  const modelosData = [
+    {% for modelo in formularios %}
+    {
+      id: {{ modelo.id }},
+      nome: '{{ modelo.nome or "Sem nome" }}',
+      ativo: {{ 'true' if modelo.ativo else 'false' }},
+      criado_em: '{{ modelo.criado_em.strftime("%d/%m/%Y") if modelo.criado_em else "-" }}',
+      formularios_count: {{ modelo.formularios_gerados|length if modelo.formularios_gerados else 0 }},
+      formularios_gerados: [
+        {% if modelo.formularios_gerados %}
+          {% for f in modelo.formularios_gerados %}
+          {
+            slug: '{{ f.slug }}',
+            nome: '{{ f.nome or "Sem nome" }}',
+            url: '{{ url_for("peticionador.preencher_formulario_dinamico", formulario_slug=f.slug) }}'
+          }{{ "," if not loop.last else "" }}
           {% endfor %}
-        {% else %}
-          <span class="text-muted">Nenhum formulário criado</span>
         {% endif %}
-      </td>
-    </tr>
+      ]
+    }{{ "," if not loop.last else "" }}
     {% endfor %}
-{% endif %}
-  </tbody>
-</table>
+  ];
+
+  // Estender o Vue app para funcionalidades dos modelos
+  if (window.Vue && document.getElementById('app').__vue_app__) {
+    const app = document.getElementById('app').__vue_app__;
+    
+    app._component.data = function() {
+      const originalData = app._component.data ? app._component.data() : {};
+      return {
+        ...originalData,
+        deactivateDialog: false,
+        selectedModel: null,
+        headers: [
+          { title: 'Modelo', key: 'nome', sortable: true },
+          { title: 'Status', key: 'ativo', sortable: true },
+          { title: 'Criado em', key: 'criado_em', sortable: true },
+          { title: 'Formulários', key: 'formularios', sortable: false },
+          { title: 'Ações', key: 'acoes', sortable: false, align: 'center' }
+        ],
+        modelosData: modelosData
+      };
+    };
+
+    app._component.methods = {
+      ...app._component.methods,
+      confirmDeactivate(model) {
+        this.selectedModel = model;
+        this.deactivateDialog = true;
+      },
+      async deactivateModel() {
+        if (!this.selectedModel) return;
+        
+        try {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = `{{ url_for('peticionador.excluir_modelo', modelo_id=1) }}`.replace('1', this.selectedModel.id);
+          
+          const csrfToken = document.querySelector('meta[name=csrf-token]');
+          if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+          }
+          
+          document.body.appendChild(form);
+          form.submit();
+        } catch (error) {
+          console.error('Erro ao desativar modelo:', error);
+          alert('Erro ao desativar modelo. Tente novamente.');
+        }
+        
+        this.deactivateDialog = false;
+        this.selectedModel = null;
+      }
+    };
+  }
+</script>
 {% endblock %}

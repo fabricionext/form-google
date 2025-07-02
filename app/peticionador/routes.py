@@ -192,7 +192,7 @@ def dashboard():
     )
     
     return render_template(
-        "peticionador/dashboard.html",
+        "peticionador/dashboard_vuetify.html",
         title="Dashboard Peticionador",
         total_clientes=total_clientes,
         total_peticoes=total_formularios,  # Agora conta formulários criados
@@ -280,24 +280,18 @@ def logout():
 # GESTÃO DE MODELOS
 # =============================================================================
 
-# @peticionador_bp.route("/modelos")
-# @login_required
-# def listar_modelos():
-#     """Lista todos os modelos de petição disponíveis."""
-#     # Adicionar paginação para evitar sobrecarga com muitos modelos
-#     page = request.args.get("page", 1, type=int)
-#     formularios_query = FormularioGerado.query.order_by(
-#         FormularioGerado.criado_em.desc()
-#     )
-#     pagination = formularios_query.paginate(page=page, per_page=10)
-#     formularios = pagination.items
-
-#     return render_template(
-#         "peticionador/modelos_listar.html",
-#         title="Modelos de Petição",
-#         formularios=formularios,
-#         pagination=pagination,
-#     )
+@peticionador_bp.route("/modelos")
+@login_required
+def listar_modelos():
+    """Lista todos os modelos de petição disponíveis."""
+    # Buscar modelos de petição ativos
+    modelos = PeticaoModelo.query.filter_by(ativo=True).order_by(PeticaoModelo.nome).all()
+    
+    return render_template(
+        "peticionador/modelos_listar.html",
+        title="Modelos de Petição",
+        formularios=modelos,  # Mantendo o nome 'formularios' para compatibilidade com template
+    )
 
 
 @peticionador_bp.route("/modelos/adicionar", methods=["GET", "POST"])
@@ -533,34 +527,39 @@ def preencher_formulario_dinamico(formulario_slug):
 # GESTÃO DE CLIENTES
 # =============================================================================
 
-# @peticionador_bp.route("/clientes")
-# @login_required
-# def listar_clientes():
-#     """Lista todos os clientes cadastrados com busca e paginação."""
-#     page = request.args.get("page", 1, type=int)
-#     search_query = request.args.get("q", "")
+@peticionador_bp.route("/clientes")
+@login_required
+def listar_clientes():
+    """Lista todos os clientes cadastrados com busca e paginação."""
+    page = request.args.get("page", 1, type=int)
+    search_query = request.args.get("q", "")
 
-#     query = Cliente.query.order_by(Cliente.id.desc())
-#     if search_query:
-#         # Busca por nome ou CPF/CNPJ
-#         search_term = f"%{search_query}%"
-#         query = query.filter(
-#             db.or_(
-#                 Cliente.nome_cliente.ilike(search_term),
-#                 Cliente.cpf_cnpj.ilike(search_term),
-#             )
-#         )
+    query = Cliente.query.order_by(Cliente.id.desc())
+    if search_query:
+        # Busca por nome, razão social, CPF ou CNPJ
+        search_term = f"%{search_query}%"
+        query = query.filter(
+            db.or_(
+                Cliente.primeiro_nome.ilike(search_term),
+                Cliente.sobrenome.ilike(search_term),
+                Cliente.nome_completo.ilike(search_term),
+                Cliente.razao_social.ilike(search_term),
+                Cliente.cpf.ilike(search_term),
+                Cliente.cnpj.ilike(search_term),
+                Cliente.email.ilike(search_term),
+            )
+        )
 
-#     pagination = query.paginate(page=page, per_page=10, error_out=False)
-#     clientes = pagination.items
+    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    clientes = pagination.items
 
-#     return render_template(
-#         "peticionador/clientes_listar.html",
-#         title="Clientes Cadastrados",
-#         clientes=clientes,
-#         pagination=pagination,
-#         search_query=search_query,
-#     )
+    return render_template(
+        "peticionador/clientes_listar.html",
+        title="Clientes Cadastrados",
+        clientes=clientes,
+        pagination=pagination,
+        search_query=search_query,
+    )
 
 
 @peticionador_bp.route("/clientes/adicionar", methods=["GET", "POST"])
@@ -586,7 +585,7 @@ def adicionar_cliente():
             flash("Erro ao adicionar cliente.", "danger")
     
     return render_template(
-        "peticionador/cliente_form.html",
+        "peticionador/cliente_form_vuetify.html",
         title="Adicionar Cliente",
         form=form
     )
@@ -613,7 +612,7 @@ def editar_cliente(cliente_id):
             flash("Erro ao editar cliente.", "danger")
     
     return render_template(
-        "peticionador/cliente_form.html",
+        "peticionador/cliente_form_vuetify.html",
         title="Editar Cliente",
         form=form,
         cliente=cliente
@@ -626,7 +625,7 @@ def visualizar_cliente(cliente_id):
     """Visualiza detalhes de um cliente."""
     cliente = Cliente.query.get_or_404(cliente_id)
     return render_template(
-        "peticionador/cliente_detalhes.html",
+        "peticionador/cliente_detalhes_vuetify.html",
         title=f"Cliente - {cliente.nome_completo_formatado}",
         cliente=cliente,
     )
@@ -1159,3 +1158,298 @@ def limpar_e_sincronizar_placeholders(modelo_id):
     # O conteúdo desta função será movido para o PlaceholderService
     # ou uma classe de domínio específica para o modelo.
     pass
+
+
+# =============================================================================
+# DASHBOARD ADMINISTRATIVO AVANÇADO
+# =============================================================================
+
+@peticionador_bp.route("/admin/dashboard")
+@login_required
+def admin_dashboard():
+    """Dashboard administrativo avançado com monitoramento completo."""
+    from datetime import datetime, timedelta
+    
+    try:
+        # Estatísticas básicas
+        total_usuarios = User.query.count()
+        usuarios_ativos = User.query.filter_by(is_active=True).count()
+        total_modelos = PeticaoModelo.query.filter_by(ativo=True).count()
+        total_clientes = Cliente.query.count()
+        total_formularios = FormularioGerado.query.count()
+        total_peticoes = PeticaoGerada.query.count()
+        total_autoridades = AutoridadeTransito.query.count()
+        
+        # Estatísticas por período
+        hoje = datetime.utcnow()
+        ultima_semana = hoje - timedelta(days=7)
+        ultimo_mes = hoje - timedelta(days=30)
+        
+        # Novos registros (última semana)
+        novos_usuarios = User.query.filter(User.created_at >= ultima_semana).count() if hasattr(User, 'created_at') else 0
+        novos_clientes = Cliente.query.filter(Cliente.created_at >= ultima_semana).count() if hasattr(Cliente, 'created_at') else 0
+        novos_formularios = FormularioGerado.query.filter(FormularioGerado.criado_em >= ultima_semana).count()
+        
+        # Últimas atividades
+        ultimos_clientes = (
+            Cliente.query
+            .order_by(Cliente.id.desc())
+            .limit(10)
+            .all()
+        )
+        
+        ultimos_formularios = (
+            FormularioGerado.query
+            .join(PeticaoModelo)
+            .order_by(FormularioGerado.criado_em.desc())
+            .limit(10)
+            .all()
+        )
+        
+        # Estatísticas de uso dos modelos
+        modelos_mais_usados = (
+            db.session.query(PeticaoModelo, db.func.count(FormularioGerado.id).label('uso_count'))
+            .join(FormularioGerado, PeticaoModelo.id == FormularioGerado.modelo_id)
+            .group_by(PeticaoModelo.id)
+            .order_by(db.desc('uso_count'))
+            .limit(5)
+            .all()
+        )
+        
+        return render_template(
+            "peticionador/admin_dashboard.html",
+            title="Dashboard Administrativo",
+            # Estatísticas gerais
+            total_usuarios=total_usuarios,
+            usuarios_ativos=usuarios_ativos,
+            total_modelos=total_modelos,
+            total_clientes=total_clientes,
+            total_formularios=total_formularios,
+            total_peticoes=total_peticoes,
+            total_autoridades=total_autoridades,
+            # Novos registros
+            novos_usuarios=novos_usuarios,
+            novos_clientes=novos_clientes,
+            novos_formularios=novos_formularios,
+            # Atividades recentes
+            ultimos_clientes=ultimos_clientes,
+            ultimos_formularios=ultimos_formularios,
+            # Estatísticas de uso
+            modelos_mais_usados=modelos_mais_usados,
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro no dashboard administrativo: {e}")
+        flash("Erro ao carregar dashboard administrativo.", "danger")
+        return redirect(url_for("peticionador.dashboard"))
+
+
+@peticionador_bp.route("/admin/monitoramento")
+@login_required
+def monitoramento():
+    """Página de monitoramento em tempo real."""
+    from datetime import datetime, timedelta
+    
+    try:
+        # Dados para últimas 24 horas
+        agora = datetime.utcnow()
+        ontem = agora - timedelta(hours=24)
+        
+        # Atividades recentes (últimas 24h)
+        formularios_recentes = (
+            FormularioGerado.query
+            .filter(FormularioGerado.criado_em >= ontem)
+            .order_by(FormularioGerado.criado_em.desc())
+            .limit(20)
+            .all()
+        )
+        
+        # Clientes cadastrados via /cadastrocliente (últimas 24h)
+        clientes_recentes = (
+            Cliente.query
+            .filter(Cliente.created_at >= ontem) if hasattr(Cliente, 'created_at') else Cliente.query
+        ).order_by(Cliente.id.desc()).limit(20).all()
+        
+        # Sistema de logs (se disponível)
+        logs_sistema = []  # TODO: Implementar logs do sistema
+        
+        return render_template(
+            "peticionador/monitoramento.html",
+            title="Monitoramento do Sistema",
+            formularios_recentes=formularios_recentes,
+            clientes_recentes=clientes_recentes,
+            logs_sistema=logs_sistema,
+            timestamp_atualizacao=agora
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro no monitoramento: {e}")
+        flash("Erro ao carregar monitoramento.", "danger")
+        return redirect(url_for("peticionador.dashboard"))
+
+
+@peticionador_bp.route("/admin/relatorios")
+@login_required
+def relatorios():
+    """Página de relatórios e estatísticas."""
+    from datetime import datetime, timedelta
+    
+    try:
+        # Período de análise (último mês)
+        hoje = datetime.utcnow()
+        ultimo_mes = hoje - timedelta(days=30)
+        
+        # Relatório de clientes por período
+        clientes_por_dia = (
+            db.session.query(
+                db.func.date(Cliente.created_at if hasattr(Cliente, 'created_at') else Cliente.id).label('data'),
+                db.func.count(Cliente.id).label('total')
+            )
+            .filter(Cliente.created_at >= ultimo_mes if hasattr(Cliente, 'created_at') else True)
+            .group_by(db.func.date(Cliente.created_at if hasattr(Cliente, 'created_at') else Cliente.id))
+            .order_by('data')
+            .all()
+        )
+        
+        # Relatório de formulários por modelo
+        formularios_por_modelo = (
+            db.session.query(PeticaoModelo.nome, db.func.count(FormularioGerado.id).label('total'))
+            .join(FormularioGerado, PeticaoModelo.id == FormularioGerado.modelo_id)
+            .group_by(PeticaoModelo.nome)
+            .order_by(db.desc('total'))
+            .all()
+        )
+        
+        # Relatório de uso por horário
+        uso_por_horario = (
+            db.session.query(
+                db.func.extract('hour', FormularioGerado.criado_em).label('hora'),
+                db.func.count(FormularioGerado.id).label('total')
+            )
+            .group_by('hora')
+            .order_by('hora')
+            .all()
+        )
+        
+        return render_template(
+            "peticionador/relatorios.html",
+            title="Relatórios e Estatísticas",
+            clientes_por_dia=clientes_por_dia,
+            formularios_por_modelo=formularios_por_modelo,
+            uso_por_horario=uso_por_horario,
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro nos relatórios: {e}")
+        flash("Erro ao carregar relatórios.", "danger")
+        return redirect(url_for("peticionador.dashboard"))
+
+
+@peticionador_bp.route("/configuracoes")
+@login_required
+def configuracoes():
+    """Página de configurações do sistema."""
+    # Obter dados do sistema para exibir nas configurações
+    total_usuarios = User.query.filter_by(is_active=True).count()
+    total_clientes = Cliente.query.count()
+    
+    return render_template(
+        "peticionador/configuracoes.html",
+        title="Configurações do Sistema",
+        total_usuarios=total_usuarios,
+        total_clientes=total_clientes,
+    )
+
+# Rota temporária para evitar erro BuildError
+@peticionador_bp.route("/placeholders")
+@login_required
+def listar_placeholders():
+    """Página temporária para placeholders."""
+    return redirect(url_for("peticionador.configuracoes"))
+
+
+# =============================================================================
+# APIs PARA MONITORAMENTO EM TEMPO REAL
+# =============================================================================
+
+@peticionador_bp.route("/api/admin/stats")
+@login_required
+def admin_stats_api():
+    """API JSON com estatísticas em tempo real."""
+    from datetime import datetime, timedelta
+    
+    try:
+        agora = datetime.utcnow()
+        hoje = agora.replace(hour=0, minute=0, second=0, microsecond=0)
+        ontem = hoje - timedelta(days=1)
+        
+        stats = {
+            'timestamp': agora.isoformat(),
+            'totais': {
+                'usuarios': User.query.count(),
+                'usuarios_ativos': User.query.filter_by(is_active=True).count(),
+                'clientes': Cliente.query.count(),
+                'formularios': FormularioGerado.query.count(),
+                'modelos': PeticaoModelo.query.filter_by(ativo=True).count(),
+                'autoridades': AutoridadeTransito.query.count()
+            },
+            'hoje': {
+                'formularios': FormularioGerado.query.filter(FormularioGerado.criado_em >= hoje).count(),
+                'clientes': Cliente.query.filter(Cliente.created_at >= hoje).count() if hasattr(Cliente, 'created_at') else 0
+            },
+            'sistema': {
+                'status': 'online',
+                'uptime': '99.9%',  # TODO: Implementar cálculo real
+                'memoria_uso': '45%',  # TODO: Implementar monitoramento real
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@peticionador_bp.route("/api/admin/clientes-recentes")
+@login_required
+def clientes_recentes_api():
+    """API JSON com clientes cadastrados recentemente."""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        
+        clientes = (
+            Cliente.query
+            .order_by(Cliente.id.desc())
+            .limit(limit)
+            .all()
+        )
+        
+        clientes_data = []
+        for cliente in clientes:
+            clientes_data.append({
+                'id': cliente.id,
+                'nome': cliente.nome_razao_social or 'N/A',
+                'email': cliente.email or 'N/A',
+                'telefone': cliente.telefone_celular or cliente.telefone_outro or 'N/A',
+                'tipo_pessoa': cliente.tipo_pessoa.value if cliente.tipo_pessoa else 'N/A',
+                'data_cadastro': cliente.created_at.isoformat() if hasattr(cliente, 'created_at') and cliente.created_at else 'N/A',
+                'cpf_cnpj': cliente.cpf or cliente.cnpj or 'N/A'
+            })
+        
+        return jsonify({
+            'success': True,
+            'clientes': clientes_data,
+            'total': len(clientes_data)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

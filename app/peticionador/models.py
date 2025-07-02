@@ -80,6 +80,16 @@ class Cliente(db.Model):
     representante_rg_uf_emissor = db.Column(db.String(2))
     representante_cargo = db.Column(db.String(64))
 
+    # Metadados
+    ativo = db.Column(db.Boolean, default=True)
+    criado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    atualizado_em = db.Column(
+        db.DateTime, 
+        default=datetime.datetime.utcnow, 
+        onupdate=datetime.datetime.utcnow
+    )
+    versao = db.Column(db.Integer, default=1)  # Controle de versão
+
     @property
     def nome_completo_formatado(self):
         """Retorna nome completo formatado baseado no tipo de pessoa"""
@@ -125,8 +135,111 @@ class Cliente(db.Model):
         """Retorna telefone principal ou alternativo"""
         return self.telefone_celular or self.telefone_outro or ""
 
+    def arquivar_para_historico(self, motivo="Atualização de dados"):
+        """Arquiva os dados atuais do cliente no histórico antes de uma atualização."""
+        historico = ClienteHistorico(
+            cliente_id=self.id,
+            tipo_pessoa=self.tipo_pessoa,
+            email=self.email,
+            telefone_celular=self.telefone_celular,
+            telefone_outro=self.telefone_outro,
+            primeiro_nome=self.primeiro_nome,
+            sobrenome=self.sobrenome,
+            nome_completo=self.nome_completo,
+            cpf=self.cpf,
+            rg_numero=self.rg_numero,
+            rg_orgao_emissor=self.rg_orgao_emissor,
+            rg_uf_emissor=self.rg_uf_emissor,
+            data_nascimento=self.data_nascimento,
+            nacionalidade=self.nacionalidade,
+            estado_civil=self.estado_civil,
+            profissao=self.profissao,
+            cnh_numero=self.cnh_numero,
+            endereco_logradouro=self.endereco_logradouro,
+            endereco_numero=self.endereco_numero,
+            endereco_complemento=self.endereco_complemento,
+            endereco_bairro=self.endereco_bairro,
+            endereco_cidade=self.endereco_cidade,
+            endereco_estado=self.endereco_estado,
+            endereco_cep=self.endereco_cep,
+            razao_social=self.razao_social,
+            cnpj=self.cnpj,
+            representante_nome=self.representante_nome,
+            representante_cpf=self.representante_cpf,
+            representante_rg_numero=self.representante_rg_numero,
+            representante_rg_orgao_emissor=self.representante_rg_orgao_emissor,
+            representante_rg_uf_emissor=self.representante_rg_uf_emissor,
+            representante_cargo=self.representante_cargo,
+            versao_arquivada=self.versao,
+            motivo=motivo
+        )
+        db.session.add(historico)
+        # Incrementar versão do cliente atual
+        self.versao = (self.versao or 1) + 1
+        self.atualizado_em = datetime.datetime.utcnow()
+        return historico
+
     def __repr__(self):
         return f"<Cliente {self.nome_completo or self.razao_social}>"
+
+
+class ClienteHistorico(db.Model):
+    """Histórico de alterações dos clientes para auditoria."""
+    
+    __tablename__ = "clientes_historico"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes_peticionador.id"), nullable=False)
+    
+    # Todos os campos do cliente original
+    tipo_pessoa = db.Column(db.Enum(TipoPessoaEnum), nullable=False)
+    email = db.Column(db.String(128), nullable=False)
+    telefone_celular = db.Column(db.String(32))
+    telefone_outro = db.Column(db.String(32))
+    
+    # Pessoa Física
+    primeiro_nome = db.Column(db.String(64))
+    sobrenome = db.Column(db.String(128))
+    nome_completo = db.Column(db.String(192))
+    cpf = db.Column(db.String(14))
+    rg_numero = db.Column(db.String(32))
+    rg_orgao_emissor = db.Column(db.String(32))
+    rg_uf_emissor = db.Column(db.String(2))
+    data_nascimento = db.Column(db.Date)
+    nacionalidade = db.Column(db.String(32))
+    estado_civil = db.Column(db.String(20))
+    profissao = db.Column(db.String(64))
+    cnh_numero = db.Column(db.String(32))
+    
+    # Endereço
+    endereco_logradouro = db.Column(db.String(128))
+    endereco_numero = db.Column(db.String(16))
+    endereco_complemento = db.Column(db.String(64))
+    endereco_bairro = db.Column(db.String(64))
+    endereco_cidade = db.Column(db.String(64))
+    endereco_estado = db.Column(db.String(2))
+    endereco_cep = db.Column(db.String(16))
+    
+    # Pessoa Jurídica
+    razao_social = db.Column(db.String(128))
+    cnpj = db.Column(db.String(18))
+    representante_nome = db.Column(db.String(128))
+    representante_cpf = db.Column(db.String(14))
+    representante_rg_numero = db.Column(db.String(32))
+    representante_rg_orgao_emissor = db.Column(db.String(32))
+    representante_rg_uf_emissor = db.Column(db.String(2))
+    representante_cargo = db.Column(db.String(64))
+
+    # Metadados do histórico
+    versao_arquivada = db.Column(db.Integer, nullable=False)
+    motivo = db.Column(db.String(200), default="Atualização de dados")
+    arquivado_em = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    # Relacionamento
+    cliente = db.relationship("Cliente", backref=db.backref("historico", lazy=True))
+
+    def __repr__(self):
+        return f"<ClienteHistorico {self.cliente_id} v{self.versao_arquivada}>"
 
 
 class AutoridadeTransito(db.Model):
